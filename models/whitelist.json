@@ -1,0 +1,560 @@
+{
+  "count": 111,
+  "entries": [
+    {
+      "domain": "1212.go.th",
+      "agency_name": "Online Fraud Complaint Center",
+      "category": "go.th"
+    },
+    {
+      "domain": "ago.go.th",
+      "agency_name": "Office of the Attorney General",
+      "category": "go.th"
+    },
+    {
+      "domain": "airportthai.co.th",
+      "agency_name": "Airports of Thailand",
+      "category": "co.th"
+    },
+    {
+      "domain": "audit.go.th",
+      "agency_name": "State Audit Office of Thailand",
+      "category": "go.th"
+    },
+    {
+      "domain": "baac.or.th",
+      "agency_name": "Bank for Agriculture and Agricultural Cooperatives",
+      "category": "or.th"
+    },
+    {
+      "domain": "bangkok.go.th",
+      "agency_name": "Bangkok Metropolitan Administration",
+      "category": "go.th"
+    },
+    {
+      "domain": "bot.or.th",
+      "agency_name": "Bank of Thailand",
+      "category": "or.th"
+    },
+    {
+      "domain": "bu.ac.th",
+      "agency_name": "Bangkok University",
+      "category": "ac.th"
+    },
+    {
+      "domain": "buu.ac.th",
+      "agency_name": "Burapha University",
+      "category": "ac.th"
+    },
+    {
+      "domain": "cgd.go.th",
+      "agency_name": "The Comptroller General's Department",
+      "category": "go.th"
+    },
+    {
+      "domain": "chula.ac.th",
+      "agency_name": "Chulalongkorn University",
+      "category": "ac.th"
+    },
+    {
+      "domain": "cmu.ac.th",
+      "agency_name": "Chiang Mai University",
+      "category": "ac.th"
+    },
+    {
+      "domain": "coj.go.th",
+      "agency_name": "Courts of Justice",
+      "category": "go.th"
+    },
+    {
+      "domain": "customs.go.th",
+      "agency_name": "The Customs Department",
+      "category": "go.th"
+    },
+    {
+      "domain": "dbd.go.th",
+      "agency_name": "Department of Business Development",
+      "category": "go.th"
+    },
+    {
+      "domain": "dede.go.th",
+      "agency_name": "Department of Alternative Energy Development and Efficiency",
+      "category": "go.th"
+    },
+    {
+      "domain": "depa.or.th",
+      "agency_name": "Digital Economy Promotion Agency",
+      "category": "or.th"
+    },
+    {
+      "domain": "dft.go.th",
+      "agency_name": "Department of Foreign Trade",
+      "category": "go.th"
+    },
+    {
+      "domain": "dga.or.th",
+      "agency_name": "Digital Government Development Agency",
+      "category": "or.th"
+    },
+    {
+      "domain": "disaster.go.th",
+      "agency_name": "Department of Disaster Prevention and Mitigation",
+      "category": "go.th"
+    },
+    {
+      "domain": "dla.go.th",
+      "agency_name": "Department of Local Administration",
+      "category": "go.th"
+    },
+    {
+      "domain": "dld.go.th",
+      "agency_name": "Department of Livestock Development",
+      "category": "go.th"
+    },
+    {
+      "domain": "doa.go.th",
+      "agency_name": "Department of Agriculture",
+      "category": "go.th"
+    },
+    {
+      "domain": "doe.go.th",
+      "agency_name": "Department of Employment",
+      "category": "go.th"
+    },
+    {
+      "domain": "dol.go.th",
+      "agency_name": "Department of Lands",
+      "category": "go.th"
+    },
+    {
+      "domain": "dopa.go.th",
+      "agency_name": "Department of Provincial Administration",
+      "category": "go.th"
+    },
+    {
+      "domain": "dpu.ac.th",
+      "agency_name": "Dhurakij Pundit University",
+      "category": "ac.th"
+    },
+    {
+      "domain": "dsi.go.th",
+      "agency_name": "Department of Special Investigation",
+      "category": "go.th"
+    },
+    {
+      "domain": "egat.co.th",
+      "agency_name": "Electricity Generating Authority of Thailand",
+      "category": "co.th"
+    },
+    {
+      "domain": "etda.or.th",
+      "agency_name": "Electronic Transactions Development Agency",
+      "category": "or.th"
+    },
+    {
+      "domain": "excise.go.th",
+      "agency_name": "The Excise Department",
+      "category": "go.th"
+    },
+    {
+      "domain": "exim.go.th",
+      "agency_name": "Export-Import Bank of Thailand",
+      "category": "go.th"
+    },
+    {
+      "domain": "ghbank.co.th",
+      "agency_name": "Government Housing Bank",
+      "category": "co.th"
+    },
+    {
+      "domain": "gistda.or.th",
+      "agency_name": "Geo-Informatics and Space Technology Development Agency",
+      "category": "or.th"
+    },
+    {
+      "domain": "gsb.or.th",
+      "agency_name": "Government Savings Bank",
+      "category": "or.th"
+    },
+    {
+      "domain": "immigration.go.th",
+      "agency_name": "Immigration Bureau",
+      "category": "go.th"
+    },
+    {
+      "domain": "ipthailand.go.th",
+      "agency_name": "Department of Intellectual Property",
+      "category": "go.th"
+    },
+    {
+      "domain": "kku.ac.th",
+      "agency_name": "Khon Kaen University",
+      "category": "ac.th"
+    },
+    {
+      "domain": "kmitl.ac.th",
+      "agency_name": "King Mongkut's Institute of Technology Ladkrabang",
+      "category": "ac.th"
+    },
+    {
+      "domain": "kmutnb.ac.th",
+      "agency_name": "King Mongkut's University of Technology North Bangkok",
+      "category": "ac.th"
+    },
+    {
+      "domain": "kmutt.ac.th",
+      "agency_name": "King Mongkut's University of Technology Thonburi",
+      "category": "ac.th"
+    },
+    {
+      "domain": "ktb.co.th",
+      "agency_name": "Krungthai Bank",
+      "category": "co.th"
+    },
+    {
+      "domain": "ku.ac.th",
+      "agency_name": "Kasetsart University",
+      "category": "ac.th"
+    },
+    {
+      "domain": "m-culture.go.th",
+      "agency_name": "Ministry of Culture",
+      "category": "go.th"
+    },
+    {
+      "domain": "m-society.go.th",
+      "agency_name": "Ministry of Social Development and Human Security",
+      "category": "go.th"
+    },
+    {
+      "domain": "mahidol.ac.th",
+      "agency_name": "Mahidol University",
+      "category": "ac.th"
+    },
+    {
+      "domain": "mdes.go.th",
+      "agency_name": "Ministry of Digital Economy and Society",
+      "category": "go.th"
+    },
+    {
+      "domain": "mea.co.th",
+      "agency_name": "Metropolitan Electricity Authority",
+      "category": "co.th"
+    },
+    {
+      "domain": "mfa.go.th",
+      "agency_name": "Ministry of Foreign Affairs",
+      "category": "go.th"
+    },
+    {
+      "domain": "mfu.ac.th",
+      "agency_name": "Mae Fah Luang University",
+      "category": "ac.th"
+    },
+    {
+      "domain": "mhesi.go.th",
+      "agency_name": "Ministry of Higher Education Science Research and Innovation",
+      "category": "go.th"
+    },
+    {
+      "domain": "mnre.go.th",
+      "agency_name": "Ministry of Natural Resources and Environment",
+      "category": "go.th"
+    },
+    {
+      "domain": "moac.go.th",
+      "agency_name": "Ministry of Agriculture and Cooperatives",
+      "category": "go.th"
+    },
+    {
+      "domain": "moc.go.th",
+      "agency_name": "Ministry of Commerce",
+      "category": "go.th"
+    },
+    {
+      "domain": "mod.go.th",
+      "agency_name": "Ministry of Defence",
+      "category": "go.th"
+    },
+    {
+      "domain": "moe.go.th",
+      "agency_name": "Ministry of Education",
+      "category": "go.th"
+    },
+    {
+      "domain": "mof.go.th",
+      "agency_name": "Ministry of Finance",
+      "category": "go.th"
+    },
+    {
+      "domain": "moi.go.th",
+      "agency_name": "Ministry of Interior",
+      "category": "go.th"
+    },
+    {
+      "domain": "mol.go.th",
+      "agency_name": "Ministry of Labour",
+      "category": "go.th"
+    },
+    {
+      "domain": "moph.go.th",
+      "agency_name": "Ministry of Public Health",
+      "category": "go.th"
+    },
+    {
+      "domain": "mot.go.th",
+      "agency_name": "Ministry of Transport",
+      "category": "go.th"
+    },
+    {
+      "domain": "mots.go.th",
+      "agency_name": "Ministry of Tourism and Sports",
+      "category": "go.th"
+    },
+    {
+      "domain": "msu.ac.th",
+      "agency_name": "Mahasarakham University",
+      "category": "ac.th"
+    },
+    {
+      "domain": "mua.go.th",
+      "agency_name": "Office of the Higher Education Commission",
+      "category": "go.th"
+    },
+    {
+      "domain": "mwa.co.th",
+      "agency_name": "Metropolitan Waterworks Authority",
+      "category": "co.th"
+    },
+    {
+      "domain": "nacc.go.th",
+      "agency_name": "National Anti-Corruption Commission",
+      "category": "go.th"
+    },
+    {
+      "domain": "nbtc.go.th",
+      "agency_name": "National Broadcasting and Telecommunications Commission",
+      "category": "go.th"
+    },
+    {
+      "domain": "nesdc.go.th",
+      "agency_name": "Office of the National Economic and Social Development Council",
+      "category": "go.th"
+    },
+    {
+      "domain": "nhso.go.th",
+      "agency_name": "National Health Security Office",
+      "category": "go.th"
+    },
+    {
+      "domain": "nia.or.th",
+      "agency_name": "National Innovation Agency",
+      "category": "or.th"
+    },
+    {
+      "domain": "nida.ac.th",
+      "agency_name": "National Institute of Development Administration",
+      "category": "ac.th"
+    },
+    {
+      "domain": "nso.go.th",
+      "agency_name": "National Statistical Office",
+      "category": "go.th"
+    },
+    {
+      "domain": "nstda.or.th",
+      "agency_name": "National Science and Technology Development Agency",
+      "category": "or.th"
+    },
+    {
+      "domain": "ntplc.co.th",
+      "agency_name": "National Telecom",
+      "category": "co.th"
+    },
+    {
+      "domain": "nu.ac.th",
+      "agency_name": "Naresuan University",
+      "category": "ac.th"
+    },
+    {
+      "domain": "obec.go.th",
+      "agency_name": "Office of the Basic Education Commission",
+      "category": "go.th"
+    },
+    {
+      "domain": "ocsc.go.th",
+      "agency_name": "Office of the Civil Service Commission",
+      "category": "go.th"
+    },
+    {
+      "domain": "parliament.go.th",
+      "agency_name": "Parliament of Thailand",
+      "category": "go.th"
+    },
+    {
+      "domain": "pea.co.th",
+      "agency_name": "Provincial Electricity Authority",
+      "category": "co.th"
+    },
+    {
+      "domain": "police.go.th",
+      "agency_name": "Royal Thai Police",
+      "category": "go.th"
+    },
+    {
+      "domain": "prd.go.th",
+      "agency_name": "The Government Public Relations Department",
+      "category": "go.th"
+    },
+    {
+      "domain": "psu.ac.th",
+      "agency_name": "Prince of Songkla University",
+      "category": "ac.th"
+    },
+    {
+      "domain": "pwa.co.th",
+      "agency_name": "Provincial Waterworks Authority",
+      "category": "co.th"
+    },
+    {
+      "domain": "rd.go.th",
+      "agency_name": "The Revenue Department",
+      "category": "go.th"
+    },
+    {
+      "domain": "redcross.or.th",
+      "agency_name": "The Thai Red Cross Society",
+      "category": "or.th"
+    },
+    {
+      "domain": "rid.go.th",
+      "agency_name": "Royal Irrigation Department",
+      "category": "go.th"
+    },
+    {
+      "domain": "rmutt.ac.th",
+      "agency_name": "Rajamangala University of Technology Thanyaburi",
+      "category": "ac.th"
+    },
+    {
+      "domain": "rsu.ac.th",
+      "agency_name": "Rangsit University",
+      "category": "ac.th"
+    },
+    {
+      "domain": "ru.ac.th",
+      "agency_name": "Ramkhamhaeng University",
+      "category": "ac.th"
+    },
+    {
+      "domain": "sec.or.th",
+      "agency_name": "Securities and Exchange Commission",
+      "category": "or.th"
+    },
+    {
+      "domain": "senate.go.th",
+      "agency_name": "The Senate of Thailand",
+      "category": "go.th"
+    },
+    {
+      "domain": "set.or.th",
+      "agency_name": "The Stock Exchange of Thailand",
+      "category": "or.th"
+    },
+    {
+      "domain": "soc.go.th",
+      "agency_name": "Secretariat of the Cabinet",
+      "category": "go.th"
+    },
+    {
+      "domain": "spu.ac.th",
+      "agency_name": "Sripatum University",
+      "category": "ac.th"
+    },
+    {
+      "domain": "sso.go.th",
+      "agency_name": "Social Security Office",
+      "category": "go.th"
+    },
+    {
+      "domain": "ssru.ac.th",
+      "agency_name": "Suan Sunandha Rajabhat University",
+      "category": "ac.th"
+    },
+    {
+      "domain": "stou.ac.th",
+      "agency_name": "Sukhothai Thammathirat Open University",
+      "category": "ac.th"
+    },
+    {
+      "domain": "su.ac.th",
+      "agency_name": "Silpakorn University",
+      "category": "ac.th"
+    },
+    {
+      "domain": "swu.ac.th",
+      "agency_name": "Srinakharinwirot University",
+      "category": "ac.th"
+    },
+    {
+      "domain": "tat.or.th",
+      "agency_name": "Tourism Authority of Thailand",
+      "category": "or.th"
+    },
+    {
+      "domain": "tcdc.or.th",
+      "agency_name": "Thailand Creative and Design Center",
+      "category": "or.th"
+    },
+    {
+      "domain": "thaigov.go.th",
+      "agency_name": "Royal Thai Government",
+      "category": "go.th"
+    },
+    {
+      "domain": "thaihealth.or.th",
+      "agency_name": "Thai Health Promotion Foundation",
+      "category": "or.th"
+    },
+    {
+      "domain": "thaijobs.go.th",
+      "agency_name": "Department of Employment Job Portal",
+      "category": "go.th"
+    },
+    {
+      "domain": "thailandpost.co.th",
+      "agency_name": "Thailand Post",
+      "category": "co.th"
+    },
+    {
+      "domain": "tmd.go.th",
+      "agency_name": "Thai Meteorological Department",
+      "category": "go.th"
+    },
+    {
+      "domain": "tu.ac.th",
+      "agency_name": "Thammasat University",
+      "category": "ac.th"
+    },
+    {
+      "domain": "ubu.ac.th",
+      "agency_name": "Ubon Ratchathani University",
+      "category": "ac.th"
+    },
+    {
+      "domain": "up.ac.th",
+      "agency_name": "University of Phayao",
+      "category": "ac.th"
+    },
+    {
+      "domain": "utcc.ac.th",
+      "agency_name": "University of the Thai Chamber of Commerce",
+      "category": "ac.th"
+    },
+    {
+      "domain": "wu.ac.th",
+      "agency_name": "Walailak University",
+      "category": "ac.th"
+    }
+  ]
+}

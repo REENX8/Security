@@ -1,0 +1,112 @@
+domain,agency_name,category
+thaigov.go.th,Royal Thai Government,go.th
+soc.go.th,Secretariat of the Cabinet,go.th
+parliament.go.th,Parliament of Thailand,go.th
+senate.go.th,The Senate of Thailand,go.th
+moe.go.th,Ministry of Education,go.th
+obec.go.th,Office of the Basic Education Commission,go.th
+mof.go.th,Ministry of Finance,go.th
+mfa.go.th,Ministry of Foreign Affairs,go.th
+moph.go.th,Ministry of Public Health,go.th
+moi.go.th,Ministry of Interior,go.th
+mot.go.th,Ministry of Transport,go.th
+moc.go.th,Ministry of Commerce,go.th
+mol.go.th,Ministry of Labour,go.th
+moac.go.th,Ministry of Agriculture and Cooperatives,go.th
+mnre.go.th,Ministry of Natural Resources and Environment,go.th
+mdes.go.th,Ministry of Digital Economy and Society,go.th
+mhesi.go.th,Ministry of Higher Education Science Research and Innovation,go.th
+m-culture.go.th,Ministry of Culture,go.th
+m-society.go.th,Ministry of Social Development and Human Security,go.th
+mots.go.th,Ministry of Tourism and Sports,go.th
+mod.go.th,Ministry of Defence,go.th
+rd.go.th,The Revenue Department,go.th
+customs.go.th,The Customs Department,go.th
+excise.go.th,The Excise Department,go.th
+cgd.go.th,The Comptroller General's Department,go.th
+dbd.go.th,Department of Business Development,go.th
+dft.go.th,Department of Foreign Trade,go.th
+ipthailand.go.th,Department of Intellectual Property,go.th
+doa.go.th,Department of Agriculture,go.th
+dld.go.th,Department of Livestock Development,go.th
+rid.go.th,Royal Irrigation Department,go.th
+dol.go.th,Department of Lands,go.th
+dopa.go.th,Department of Provincial Administration,go.th
+dla.go.th,Department of Local Administration,go.th
+disaster.go.th,Department of Disaster Prevention and Mitigation,go.th
+bangkok.go.th,Bangkok Metropolitan Administration,go.th
+police.go.th,Royal Thai Police,go.th
+immigration.go.th,Immigration Bureau,go.th
+dsi.go.th,Department of Special Investigation,go.th
+coj.go.th,Courts of Justice,go.th
+ago.go.th,Office of the Attorney General,go.th
+nacc.go.th,National Anti-Corruption Commission,go.th
+audit.go.th,State Audit Office of Thailand,go.th
+ocsc.go.th,Office of the Civil Service Commission,go.th
+nesdc.go.th,Office of the National Economic and Social Development Council,go.th
+prd.go.th,The Government Public Relations Department,go.th
+nso.go.th,National Statistical Office,go.th
+tmd.go.th,Thai Meteorological Department,go.th
+dede.go.th,Department of Alternative Energy Development and Efficiency,go.th
+nbtc.go.th,National Broadcasting and Telecommunications Commission,go.th
+sso.go.th,Social Security Office,go.th
+doe.go.th,Department of Employment,go.th
+nhso.go.th,National Health Security Office,go.th
+thaijobs.go.th,Department of Employment Job Portal,go.th
+exim.go.th,Export-Import Bank of Thailand,go.th
+mua.go.th,Office of the Higher Education Commission,go.th
+1212.go.th,Online Fraud Complaint Center,go.th
+chula.ac.th,Chulalongkorn University,ac.th
+mahidol.ac.th,Mahidol University,ac.th
+ku.ac.th,Kasetsart University,ac.th
+tu.ac.th,Thammasat University,ac.th
+cmu.ac.th,Chiang Mai University,ac.th
+kku.ac.th,Khon Kaen University,ac.th
+psu.ac.th,Prince of Songkla University,ac.th
+swu.ac.th,Srinakharinwirot University,ac.th
+kmutt.ac.th,King Mongkut's University of Technology Thonburi,ac.th
+kmutnb.ac.th,King Mongkut's University of Technology North Bangkok,ac.th
+kmitl.ac.th,King Mongkut's Institute of Technology Ladkrabang,ac.th
+buu.ac.th,Burapha University,ac.th
+nu.ac.th,Naresuan University,ac.th
+su.ac.th,Silpakorn University,ac.th
+wu.ac.th,Walailak University,ac.th
+mfu.ac.th,Mae Fah Luang University,ac.th
+msu.ac.th,Mahasarakham University,ac.th
+ubu.ac.th,Ubon Ratchathani University,ac.th
+up.ac.th,University of Phayao,ac.th
+nida.ac.th,National Institute of Development Administration,ac.th
+stou.ac.th,Sukhothai Thammathirat Open University,ac.th
+ru.ac.th,Ramkhamhaeng University,ac.th
+rmutt.ac.th,Rajamangala University of Technology Thanyaburi,ac.th
+ssru.ac.th,Suan Sunandha Rajabhat University,ac.th
+bu.ac.th,Bangkok University,ac.th
+spu.ac.th,Sripatum University,ac.th
+rsu.ac.th,Rangsit University,ac.th
+utcc.ac.th,University of the Thai Chamber of Commerce,ac.th
+dpu.ac.th,Dhurakij Pundit University,ac.th
+bot.or.th,Bank of Thailand,or.th
+set.or.th,The Stock Exchange of Thailand,or.th
+sec.or.th,Securities and Exchange Commission,or.th
+gsb.or.th,Government Savings Bank,or.th
+baac.or.th,Bank for Agriculture and Agricultural Cooperatives,or.th
+redcross.or.th,The Thai Red Cross Society,or.th
+thaihealth.or.th,Thai Health Promotion Foundation,or.th
+nstda.or.th,National Science and Technology Development Agency,or.th
+etda.or.th,Electronic Transactions Development Agency,or.th
+depa.or.th,Digital Economy Promotion Agency,or.th
+dga.or.th,Digital Government Development Agency,or.th
+gistda.or.th,Geo-Informatics and Space Technology Development Agency,or.th
+nia.or.th,National Innovation Agency,or.th
+tat.or.th,Tourism Authority of Thailand,or.th
+tcdc.or.th,Thailand Creative and Design Center,or.th
+egat.co.th,Electricity Generating Authority of Thailand,co.th
+pea.co.th,Provincial Electricity Authority,co.th
+mea.co.th,Metropolitan Electricity Authority,co.th
+mwa.co.th,Metropolitan Waterworks Authority,co.th
+pwa.co.th,Provincial Waterworks Authority,co.th
+thailandpost.co.th,Thailand Post,co.th
+airportthai.co.th,Airports of Thailand,co.th
+ktb.co.th,Krungthai Bank,co.th
+ghbank.co.th,Government Housing Bank,co.th
+ntplc.co.th,National Telecom,co.th
