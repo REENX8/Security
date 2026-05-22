@@ -1,0 +1,69 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>ตั้งค่า — Thai Phishing Detector</title>
+  <link rel="stylesheet" href="options.css" />
+</head>
+<body>
+  <div class="wrap">
+    <header>
+      <h1>🛡️ Thai Phishing Detector</h1>
+      <p class="sub">ตั้งค่าการเชื่อมต่อและการแจ้งเตือน</p>
+    </header>
+
+    <section class="card">
+      <h2>การเชื่อมต่อ API</h2>
+
+      <label for="endpoint">API Endpoint URL</label>
+      <input type="url" id="endpoint" placeholder="http://localhost:8000" />
+
+      <label for="apiKey">API Key</label>
+      <input type="password" id="apiKey" placeholder="API key" />
+
+      <label for="dashboardUrl">Dashboard URL</label>
+      <input type="url" id="dashboardUrl" placeholder="http://localhost:5173" />
+    </section>
+
+    <section class="card">
+      <h2>การทำงาน</h2>
+
+      <div class="toggle-row">
+        <div>
+          <div class="toggle-title">เปิดใช้งานการตรวจจับ</div>
+          <div class="toggle-desc">ตรวจสอบทุกหน้าเว็บที่เข้าชม</div>
+        </div>
+        <label class="switch">
+          <input type="checkbox" id="enabled" />
+          <span class="slider"></span>
+        </label>
+      </div>
+
+      <div class="toggle-row">
+        <div>
+          <div class="toggle-title">การแจ้งเตือนเดสก์ท็อป</div>
+          <div class="toggle-desc">แสดงป๊อปอัปเมื่อพบเว็บฟิชชิง</div>
+        </div>
+        <label class="switch">
+          <input type="checkbox" id="notifications" />
+          <span class="slider"></span>
+        </label>
+      </div>
+    </section>
+
+    <section class="card">
+      <h2>ข้อมูล</h2>
+      <button id="clear-history" class="btn-danger">ล้างประวัติการตรวจสอบ</button>
+      <p class="hint" id="history-count"></p>
+    </section>
+
+    <div class="actions">
+      <button id="save" class="btn-primary">บันทึกการตั้งค่า</button>
+      <span id="status" class="status"></span>
+    </div>
+  </div>
+
+  <script type="module" src="options.js"></script>
+</body>
+</html>

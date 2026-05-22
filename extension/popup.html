@@ -1,0 +1,63 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Thai Phishing Detector</title>
+  <link rel="stylesheet" href="popup.css" />
+</head>
+<body>
+  <header class="header">
+    <div class="brand">
+      <span class="shield" id="brand-icon">🛡️</span>
+      <div>
+        <div class="brand-title">Thai Phishing Detector</div>
+        <div class="brand-sub">ตรวจสอบความปลอดภัยเว็บไซต์</div>
+      </div>
+    </div>
+  </header>
+
+  <main class="content" id="content">
+    <div class="state" id="loading">
+      <div class="spinner"></div>
+      <p>กำลังตรวจสอบ...</p>
+    </div>
+  </main>
+
+  <template id="result-template">
+    <div class="result">
+      <div class="verdict">
+        <span class="badge" data-badge></span>
+        <span class="score-text" data-score-text></span>
+      </div>
+
+      <div class="meter">
+        <div class="meter-fill" data-meter></div>
+      </div>
+
+      <p class="reason" data-reason></p>
+
+      <div class="row typosquat-row" data-typo-row hidden>
+        <span class="row-label">โดเมนที่ถูกเลียนแบบ</span>
+        <span class="row-value" data-closest></span>
+      </div>
+      <div class="row" data-dist-row hidden>
+        <span class="row-label">Edit distance</span>
+        <span class="row-value" data-distance></span>
+      </div>
+
+      <div class="url-box">
+        <span class="row-label">URL</span>
+        <span class="url-text" data-url></span>
+      </div>
+    </div>
+  </template>
+
+  <footer class="footer">
+    <a href="#" id="dashboard-link" class="link">ดูแดชบอร์ด ↗</a>
+    <a href="#" id="options-link" class="link muted">ตั้งค่า</a>
+  </footer>
+
+  <script type="module" src="popup.js"></script>
+</body>
+</html>
