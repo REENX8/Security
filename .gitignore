@@ -1,0 +1,39 @@
+# --- Python ---
+__pycache__/
+*.py[cod]
+*.egg-info/
+.eggs/
+build/
+dist/
+.venv/
+venv/
+env/
+.pytest_cache/
+
+# --- Environment / secrets ---
+.env
+.env.local
+*.db
+*.sqlite3
+
+# --- Regenerable ML data (run the pipeline to rebuild) ---
+data/dataset.csv
+data/features_cache.csv
+data/test_split.csv
+data/raw/
+
+# --- Node / dashboard ---
+node_modules/
+dashboard/dist/
+dashboard/.env
+dashboard/.env.local
+npm-debug.log*
+
+# --- OS / editor ---
+.DS_Store
+Thumbs.db
+.idea/
+.vscode/
+
+# NOTE: trained model artifacts in models/ and reports/ ARE committed
+# so the system is ready to run without retraining.

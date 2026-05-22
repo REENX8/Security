@@ -1,0 +1,41 @@
+services:
+  db:
+    image: postgres:16-alpine
+    container_name: phish-db
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-phish}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-phish}
+      POSTGRES_DB: ${POSTGRES_DB:-phishdb}
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-phish}"]
+      interval: 5s
+      timeout: 3s
+      retries: 12
+    restart: unless-stopped
+
+  backend:
+    build:
+      context: .
+      dockerfile: backend/Dockerfile
+    container_name: phish-backend
+    environment:
+      DATABASE_URL: postgresql+asyncpg://${POSTGRES_USER:-phish}:${POSTGRES_PASSWORD:-phish}@db:5432/${POSTGRES_DB:-phishdb}
+      API_KEY: ${API_KEY:-dev-local-key-change-me}
+      CORS_ORIGINS: ${CORS_ORIGINS:-http://localhost:5173,http://localhost:3000}
+      RATE_LIMIT: ${RATE_LIMIT:-100/minute}
+      ENABLE_WHOIS: ${ENABLE_WHOIS:-true}
+      ENABLE_TLS: ${ENABLE_TLS:-true}
+    ports:
+      - "8000:8000"
+    volumes:
+      # Model artifacts produced by the ML pipeline (read-only).
+      - ./models:/app/models:ro
+    depends_on:
+      db:
+        condition: service_healthy
+    restart: unless-stopped
+
+volumes:
+  pgdata:
