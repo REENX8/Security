@@ -150,19 +150,22 @@ class SyntheticGenerator:
                 "tls_ok": tls_ok,
             }
 
-        # phishing
+        # phishing — distributions updated to match 2024 reality:
+        # attackers increasingly use major registrars and Let's Encrypt certs.
         whois_ok = 1 if r.random() < 0.70 else 0
         if whois_ok:
-            # mostly freshly registered, but ~30% on aged/compromised hosts
-            age = (r.randint(0, 300) if r.random() < 0.70
+            # 55% freshly registered, 45% on aged/compromised hosts (was 70/30)
+            age = (r.randint(0, 300) if r.random() < 0.55
                    else r.randint(300, 7000))
         else:
             age = -1
         tls_ok = 1 if (has_https and r.random() < 0.80) else 0
-        valid_cert = 1 if (tls_ok and r.random() < 0.55) else 0
+        # 72% of TLS-ok phishing has a valid cert (Let's Encrypt is free; was 55%)
+        valid_cert = 1 if (tls_ok and r.random() < 0.72) else 0
         return {
             "domain_age_days": age,
-            "is_known_registrar": 1 if (whois_ok and r.random() < 0.15) else 0,
+            # 35% of WHOIS-ok phishing uses a known registrar (was 15%)
+            "is_known_registrar": 1 if (whois_ok and r.random() < 0.35) else 0,
             "has_valid_cert": valid_cert,
             "cert_age_days": (r.randint(0, 120) if valid_cert
                               else (r.randint(0, 400) if tls_ok else -1)),
@@ -193,10 +196,11 @@ class SyntheticGenerator:
     def gen_phish(self) -> dict:
         domain = self.rng.choice(self.domains)
         label = self._domain_label(domain)
-        archetype = self.rng.choice(
-            ["typosquat", "typosquat", "tld_swap", "subdomain_spoof",
-             "ip_host", "at_trick", "brand_stuffed"]
-        )
+        archetype = self.rng.choices(
+            ["typosquat", "tld_swap", "subdomain_spoof", "ip_host",
+             "at_trick", "brand_stuffed", "https_ip_host", "redirect_chain"],
+            weights=[28, 13, 13, 11, 11, 13, 5, 6],
+        )[0]
         scheme = "https" if self.rng.random() < 0.55 else "http"
         path = self.rng.choice(_PHISH_PATHS)
 
@@ -211,19 +215,39 @@ class SyntheticGenerator:
         elif archetype == "ip_host":
             host = ".".join(str(self.rng.randint(1, 254)) for _ in range(4))
             scheme = "http"
+        elif archetype == "https_ip_host":
+            # Attacker uses a VPS with HTTPS; model must not rely on HTTP alone
+            host = ".".join(str(self.rng.randint(1, 254)) for _ in range(4))
+            scheme = "https"
         elif archetype == "at_trick":
             attacker = self._rand_str(self.rng.randint(5, 9))
             host = f"{domain}@{attacker}.{self.rng.choice(_BAD_TLDS)}"
+        elif archetype == "redirect_chain":
+            # attacker.xyz/redirect?to=legitimate.go.th — redirect with query param
+            attacker = self._rand_str(self.rng.randint(5, 10))
+            host = f"{attacker}.{self.rng.choice(_BAD_TLDS)}"
         else:  # brand_stuffed
             words = self.rng.sample(_BRAND_WORDS, k=self.rng.randint(2, 4))
             host = "-".join([label] + words) + "." + self.rng.choice(_BAD_TLDS)
 
-        url = f"{scheme}://{host}/{path}"
-        if self.rng.random() < 0.4:  # extra junk query string
-            url += f"?id={self._rand_str(self.rng.randint(8, 20))}"
+        if archetype == "redirect_chain":
+            url = f"{scheme}://{host}/redirect?to={domain}"
+        else:
+            url = f"{scheme}://{host}/{path}"
+            if self.rng.random() < 0.4:  # extra junk query string
+                url += f"?id={self._rand_str(self.rng.randint(8, 20))}"
 
         row = {"url": url, "label": 1}
-        row.update(self.sim_network(1, scheme == "https"))
+        net = self.sim_network(1, scheme == "https")
+        # HTTPS IP-host: ensure TLS is attempted with a self-signed cert
+        if archetype == "https_ip_host" and not net["tls_ok"]:
+            net.update({
+                "tls_ok": 1,
+                "has_valid_cert": 0,
+                "is_self_signed": 1,
+                "cert_age_days": self.rng.randint(0, 90),
+            })
+        row.update(net)
         return row
 
     # ----- driver -------------------------------------------------------
