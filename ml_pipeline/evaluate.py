@@ -27,6 +27,9 @@ from sklearn.metrics import (
     roc_auc_score,
     roc_curve,
 )
+from sklearn.model_selection import StratifiedKFold, cross_val_score
+from sklearn.pipeline import Pipeline
+from sklearn.preprocessing import StandardScaler as _CVScaler
 
 from phish_features import ORDERED_FEATURES
 
@@ -42,8 +45,9 @@ from ml_pipeline.config import (
     THAI_HOLDOUT_METRICS_JSON,
     ensure_dirs,
 )
+from ml_pipeline.config import DATASET_CSV, RANDOM_SEED
 from ml_pipeline.feature_engineering import build_feature_frame
-from ml_pipeline.train import TEST_SPLIT_CSV
+from ml_pipeline.train import TEST_SPLIT_CSV, build_ensemble
 
 
 def wilson_ci(k: int, n: int, z: float = 1.96) -> tuple[float, float]:
@@ -118,7 +122,11 @@ def main() -> None:
 
     # --- feature importance (from the RF member) ---
     try:
-        rf = model.named_estimators_["rf"]
+        # CalibratedClassifierCV wraps the base VotingClassifier; unwrap if needed.
+        if hasattr(model, "named_estimators_"):
+            rf = model.named_estimators_["rf"]
+        else:
+            rf = model.calibrated_classifiers_[0].estimator.named_estimators_["rf"]
         importances = pd.Series(
             rf.feature_importances_, index=ORDERED_FEATURES
         ).sort_values(ascending=True)
@@ -155,6 +163,44 @@ def main() -> None:
     print("=" * 52)
 
     # ------------------------------------------------------------------
+    # 5-FOLD CROSS-VALIDATION on the full synthetic dataset.
+    # Uses a fresh pipeline (no leakage from the fitted scaler/model)
+    # to show variance across folds — still same-distribution synthetic
+    # data, but exposes whether the model is consistently fitted.
+    # ------------------------------------------------------------------
+    cv_metrics: dict | None = None
+    try:
+        full_frame = build_feature_frame()
+        X_all = full_frame[ORDERED_FEATURES].astype(float).to_numpy()
+        y_all = full_frame["label"].astype(int).to_numpy()
+
+        cv_pipe = Pipeline([
+            ("scaler", _CVScaler()),
+            ("model", build_ensemble()),
+        ])
+        print("[eval] running 5-fold CV on full synthetic dataset ...")
+        cv_f1 = cross_val_score(
+            cv_pipe,
+            X_all,
+            y_all,
+            cv=StratifiedKFold(5, shuffle=True, random_state=RANDOM_SEED),
+            scoring="f1",
+        )
+        cv_metrics = {
+            "cv_f1_mean": round(float(cv_f1.mean()), 4),
+            "cv_f1_std": round(float(cv_f1.std()), 4),
+            "cv_note": (
+                "5-fold stratified CV on full synthetic dataset using a fresh "
+                "pipeline (scaler + uncalibrated ensemble). Same-distribution "
+                "synthetic data but reveals per-fold variance."
+            ),
+        }
+        print(f"[eval] CV F1: {cv_f1.mean():.4f} ± {cv_f1.std():.4f}  "
+              f"(folds: {[round(v, 4) for v in cv_f1]})")
+    except Exception as exc:  # noqa: BLE001
+        print(f"[eval] cross-validation skipped ({exc})")
+
+    # ------------------------------------------------------------------
     # HONEST GENERALISATION CHECK: recall on real-world phishing URLs
     # the model has never seen during training.
     # ------------------------------------------------------------------
@@ -172,7 +218,7 @@ def main() -> None:
         print(f"[eval] no Thai-specific holdout found at {THAI_HOLDOUT_CSV} "
               "(expected — Thai-targeting phishing is rare in public feeds)")
 
-    write_evaluation_summary(metrics, real_holdout_metrics, thai_holdout_metrics)
+    write_evaluation_summary(metrics, real_holdout_metrics, thai_holdout_metrics, cv_metrics)
 
 
 def _eval_holdout_csv(
@@ -253,6 +299,7 @@ def write_evaluation_summary(
     synthetic_metrics: dict,
     real_holdout_metrics: "dict | None",
     thai_holdout_metrics: "dict | None",
+    cv_metrics: "dict | None" = None,
 ) -> None:
     """Write a consolidated evaluation_summary.json that makes grader intent clear."""
     real_recall = (real_holdout_metrics or {}).get("recall_phishing_threshold")
@@ -294,6 +341,7 @@ def write_evaluation_summary(
         },
         "real_world_holdout": real_holdout_metrics,
         "thai_specific_holdout": thai_holdout_metrics,
+        "cross_validation": cv_metrics,
     }
     with open(EVALUATION_SUMMARY_JSON, "w", encoding="utf-8") as fh:
         json.dump(summary, fh, indent=2)

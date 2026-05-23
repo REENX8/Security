@@ -11,6 +11,8 @@ import re
 from collections import Counter
 from urllib.parse import urlparse
 
+_DIGIT_RUN_RE = re.compile(r"\d+")
+
 # IPv4 literal, optionally with a port.
 _IPV4_RE = re.compile(r"^(?:\d{1,3}\.){3}\d{1,3}(?::\d+)?$")
 # Bracketed IPv6 literal, e.g. [2001:db8::1]
@@ -94,6 +96,10 @@ def extract_lexical(url: str) -> dict:
     parsed = urlparse(norm)
     host = (parsed.hostname or "").lower()
 
+    host_labels = [lb for lb in host.split(".") if lb]
+    path_parts = [p for p in parsed.path.split("/") if p]
+    digit_runs = _DIGIT_RUN_RE.findall(host)
+
     return {
         "url_length": len(norm),
         "num_dots": norm.count("."),
@@ -105,4 +111,12 @@ def extract_lexical(url: str) -> dict:
         "entropy": round(shannon_entropy(norm), 6),
         "has_https": int(parsed.scheme == "https"),
         "num_subdomains": count_subdomains(host),
+        # v1.1 features
+        "path_depth": len(path_parts),
+        "domain_label_max_len": max((len(lb) for lb in host_labels), default=0),
+        "has_port": int(
+            parsed.port is not None and parsed.port not in (80, 443)
+        ),
+        "max_digit_run": max((len(r) for r in digit_runs), default=0),
+        "has_query_string": int(bool(parsed.query)),
     }

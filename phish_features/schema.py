@@ -13,7 +13,7 @@ and retrain the model. The backend refuses to serve a model whose
 from __future__ import annotations
 
 # Bump on ANY change to ORDERED_FEATURES / encodings / defaults.
-FEATURE_SCHEMA_VERSION = "1.0.0"
+FEATURE_SCHEMA_VERSION = "1.1.0"
 
 # The exact, ordered list of numeric features fed to the model.
 # Index position IS the contract -- never reorder, only append + bump version.
@@ -44,6 +44,12 @@ ORDERED_FEATURES: list[str] = [
     # --- meta: did the optional network lookups succeed? ---
     "whois_ok",
     "tls_ok",
+    # --- new lexical features (v1.1) ---
+    "path_depth",           # segments in URL path (not counting empty)
+    "domain_label_max_len", # longest label in the hostname
+    "has_port",             # 1 if non-standard port (not 80/443) present
+    "max_digit_run",        # length of longest consecutive-digit run in host
+    "has_query_string",     # 1 if '?' present in URL
 ]
 
 N_FEATURES = len(ORDERED_FEATURES)
