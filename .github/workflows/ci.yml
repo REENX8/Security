@@ -1,0 +1,75 @@
+name: CI
+
+on:
+  push:
+    branches: ["main", "claude/**"]
+  pull_request:
+    branches: ["main"]
+
+jobs:
+  backend-tests:
+    name: Backend + ML tests (pytest)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+          cache: pip
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -e .
+          pip install -r backend/requirements.txt
+          pip install -r ml_pipeline/requirements.txt
+          pip install "pytest==8.3.4" "httpx==0.28.1"
+
+      - name: Run pytest
+        run: python -m pytest -ra
+
+      - name: Smoke-test the API
+        run: |
+          DATABASE_URL="sqlite+aiosqlite:///./ci.db" \
+          API_KEY="ci-key" \
+          ENABLE_WHOIS=false ENABLE_TLS=false \
+          python -m uvicorn app.main:app --host 127.0.0.1 --port 8000 &
+          for i in 1 2 3 4 5 6 7 8 9 10; do
+            curl -s http://127.0.0.1:8000/health | grep -q model_ready && break
+            sleep 1
+          done
+          curl -sf http://127.0.0.1:8000/health
+          curl -sf -X POST http://127.0.0.1:8000/api/v1/check \
+            -H "X-API-Key: ci-key" -H "Content-Type: application/json" \
+            -d '{"url":"http://obec.com/verify"}' | grep -q phishing
+          curl -sf http://127.0.0.1:8000/metrics | grep -q phish_checks_total
+        working-directory: backend
+
+  dashboard-build:
+    name: Dashboard build (Vite)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: npm
+          cache-dependency-path: dashboard/package-lock.json
+
+      - name: Install + build
+        working-directory: dashboard
+        run: |
+          npm ci
+          npm run build
+
+  docker-build:
+    name: Docker image build
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Build backend image
+        run: docker build -f backend/Dockerfile -t phish-backend:ci .
