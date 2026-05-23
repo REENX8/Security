@@ -2,6 +2,7 @@ import { NavLink } from "react-router-dom";
 
 const NAV = [
   { to: "/", label: "ภาพรวม", icon: "📊", end: true },
+  { to: "/bulk", label: "ตรวจหลาย URL", icon: "📦" },
   { to: "/history", label: "ประวัติการตรวจสอบ", icon: "🗂️" },
   { to: "/stats", label: "สถิติเชิงลึก", icon: "📈" },
 ];

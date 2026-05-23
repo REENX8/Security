@@ -46,6 +46,13 @@ export function checkUrl(url) {
   });
 }
 
+export function checkBatch(urls) {
+  return request("/api/v1/check/batch", {
+    method: "POST",
+    body: JSON.stringify({ urls }),
+  });
+}
+
 export function getHealth() {
   return request("/health");
 }

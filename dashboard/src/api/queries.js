@@ -1,7 +1,7 @@
 // TanStack Query hooks.
 
 import { useQuery, useMutation } from "@tanstack/react-query";
-import { getStats, getHistory, checkUrl, getHealth } from "./client.js";
+import { getStats, getHistory, checkUrl, checkBatch, getHealth } from "./client.js";
 
 export function useStats() {
   return useQuery({
@@ -30,5 +30,11 @@ export function useHealth() {
 export function useCheckUrl() {
   return useMutation({
     mutationFn: (url) => checkUrl(url),
+  });
+}
+
+export function useCheckBatch() {
+  return useMutation({
+    mutationFn: (urls) => checkBatch(urls),
   });
 }

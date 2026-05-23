@@ -2,7 +2,7 @@ import LabelBadge from "./LabelBadge.jsx";
 import { formatDateTime, formatPct, truncate } from "../lib/format.js";
 
 export default function HistoryTable({
-  items = [], total = 0, limit = 50, offset = 0, onPage, loading,
+  items = [], total = 0, limit = 50, offset = 0, onPage, onRowClick, loading,
 }) {
   const page = Math.floor(offset / limit) + 1;
   const pages = Math.max(1, Math.ceil(total / limit));
@@ -34,7 +34,8 @@ export default function HistoryTable({
             )}
             {!loading && items.map((item) => (
               <tr key={item.id}
-                  className="border-b border-slate-800/60 last:border-0 hover:bg-slate-800/40">
+                  className="cursor-pointer border-b border-slate-800/60 last:border-0 hover:bg-slate-800/40"
+                  onClick={() => onRowClick && onRowClick(item)}>
                 <td className="px-4 py-3 font-mono text-xs" title={item.url}>
                   {truncate(item.url, 52)}
                 </td>
