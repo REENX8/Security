@@ -97,3 +97,55 @@ class StatsResponse(BaseModel):
 class ErrorResponse(BaseModel):
     error: str
     code: str
+
+
+# --- Whitelist ---
+
+class WhitelistEntryIn(BaseModel):
+    domain: str = Field(..., min_length=3, max_length=255)
+    agency_name: str = Field(default="", max_length=512)
+    category: str = Field(default="other", max_length=64)
+
+
+class WhitelistEntryOut(BaseModel):
+    id: int
+    domain: str
+    agency_name: str
+    category: str
+    added_by: str
+    is_seeded: bool
+    created_at: str
+
+
+class WhitelistListResponse(BaseModel):
+    total: int
+    limit: int
+    offset: int
+    items: list[WhitelistEntryOut]
+
+
+# --- Feedback ---
+
+class FeedbackCreate(BaseModel):
+    url: str = Field(..., min_length=3, max_length=2048)
+    verdict_given: Literal["safe", "suspicious", "phishing", "unverified"]
+    correct_verdict: Literal["safe", "suspicious", "phishing"]
+    comment: str = Field(default="", max_length=1024)
+    source: Literal["extension", "dashboard", "api"] = "dashboard"
+
+
+class FeedbackOut(BaseModel):
+    id: str
+    url: str
+    verdict_given: str
+    correct_verdict: str
+    comment: str
+    source: str
+    created_at: str
+
+
+class FeedbackListResponse(BaseModel):
+    total: int
+    limit: int
+    offset: int
+    items: list[FeedbackOut]

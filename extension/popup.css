@@ -100,3 +100,54 @@ body {
 }
 .link.muted { color: var(--muted); }
 .link:hover { text-decoration: underline; }
+
+/* Feedback form */
+.report-btn {
+  display: block; width: 100%; margin-top: 10px;
+  padding: 7px 12px; border-radius: 8px;
+  border: 1px solid #475569; background: transparent;
+  color: #94a3b8; font-size: 12px; cursor: pointer;
+  text-align: center;
+}
+.report-btn:hover:not(:disabled) { background: #1e293b; color: #f1f5f9; }
+.report-btn:disabled { opacity: 0.5; cursor: default; }
+
+.feedback-form {
+  margin-top: 10px; padding: 10px 12px;
+  background: #0f172a; border-radius: 8px; border: 1px solid #334155;
+}
+.feedback-label {
+  font-size: 12px; color: #94a3b8; margin-bottom: 8px;
+}
+.feedback-choices {
+  display: flex; gap: 6px; margin-bottom: 8px;
+}
+.choice-btn {
+  flex: 1; padding: 5px 4px; border-radius: 6px;
+  border: 1px solid #475569; background: transparent;
+  color: #cbd5e1; font-size: 11px; cursor: pointer;
+}
+.choice-btn.selected { background: #2563eb; border-color: #2563eb; color: #fff; }
+.choice-btn:hover:not(.selected) { background: #1e293b; }
+
+.feedback-comment {
+  width: 100%; resize: vertical;
+  background: #1e293b; border: 1px solid #475569;
+  border-radius: 6px; color: #f1f5f9; font-size: 11px;
+  padding: 6px 8px; margin-bottom: 8px; box-sizing: border-box;
+}
+.feedback-actions {
+  display: flex; justify-content: flex-end; gap: 6px;
+}
+.cancel-btn, .submit-btn {
+  padding: 5px 12px; border-radius: 6px; font-size: 11px;
+  cursor: pointer; border: 1px solid #475569;
+}
+.cancel-btn { background: transparent; color: #94a3b8; }
+.cancel-btn:hover { background: #1e293b; }
+.submit-btn { background: #2563eb; border-color: #2563eb; color: #fff; }
+.submit-btn:hover { background: #1d4ed8; }
+
+.feedback-status {
+  font-size: 11px; color: #22c55e; margin-top: 6px; text-align: center;
+}

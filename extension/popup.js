@@ -54,9 +54,69 @@ function renderResult(result) {
 
   node.querySelector("[data-url]").textContent = result.url || "";
 
+  // Feedback button (only for verified results)
+  const reportBtn = node.querySelector("[data-report-btn]");
+  if (label !== "unverified" && reportBtn) {
+    reportBtn.hidden = false;
+    const feedbackForm = node.querySelector("[data-feedback-form]");
+    reportBtn.addEventListener("click", () => {
+      reportBtn.hidden = true;
+      feedbackForm.hidden = false;
+    });
+    node.querySelector("[data-cancel-feedback]").addEventListener("click", () => {
+      feedbackForm.hidden = true;
+      reportBtn.hidden = false;
+    });
+    node.querySelectorAll("[data-choice]").forEach((btn) => {
+      btn.addEventListener("click", () => {
+        node.querySelectorAll("[data-choice]").forEach((b) => b.classList.remove("selected"));
+        btn.classList.add("selected");
+        btn.dataset.selectedChoice = btn.dataset.choice;
+      });
+    });
+    node.querySelector("[data-submit-feedback]").addEventListener("click", async () => {
+      const selected = node.querySelector("[data-choice].selected");
+      if (!selected) { alert("กรุณาเลือกผลที่ถูกต้อง"); return; }
+      const comment = node.querySelector("[data-comment]").value.trim();
+      const statusEl = node.querySelector("[data-feedback-status]");
+      try {
+        await _submitFeedback(result, selected.dataset.choice, comment);
+        statusEl.textContent = "ส่งรายงานเรียบร้อย";
+        statusEl.hidden = false;
+        feedbackForm.hidden = true;
+        reportBtn.textContent = "ส่งรายงานแล้ว";
+        reportBtn.hidden = false;
+        reportBtn.disabled = true;
+      } catch (err) {
+        statusEl.textContent = `เกิดข้อผิดพลาด: ${err.message}`;
+        statusEl.hidden = false;
+      }
+    });
+  }
+
   const content = document.getElementById("content");
   content.innerHTML = "";
   content.appendChild(node);
+}
+
+async function _submitFeedback(result, correctVerdict, comment) {
+  const settings = await getSettings();
+  const apiUrl = (settings.apiUrl || "http://localhost:8000").replace(/\/+$/, "");
+  const resp = await fetch(`${apiUrl}/api/v1/feedback`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      "X-API-Key": settings.apiKey || "",
+    },
+    body: JSON.stringify({
+      url: result.url,
+      verdict_given: result.label,
+      correct_verdict: correctVerdict,
+      comment,
+      source: "extension",
+    }),
+  });
+  if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
 }
 
 async function init() {

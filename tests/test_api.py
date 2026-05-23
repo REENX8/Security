@@ -127,3 +127,127 @@ def test_history_filter_by_label(client, headers):
     assert resp.status_code == 200
     items = resp.json()["items"]
     assert all(i["label"] == "phishing" for i in items)
+
+
+# --- Whitelist admin endpoints ---
+
+def test_whitelist_list_requires_api_key(client):
+    resp = client.get("/api/v1/admin/whitelist")
+    assert resp.status_code == 401
+
+
+def test_whitelist_list_seeded_from_json(client, headers):
+    resp = client.get("/api/v1/admin/whitelist", headers=headers)
+    assert resp.status_code == 200
+    body = resp.json()
+    assert "total" in body
+    assert "items" in body
+    assert body["total"] > 0
+    assert all("domain" in item for item in body["items"])
+
+
+def test_whitelist_add_and_delete(client, headers):
+    # Add a new domain
+    resp = client.post(
+        "/api/v1/admin/whitelist",
+        json={"domain": "test-api-domain.go.th", "agency_name": "Test Agency", "category": "go.th"},
+        headers=headers,
+    )
+    assert resp.status_code == 201
+    body = resp.json()
+    assert body["domain"] == "test-api-domain.go.th"
+    assert body["agency_name"] == "Test Agency"
+    assert body["is_seeded"] is False
+
+    # Adding the same domain again should 409
+    resp2 = client.post(
+        "/api/v1/admin/whitelist",
+        json={"domain": "test-api-domain.go.th"},
+        headers=headers,
+    )
+    assert resp2.status_code == 409
+
+    # Search for it
+    resp3 = client.get(
+        "/api/v1/admin/whitelist?search=test-api-domain",
+        headers=headers,
+    )
+    assert resp3.status_code == 200
+    assert resp3.json()["total"] == 1
+
+    # Delete it
+    resp4 = client.delete(
+        "/api/v1/admin/whitelist/test-api-domain.go.th",
+        headers=headers,
+    )
+    assert resp4.status_code == 204
+
+    # Now it's gone
+    resp5 = client.get(
+        "/api/v1/admin/whitelist?search=test-api-domain",
+        headers=headers,
+    )
+    assert resp5.json()["total"] == 0
+
+
+def test_whitelist_delete_nonexistent(client, headers):
+    resp = client.delete(
+        "/api/v1/admin/whitelist/this-does-not-exist.go.th",
+        headers=headers,
+    )
+    assert resp.status_code == 404
+
+
+# --- Feedback endpoints ---
+
+def test_feedback_create(client):
+    resp = client.post(
+        "/api/v1/feedback",
+        json={
+            "url": "https://www.obec.go.th",
+            "verdict_given": "phishing",
+            "correct_verdict": "safe",
+            "comment": "This is a legitimate government site.",
+            "source": "dashboard",
+        },
+    )
+    assert resp.status_code == 201
+    body = resp.json()
+    assert body["url"] == "https://www.obec.go.th"
+    assert body["verdict_given"] == "phishing"
+    assert body["correct_verdict"] == "safe"
+    assert body["source"] == "dashboard"
+    assert "id" in body
+
+
+def test_feedback_list_requires_api_key(client):
+    resp = client.get("/api/v1/feedback")
+    assert resp.status_code == 401
+
+
+def test_feedback_list(client, headers):
+    # create a feedback entry first
+    client.post(
+        "/api/v1/feedback",
+        json={
+            "url": "http://obec.com/login",
+            "verdict_given": "safe",
+            "correct_verdict": "phishing",
+            "source": "extension",
+        },
+    )
+    resp = client.get("/api/v1/feedback", headers=headers)
+    assert resp.status_code == 200
+    body = resp.json()
+    assert "total" in body
+    assert body["total"] >= 1
+    assert all("url" in item for item in body["items"])
+
+
+def test_feedback_export_csv(client, headers):
+    resp = client.get("/api/v1/feedback/export", headers=headers)
+    assert resp.status_code == 200
+    assert "text/csv" in resp.headers["content-type"]
+    content = resp.content.decode("utf-8-sig")
+    assert "url" in content
+    assert "verdict_given" in content

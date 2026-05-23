@@ -50,6 +50,26 @@
         <span class="row-label">URL</span>
         <span class="url-text" data-url></span>
       </div>
+
+      <button class="report-btn" data-report-btn hidden>
+        🚩 แจ้งผลผิดพลาด
+      </button>
+
+      <div class="feedback-form" data-feedback-form hidden>
+        <p class="feedback-label">ผลที่ถูกต้องคือ?</p>
+        <div class="feedback-choices">
+          <button class="choice-btn" data-choice="safe">ปลอดภัย</button>
+          <button class="choice-btn" data-choice="suspicious">น่าสงสัย</button>
+          <button class="choice-btn" data-choice="phishing">ฟิชชิง</button>
+        </div>
+        <textarea class="feedback-comment" data-comment
+                  placeholder="หมายเหตุ (ไม่บังคับ)" rows="2" maxlength="500"></textarea>
+        <div class="feedback-actions">
+          <button class="cancel-btn" data-cancel-feedback>ยกเลิก</button>
+          <button class="submit-btn" data-submit-feedback>ส่ง</button>
+        </div>
+        <p class="feedback-status" data-feedback-status hidden></p>
+      </div>
     </div>
   </template>
 

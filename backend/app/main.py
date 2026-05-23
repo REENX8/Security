@@ -21,15 +21,52 @@ from app.database import SessionLocal, init_db
 from app.errors import register_error_handlers
 from app.metrics import CACHE_SIZE, MODEL_READY, render_metrics
 from app.ml.loader import ModelLoadError, load_scorer
-from app.models import UrlCheck
+from app.models import DbWhitelistEntry, UrlCheck
 from app.rate_limit import limiter
 from app.routers import check, history, stats
+from app.routers import admin as admin_router
+from app.routers import feedback as feedback_router
 
 logging.basicConfig(
     level=logging.INFO,
     format="%(asctime)s  %(levelname)-7s  %(message)s",
 )
 logger = logging.getLogger("phish-detector")
+
+
+async def _seed_whitelist_from_json() -> None:
+    """Migrate whitelist.json → DB on first startup (idempotent)."""
+    import json, os
+    path = settings.whitelist_path
+    if not os.path.exists(path):
+        return
+    with open(path, encoding="utf-8") as fh:
+        payload = json.load(fh)
+    entries = payload.get("entries", [])
+    if not entries:
+        return
+
+    from sqlalchemy import select as _select
+    async with SessionLocal() as session:
+        existing = (
+            await session.execute(_select(DbWhitelistEntry.domain))
+        ).scalars().all()
+        existing_set = set(existing)
+        new_rows = [
+            DbWhitelistEntry(
+                domain=e["domain"],
+                agency_name=e.get("agency_name", ""),
+                category=e.get("category", "other"),
+                added_by="seed",
+                is_seeded=True,
+            )
+            for e in entries
+            if e.get("domain") and e["domain"] not in existing_set
+        ]
+        if new_rows:
+            session.add_all(new_rows)
+            await session.commit()
+            logger.info("whitelist seeded %d entries from JSON", len(new_rows))
 
 
 @asynccontextmanager
@@ -42,6 +79,7 @@ async def lifespan(app: FastAPI):
 
     await init_db()
     logger.info("database schema ready")
+    await _seed_whitelist_from_json()
     try:
         app.state.scorer = load_scorer()
         MODEL_READY.set(1)
@@ -112,6 +150,8 @@ async def _rate_limited(_: Request, exc: RateLimitExceeded) -> JSONResponse:
 app.include_router(check.router, prefix="/api/v1", tags=["check"])
 app.include_router(stats.router, prefix="/api/v1", tags=["stats"])
 app.include_router(history.router, prefix="/api/v1", tags=["history"])
+app.include_router(admin_router.router, prefix="/api/v1", tags=["admin"])
+app.include_router(feedback_router.router, prefix="/api/v1", tags=["feedback"])
 
 
 @app.get("/health", tags=["meta"])
@@ -167,6 +207,12 @@ async def root() -> dict:
             "POST /api/v1/check/batch",
             "GET /api/v1/stats",
             "GET /api/v1/history",
+            "GET /api/v1/admin/whitelist",
+            "POST /api/v1/admin/whitelist",
+            "DELETE /api/v1/admin/whitelist/{domain}",
+            "POST /api/v1/feedback",
+            "GET /api/v1/feedback",
+            "GET /api/v1/feedback/export",
             "GET /health",
             "GET /metrics",
         ],

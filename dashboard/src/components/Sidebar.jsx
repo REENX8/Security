@@ -5,6 +5,8 @@ const NAV = [
   { to: "/bulk", label: "ตรวจหลาย URL", icon: "📦" },
   { to: "/history", label: "ประวัติการตรวจสอบ", icon: "🗂️" },
   { to: "/stats", label: "สถิติเชิงลึก", icon: "📈" },
+  { to: "/admin", label: "จัดการ Whitelist", icon: "🛡️" },
+  { to: "/feedback", label: "รายงานผลผิดพลาด", icon: "🚩" },
 ];
 
 export default function Sidebar({ open, onClose }) {

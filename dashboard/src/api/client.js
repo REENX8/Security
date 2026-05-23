@@ -56,3 +56,45 @@ export function checkBatch(urls) {
 export function getHealth() {
   return request("/health");
 }
+
+// --- Whitelist ---
+
+export function getWhitelist({ search = "", limit = 50, offset = 0 } = {}) {
+  const params = new URLSearchParams({ limit, offset });
+  if (search) params.set("search", search);
+  return request(`/api/v1/admin/whitelist?${params.toString()}`);
+}
+
+export function addWhitelistEntry(data) {
+  return request("/api/v1/admin/whitelist", {
+    method: "POST",
+    body: JSON.stringify(data),
+  });
+}
+
+export function deleteWhitelistEntry(domain) {
+  return request(`/api/v1/admin/whitelist/${encodeURIComponent(domain)}`, {
+    method: "DELETE",
+  });
+}
+
+// --- Feedback ---
+
+export function getFeedback({ verdict_given = "", correct_verdict = "",
+                              limit = 50, offset = 0 } = {}) {
+  const params = new URLSearchParams({ limit, offset });
+  if (verdict_given) params.set("verdict_given", verdict_given);
+  if (correct_verdict) params.set("correct_verdict", correct_verdict);
+  return request(`/api/v1/feedback?${params.toString()}`);
+}
+
+export function submitFeedback(data) {
+  return request("/api/v1/feedback", {
+    method: "POST",
+    body: JSON.stringify(data),
+  });
+}
+
+export function getFeedbackExportUrl() {
+  return `${(import.meta.env.VITE_API_URL || "http://localhost:8000").replace(/\/+$/, "")}/api/v1/feedback/export`;
+}
