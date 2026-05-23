@@ -1,5 +1,5 @@
 {
-  "schema_version": "1.0.0",
+  "schema_version": "1.1.0",
   "ordered_features": [
     "url_length",
     "num_dots",
@@ -21,9 +21,14 @@
     "cert_age_days",
     "is_self_signed",
     "whois_ok",
-    "tls_ok"
+    "tls_ok",
+    "path_depth",
+    "domain_label_max_len",
+    "has_port",
+    "max_digit_run",
+    "has_query_string"
   ],
-  "n_features": 21,
+  "n_features": 26,
   "tld_type_map": {
     "go.th": 0,
     "ac.th": 1,
@@ -40,13 +45,13 @@
     "whois_ok": 0,
     "tls_ok": 0
   },
-  "whitelist_sha256": "bb3cedfbd51c3337",
-  "trained_at": "2026-05-23T00:43:05.145322Z",
+  "whitelist_sha256": "0d677eb51e631f83",
+  "trained_at": "2026-05-23T09:54:56.897404Z",
   "sklearn_version": "1.5.2",
   "xgboost_version": "2.1.3",
   "metrics": {
     "train_accuracy": 1.0,
-    "test_accuracy": 0.9958,
-    "test_f1": 0.9958
+    "test_accuracy": 0.9933,
+    "test_f1": 0.9934
   }
 }

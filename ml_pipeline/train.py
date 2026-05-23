@@ -16,6 +16,7 @@ import json
 
 import joblib
 import sklearn
+from sklearn.calibration import CalibratedClassifierCV
 from sklearn.ensemble import RandomForestClassifier, VotingClassifier
 from sklearn.metrics import accuracy_score, f1_score
 from sklearn.model_selection import train_test_split
@@ -92,8 +93,9 @@ def main() -> None:
     X_train_s = scaler.fit_transform(X_train.to_numpy())
     X_test_s = scaler.transform(X_test.to_numpy())
 
-    model = build_ensemble()
-    print("[train] fitting RandomForest + XGBoost soft-voting ensemble ...")
+    base = build_ensemble()
+    print("[train] fitting calibrated RandomForest + XGBoost ensemble (cv=5) ...")
+    model = CalibratedClassifierCV(base, method="isotonic", cv=5)
     model.fit(X_train_s, y_train.to_numpy())
 
     train_pred = model.predict(X_train_s)

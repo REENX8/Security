@@ -1,5 +1,5 @@
 {
-  "count": 111,
+  "count": 121,
   "entries": [
     {
       "domain": "1212.go.th",
@@ -29,6 +29,11 @@
     {
       "domain": "bangkok.go.th",
       "agency_name": "Bangkok Metropolitan Administration",
+      "category": "go.th"
+    },
+    {
+      "domain": "boi.go.th",
+      "agency_name": "Board of Investment of Thailand",
       "category": "go.th"
     },
     {
@@ -97,6 +102,11 @@
       "category": "or.th"
     },
     {
+      "domain": "dip.go.th",
+      "agency_name": "Department of Industrial Promotion",
+      "category": "go.th"
+    },
+    {
       "domain": "disaster.go.th",
       "agency_name": "Department of Disaster Prevention and Mitigation",
       "category": "go.th"
@@ -122,6 +132,11 @@
       "category": "go.th"
     },
     {
+      "domain": "doh.go.th",
+      "agency_name": "Department of Health",
+      "category": "go.th"
+    },
+    {
       "domain": "dol.go.th",
       "agency_name": "Department of Lands",
       "category": "go.th"
@@ -137,8 +152,18 @@
       "category": "ac.th"
     },
     {
+      "domain": "dsd.go.th",
+      "agency_name": "Department of Skill Development",
+      "category": "go.th"
+    },
+    {
       "domain": "dsi.go.th",
       "agency_name": "Department of Special Investigation",
+      "category": "go.th"
+    },
+    {
+      "domain": "dss.go.th",
+      "agency_name": "Department of Science Service",
       "category": "go.th"
     },
     {
@@ -159,6 +184,11 @@
     {
       "domain": "exim.go.th",
       "agency_name": "Export-Import Bank of Thailand",
+      "category": "go.th"
+    },
+    {
+      "domain": "fpo.go.th",
+      "agency_name": "Fiscal Policy Office",
       "category": "go.th"
     },
     {
@@ -205,6 +235,11 @@
       "domain": "kmutt.ac.th",
       "agency_name": "King Mongkut's University of Technology Thonburi",
       "category": "ac.th"
+    },
+    {
+      "domain": "krisdika.go.th",
+      "agency_name": "Office of the Council of State",
+      "category": "go.th"
     },
     {
       "domain": "ktb.co.th",
@@ -347,6 +382,11 @@
       "category": "go.th"
     },
     {
+      "domain": "nia.go.th",
+      "agency_name": "Office of the National Intelligence Agency",
+      "category": "go.th"
+    },
+    {
       "domain": "nia.or.th",
       "agency_name": "National Innovation Agency",
       "category": "or.th"
@@ -387,8 +427,18 @@
       "category": "go.th"
     },
     {
+      "domain": "opdc.go.th",
+      "agency_name": "Office of the Public Sector Development Commission",
+      "category": "go.th"
+    },
+    {
       "domain": "parliament.go.th",
       "agency_name": "Parliament of Thailand",
+      "category": "go.th"
+    },
+    {
+      "domain": "pcd.go.th",
+      "agency_name": "Pollution Control Department",
       "category": "go.th"
     },
     {

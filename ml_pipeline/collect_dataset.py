@@ -29,7 +29,9 @@ from ml_pipeline.config import (
     RAW_DIR,
     REAL_HOLDOUT_CSV,
     REAL_HOLDOUT_FRACTION,
+    THAI_HOLDOUT_CSV,
     TARGET_ROWS,
+    URLHAUS_URL,
     WHITELIST_CSV,
     ensure_dirs,
 )
@@ -92,6 +94,62 @@ def _fetch_feed_urls(max_urls: int) -> list[str]:
     return clean[:max_urls]
 
 
+def _fetch_urlhaus(max_urls: int) -> list[str]:
+    """Best-effort fetch from URLhaus recent-URLs API (no API key required)."""
+    try:
+        import requests
+    except Exception:  # noqa: BLE001
+        return []
+    try:
+        resp = requests.post(URLHAUS_URL, timeout=FEED_TIMEOUT)
+        if resp.ok and "json" in resp.headers.get("content-type", ""):
+            data = resp.json()
+            urls = [
+                e["url"]
+                for e in data.get("urls", [])
+                if e.get("url") and e.get("url_status") == "online"
+                and e["url"].startswith(("http://", "https://"))
+            ]
+            print(f"[feeds] URLhaus: +{len(urls)} online urls")
+            return urls[:max_urls]
+    except Exception as exc:  # noqa: BLE001
+        print(f"[feeds] URLhaus unavailable ({exc}) -- skipping")
+    return []
+
+
+_THAI_BRANDS = {
+    "moe", "obec", "rd", "dbd", "dopa", "dsi", "ago", "parliament",
+    "senate", "thaigov", "mahidol", "chula", "kasetsart", "kmutt",
+    "kmitl", "kbank", "scb", "ktb", "bbl", "gsb", "bot", "set",
+    "sec", "egat", "pea", "mwa", "pwa", "ntplc", "airportthai",
+    "thaipost", "moph", "moi", "mof", "mfa", "mnre",
+}
+_THAI_TLDS = (".go.th", ".ac.th", ".or.th", ".co.th")
+
+
+def _is_thai_targeting(url: str) -> bool:
+    """Return True if url appears to impersonate a Thai government/financial brand."""
+    url_lower = url.lower()
+    # Subdomain-spoof pattern: contains a Thai TLD sub-string (not as the actual TLD)
+    for tld in _THAI_TLDS:
+        idx = url_lower.find(tld)
+        if idx != -1 and idx + len(tld) < len(url_lower):
+            return True
+    # Brand label appears in the registered domain on a non-.th TLD
+    try:
+        from urllib.parse import urlparse
+        host = urlparse(url).hostname or ""
+        if host.endswith(_THAI_TLDS):
+            return False  # actual Thai TLD — legitimate candidate, not a spoof
+        labels = host.lower().split(".")
+        for label in labels:
+            if label in _THAI_BRANDS:
+                return True
+    except Exception:  # noqa: BLE001
+        pass
+    return False
+
+
 def main(use_feeds: bool = True) -> None:
     ensure_dirs()
     wl = Whitelist.from_csv(WHITELIST_CSV)
@@ -108,16 +166,31 @@ def main(use_feeds: bool = True) -> None:
     # --- real phishing (optional) -- split into training + held-out test ---
     real_train: list[dict] = []
     real_holdout: list[dict] = []
+    thai_holdout: list[dict] = []
     if use_feeds:
         feed_urls = _fetch_feed_urls(max_urls=n_each // 2)
-        gen.rng.shuffle(feed_urls)
-        n_holdout = int(round(len(feed_urls) * REAL_HOLDOUT_FRACTION))
-        for i, url in enumerate(feed_urls):
+        feed_urls += _fetch_urlhaus(max_urls=n_each // 4)
+        # Deduplicate after combining feeds.
+        seen: set[str] = set()
+        feed_urls = [u for u in feed_urls if not (u in seen or seen.add(u))]  # type: ignore[func-returns-value]
+
+        # Separate Thai-targeting URLs into their own always-held-out set.
+        thai_urls = [u for u in feed_urls if _is_thai_targeting(u)]
+        non_thai_urls = [u for u in feed_urls if not _is_thai_targeting(u)]
+        print(f"[feeds] Thai-targeting URLs found: {len(thai_urls)}")
+
+        for url in thai_urls:
+            net = gen.sim_network(1, url.startswith("https://"))
+            thai_holdout.append({"url": url, "label": 1, **net})
+
+        gen.rng.shuffle(non_thai_urls)
+        n_holdout = int(round(len(non_thai_urls) * REAL_HOLDOUT_FRACTION))
+        for i, url in enumerate(non_thai_urls):
             net = gen.sim_network(1, url.startswith("https://"))
             row = {"url": url, "label": 1, **net}
             (real_holdout if i < n_holdout else real_train).append(row)
     print(f"[dataset] real phishing -- train: {len(real_train)}  "
-          f"holdout: {len(real_holdout)}")
+          f"holdout: {len(real_holdout)}  thai-holdout: {len(thai_holdout)}")
 
     # --- synthetic phishing top-up to balance the classes (training only) ---
     need = n_legit - len(real_train)
@@ -149,6 +222,19 @@ def main(use_feeds: bool = True) -> None:
               f"rows -> {REAL_HOLDOUT_CSV}")
     else:
         print("[dataset] no real-phishing holdout written (no feed URLs)")
+
+    # --- write the Thai-specific phishing holdout (always held-out, never trained) ---
+    if thai_holdout:
+        with open(THAI_HOLDOUT_CSV, "w", newline="", encoding="utf-8") as fh:
+            writer = csv.DictWriter(fh, fieldnames=_FIELDS)
+            writer.writeheader()
+            for r in thai_holdout:
+                writer.writerow({k: r.get(k, "") for k in _FIELDS})
+        print(f"[dataset] wrote {len(thai_holdout)} Thai-targeting phishing holdout "
+              f"rows -> {THAI_HOLDOUT_CSV}")
+    else:
+        print("[dataset] no Thai-specific phishing holdout written "
+              "(none found in feeds — expected for most environments)")
 
 
 if __name__ == "__main__":
