@@ -107,7 +107,7 @@ The script:
 - writes one flat `.zip` (manifest at root) — exactly the format the
   Chrome Web Store and the Firefox Add-ons Store accept.
 
-CI runs this on every push to `main`/`claude/**` and uploads the artifact
+CI runs this on every push to `main`/`feature/**` and uploads the artifact
 (see [`.github/workflows/ci.yml`](../.github/workflows/ci.yml)).
 
 ---
