@@ -38,7 +38,12 @@ TARGET_ROWS = 6000
 # Optional external phishing feeds (best-effort; pipeline works without them).
 PHISHTANK_URL = "https://data.phishtank.com/data/online-valid.json"
 OPENPHISH_URL = "https://openphish.com/feed.txt"
+URLHAUS_URL = "https://urlhaus-api.abuse.ch/v1/urls/recent/"
 FEED_TIMEOUT = 15  # seconds
+
+THAI_HOLDOUT_CSV = os.path.join(DATA_DIR, "thai_phish_holdout.csv")
+THAI_HOLDOUT_METRICS_JSON = os.path.join(REPORTS_DIR, "thai_holdout_metrics.json")
+EVALUATION_SUMMARY_JSON = os.path.join(REPORTS_DIR, "evaluation_summary.json")
 
 
 def ensure_dirs() -> None:
