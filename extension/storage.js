@@ -6,6 +6,7 @@ const DEFAULT_SETTINGS = {
   dashboardUrl: "http://localhost:5173",
   notifications: true,
   enabled: true,
+  blockPhishing: true,
 };
 
 const MAX_HISTORY = 100;
@@ -54,4 +55,26 @@ export async function getHistory() {
 
 export async function clearHistory() {
   await chrome.storage.local.set({ history: [], tabResults: {} });
+}
+
+// --- session-scoped bypass set (cleared when the browser restarts) ---
+const SESSION = chrome.storage.session || chrome.storage.local;
+
+export async function isBypassed(host) {
+  if (!host) return false;
+  const { bypass = [] } = await SESSION.get("bypass");
+  return bypass.includes(host);
+}
+
+export async function addBypass(host) {
+  if (!host) return;
+  const { bypass = [] } = await SESSION.get("bypass");
+  if (!bypass.includes(host)) {
+    bypass.push(host);
+    await SESSION.set({ bypass });
+  }
+}
+
+export async function clearBypass() {
+  await SESSION.set({ bypass: [] });
 }

@@ -1,0 +1,112 @@
+* { margin: 0; padding: 0; box-sizing: border-box; }
+
+body {
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-family: "Segoe UI", "Sarabun", Tahoma, sans-serif;
+  background: repeating-linear-gradient(
+    -45deg, #7f1d1d, #7f1d1d 16px, #6b1414 16px, #6b1414 32px
+  );
+  padding: 24px;
+}
+
+.card {
+  max-width: 720px;
+  width: 100%;
+  background: #fff;
+  border-radius: 14px;
+  overflow: hidden;
+  box-shadow: 0 12px 40px rgba(0, 0, 0, 0.4);
+}
+
+.banner {
+  background: linear-gradient(135deg, #ef4444, #b91c1c);
+  color: #fff;
+  text-align: center;
+  padding: 36px 24px 28px;
+}
+.banner .icon { font-size: 56px; display: block; margin-bottom: 8px; }
+.banner h1 { font-size: 24px; font-weight: 800; }
+.banner .sub {
+  font-size: 14px;
+  line-height: 1.6;
+  margin-top: 10px;
+  opacity: 0.95;
+}
+
+.details {
+  padding: 22px 28px;
+  border-bottom: 1px solid #e5e7eb;
+}
+.row {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  padding: 10px 0;
+  border-top: 1px solid #f3f4f6;
+  font-size: 14px;
+  gap: 14px;
+  flex-wrap: wrap;
+}
+.row:first-of-type { border-top: 0; }
+.row-label { color: #6b7280; font-weight: 500; flex-shrink: 0; }
+.row-value { color: #111827; font-weight: 600; text-align: right; word-break: break-all; }
+.mono { font-family: ui-monospace, "Cascadia Mono", Menlo, monospace; }
+
+.reason {
+  margin-top: 14px;
+  padding: 12px 14px;
+  background: #fef2f2;
+  color: #991b1b;
+  border-left: 4px solid #ef4444;
+  border-radius: 6px;
+  font-size: 14px;
+  line-height: 1.6;
+}
+
+.advice {
+  padding: 18px 28px;
+  background: #f9fafb;
+  font-size: 14px;
+  color: #374151;
+}
+.advice strong { display: block; margin-bottom: 8px; color: #111827; }
+.advice ul { padding-left: 22px; line-height: 1.8; }
+.advice code {
+  background: #e5e7eb;
+  padding: 2px 6px;
+  border-radius: 4px;
+  font-size: 13px;
+}
+
+.actions {
+  padding: 22px 28px;
+  display: flex;
+  gap: 14px;
+  justify-content: space-between;
+  flex-wrap: wrap;
+}
+.btn-primary, .btn-danger {
+  padding: 12px 24px;
+  border: none;
+  border-radius: 8px;
+  font-size: 15px;
+  font-weight: 700;
+  cursor: pointer;
+}
+.btn-primary {
+  background: #2563eb;
+  color: #fff;
+  flex: 1;
+  min-width: 220px;
+}
+.btn-primary:hover { background: #1d4ed8; }
+.btn-danger {
+  background: transparent;
+  color: #6b7280;
+  border: 1px solid #d1d5db;
+  font-size: 13px;
+}
+.btn-danger:hover { background: #fef2f2; color: #b91c1c; border-color: #fca5a5; }

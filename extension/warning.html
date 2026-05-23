@@ -1,0 +1,56 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>⚠ คำเตือนเว็บฟิชชิง — Thai Phishing Detector</title>
+  <link rel="stylesheet" href="warning.css" />
+</head>
+<body>
+  <main class="card">
+    <div class="banner">
+      <span class="icon">🚫</span>
+      <h1>เว็บไซต์นี้อาจเป็นการปลอมแปลง</h1>
+      <p class="sub">
+        Thai Phishing Detector ตรวจพบว่า URL ที่คุณกำลังจะเข้าถึง
+        มีรูปแบบของเว็บไซต์หลอกลวง (Phishing) ที่ปลอมเป็นหน่วยงานราชการ
+        หรือสถาบันการศึกษา
+      </p>
+    </div>
+
+    <section class="details">
+      <div class="row">
+        <span class="row-label">URL ที่ถูกบล็อก</span>
+        <code id="blocked-url" class="row-value mono"></code>
+      </div>
+      <div class="row" id="closest-row" hidden>
+        <span class="row-label">ปลอมเป็นเว็บไซต์</span>
+        <span class="row-value" id="closest-domain"></span>
+      </div>
+      <div class="row" id="score-row" hidden>
+        <span class="row-label">คะแนนความเสี่ยง</span>
+        <span class="row-value" id="score"></span>
+      </div>
+      <p class="reason" id="reason"></p>
+    </section>
+
+    <section class="advice">
+      <strong>คำแนะนำ:</strong>
+      <ul>
+        <li>หน่วยงานราชการไทยมักใช้โดเมน <code>.go.th</code> เท่านั้น</li>
+        <li>อย่ากรอกรหัสผ่าน เลขบัตรประชาชน หรือข้อมูลธนาคารบนเว็บไซต์ที่น่าสงสัย</li>
+        <li>หากต้องการเข้าใช้บริการ ให้พิมพ์ที่อยู่เว็บไซต์เองในแถบที่อยู่</li>
+      </ul>
+    </section>
+
+    <div class="actions">
+      <button id="back-btn" class="btn-primary">← กลับไปหน้าก่อนหน้า</button>
+      <button id="proceed-btn" class="btn-danger" title="ไม่แนะนำอย่างยิ่ง">
+        ดำเนินการต่อ (รับความเสี่ยงเอง)
+      </button>
+    </div>
+  </main>
+
+  <script src="warning.js"></script>
+</body>
+</html>
