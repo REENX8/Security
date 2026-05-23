@@ -20,7 +20,11 @@ env/
 data/dataset.csv
 data/features_cache.csv
 data/test_split.csv
+data/real_phish_holdout.csv
 data/raw/
+
+# --- pytest cache ---
+.pytest_cache/
 
 # --- Node / dashboard ---
 node_modules/

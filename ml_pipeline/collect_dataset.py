@@ -27,6 +27,8 @@ from ml_pipeline.config import (
     PHISHTANK_URL,
     RANDOM_SEED,
     RAW_DIR,
+    REAL_HOLDOUT_CSV,
+    REAL_HOLDOUT_FRACTION,
     TARGET_ROWS,
     WHITELIST_CSV,
     ensure_dirs,
@@ -103,23 +105,27 @@ def main(use_feeds: bool = True) -> None:
     n_legit = len(rows)
     print(f"[dataset] legitimate rows: {n_legit}")
 
-    # --- real phishing (optional) ---
-    real_rows: list[dict] = []
+    # --- real phishing (optional) -- split into training + held-out test ---
+    real_train: list[dict] = []
+    real_holdout: list[dict] = []
     if use_feeds:
         feed_urls = _fetch_feed_urls(max_urls=n_each // 2)
-        for url in feed_urls:
+        gen.rng.shuffle(feed_urls)
+        n_holdout = int(round(len(feed_urls) * REAL_HOLDOUT_FRACTION))
+        for i, url in enumerate(feed_urls):
             net = gen.sim_network(1, url.startswith("https://"))
-            real_rows.append({"url": url, "label": 1, **net})
-    print(f"[dataset] real phishing rows: {len(real_rows)}")
+            row = {"url": url, "label": 1, **net}
+            (real_holdout if i < n_holdout else real_train).append(row)
+    print(f"[dataset] real phishing -- train: {len(real_train)}  "
+          f"holdout: {len(real_holdout)}")
 
-    # --- synthetic phishing top-up to balance the classes ---
-    need = n_legit - len(real_rows)
+    # --- synthetic phishing top-up to balance the classes (training only) ---
+    need = n_legit - len(real_train)
     synth_phish = gen.generate(n_legit=0, n_phish=max(need, 0))
     print(f"[dataset] synthetic phishing rows: {len(synth_phish)}")
 
-    rows.extend(real_rows)
+    rows.extend(real_train)
     rows.extend(synth_phish)
-
     gen.rng.shuffle(rows)
 
     with open(DATASET_CSV, "w", newline="", encoding="utf-8") as fh:
@@ -129,8 +135,20 @@ def main(use_feeds: bool = True) -> None:
             writer.writerow({k: r.get(k, "") for k in _FIELDS})
 
     n_phish = sum(r["label"] == 1 for r in rows)
-    print(f"[dataset] wrote {len(rows)} rows -> {DATASET_CSV}")
+    print(f"[dataset] wrote {len(rows)} training rows -> {DATASET_CSV}")
     print(f"[dataset]   legitimate={len(rows) - n_phish}  phishing={n_phish}")
+
+    # --- write the held-out real-phishing test set ---
+    if real_holdout:
+        with open(REAL_HOLDOUT_CSV, "w", newline="", encoding="utf-8") as fh:
+            writer = csv.DictWriter(fh, fieldnames=_FIELDS)
+            writer.writeheader()
+            for r in real_holdout:
+                writer.writerow({k: r.get(k, "") for k in _FIELDS})
+        print(f"[dataset] wrote {len(real_holdout)} real-phishing holdout "
+              f"rows -> {REAL_HOLDOUT_CSV}")
+    else:
+        print("[dataset] no real-phishing holdout written (no feed URLs)")
 
 
 if __name__ == "__main__":

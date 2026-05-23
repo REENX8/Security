@@ -7,6 +7,7 @@ confusion matrix and a metrics JSON to ``reports/``.
 from __future__ import annotations
 
 import json
+import os
 
 import joblib
 import matplotlib
@@ -32,10 +33,13 @@ from phish_features import ORDERED_FEATURES
 from ml_pipeline.config import (
     METRICS_JSON,
     MODEL_PATH,
+    REAL_HOLDOUT_CSV,
+    REAL_HOLDOUT_METRICS_JSON,
     REPORTS_DIR,
     SCALER_PATH,
     ensure_dirs,
 )
+from ml_pipeline.feature_engineering import build_feature_frame
 from ml_pipeline.train import TEST_SPLIT_CSV
 
 
@@ -128,6 +132,58 @@ def main() -> None:
     with open(METRICS_JSON, "w", encoding="utf-8") as fh:
         json.dump(metrics, fh, indent=2)
     print(f"[eval] saved {METRICS_JSON}")
+    print("=" * 52)
+
+    # ------------------------------------------------------------------
+    # HONEST GENERALISATION CHECK: recall on real-world phishing URLs
+    # the model has never seen during training.
+    # ------------------------------------------------------------------
+    if os.path.exists(REAL_HOLDOUT_CSV):
+        evaluate_real_holdout(model, scaler)
+    else:
+        print(f"[eval] no real-phishing holdout found at {REAL_HOLDOUT_CSV} "
+              "(skipping generalisation check)")
+
+
+def evaluate_real_holdout(model, scaler) -> None:
+    frame = build_feature_frame(REAL_HOLDOUT_CSV)
+    X = frame[ORDERED_FEATURES].astype(float)
+    y_pred = model.predict(scaler.transform(X.to_numpy()))
+    y_proba = model.predict_proba(scaler.transform(X.to_numpy()))[:, 1]
+
+    flagged = (y_pred == 1).sum()
+    suspicious_or_phishing = (y_proba >= 0.30).sum()
+    n = len(X)
+
+    print()
+    print("=" * 52)
+    print("  HOLDOUT EVAL ON UNSEEN REAL PHISHING URLS")
+    print("=" * 52)
+    print(f"  Sample size           : {n}")
+    print(f"  Recall  (score >= 0.7): {flagged}/{n}  "
+          f"= {flagged / n:.4f}")
+    print(f"  Caught  (score >= 0.3): {suspicious_or_phishing}/{n}  "
+          f"= {suspicious_or_phishing / n:.4f}")
+    print(f"  Mean score            : {float(y_proba.mean()):.4f}")
+    print(f"  Median score          : {float(pd.Series(y_proba).median()):.4f}")
+
+    missed = frame.assign(score=y_proba)[y_proba < 0.30]
+    if len(missed):
+        print(f"  Examples MISSED ({min(5, len(missed))} of {len(missed)}):")
+        for _, row in missed.head(5).iterrows():
+            print(f"    - {row['url']}  (score={row['score']:.2f})")
+
+    metrics = {
+        "sample_size": int(n),
+        "recall_phishing_threshold": round(float(flagged) / n, 4),
+        "recall_suspicious_threshold": round(float(suspicious_or_phishing) / n, 4),
+        "mean_score": round(float(y_proba.mean()), 4),
+        "median_score": round(float(pd.Series(y_proba).median()), 4),
+        "missed_count": int(len(missed)),
+    }
+    with open(REAL_HOLDOUT_METRICS_JSON, "w", encoding="utf-8") as fh:
+        json.dump(metrics, fh, indent=2)
+    print(f"  Saved {REAL_HOLDOUT_METRICS_JSON}")
     print("=" * 52)
 
 

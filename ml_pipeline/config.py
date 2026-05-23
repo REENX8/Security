@@ -17,10 +17,17 @@ WHITELIST_JSON = os.path.join(MODELS_DIR, "whitelist.json")
 DATASET_CSV = os.path.join(DATA_DIR, "dataset.csv")
 RAW_DIR = os.path.join(DATA_DIR, "raw")
 
+REAL_HOLDOUT_CSV = os.path.join(DATA_DIR, "real_phish_holdout.csv")
+
 MODEL_PATH = os.path.join(MODELS_DIR, "ensemble.pkl")
 SCALER_PATH = os.path.join(MODELS_DIR, "scaler.pkl")
 FEATURES_JSON = os.path.join(MODELS_DIR, "features.json")
 METRICS_JSON = os.path.join(REPORTS_DIR, "metrics.json")
+REAL_HOLDOUT_METRICS_JSON = os.path.join(REPORTS_DIR, "real_holdout_metrics.json")
+
+# Fraction of fetched real phishing URLs reserved as a held-out test set
+# that the model never sees during training.
+REAL_HOLDOUT_FRACTION = 0.30
 
 # Reproducibility.
 RANDOM_SEED = 42

@@ -1,0 +1,8 @@
+{
+  "sample_size": 90,
+  "recall_phishing_threshold": 0.9333,
+  "recall_suspicious_threshold": 0.9667,
+  "mean_score": 0.8573,
+  "median_score": 0.9449,
+  "missed_count": 3
+}
