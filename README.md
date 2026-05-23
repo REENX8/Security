@@ -248,12 +248,30 @@ Paginated, filterable check history (`limit` up to 1000 for CSV export).
 
 ---
 
-## 🧩 Browser extension (Chrome / Edge — Manifest V3)
+## 🧩 Browser extension (Chrome / Edge / Brave / Opera / Firefox 121+)
 
-1. Open `chrome://extensions`, enable **Developer mode**.
-2. **Load unpacked** → select the [`extension/`](extension/) folder.
-3. Open the extension **Options** and set the API endpoint + API key
+Manifest V3, Chrome-Web-Store-ready, signed for the Firefox Add-ons Store
+via `browser_specific_settings.gecko.id`.
+
+### Quick install (developer mode)
+
+1. `python scripts/build_extension.py` → produces
+   `dist/thai-phishing-detector-v{VERSION}.zip` (also produced by CI on
+   every push as an [artifact](../../actions)).
+2. Extract the zip somewhere persistent.
+3. Visit `chrome://extensions` (or `edge://extensions`) → enable
+   **Developer mode** → **Load unpacked** → pick the extracted folder.
+   For Firefox: `about:debugging` → **Load Temporary Add-on…** →
+   `manifest.json`.
+4. Open **Options** and set the API endpoint + API key
    (defaults: `http://localhost:8000`, `dev-local-key-change-me`).
+
+For full instructions per browser, a Chrome Web Store submission checklist,
+permission justifications, screenshots checklist and troubleshooting see
+[`extension/README.md`](extension/README.md). The privacy policy required by
+the stores lives at [`extension/PRIVACY.md`](extension/PRIVACY.md).
+
+### Behaviour
 
 Every top-level navigation is checked in real time:
 

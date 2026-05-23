@@ -73,3 +73,36 @@ jobs:
       - uses: actions/checkout@v4
       - name: Build backend image
         run: docker build -f backend/Dockerfile -t phish-backend:ci .
+
+  extension-package:
+    name: Extension package (.zip)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Validate + package extension
+        run: python scripts/build_extension.py
+
+      - name: Verify zip contents
+        run: |
+          unzip -l dist/thai-phishing-detector-v*.zip
+          test -f dist/thai-phishing-detector-v*.zip
+
+      - name: Upload extension zip
+        uses: actions/upload-artifact@v4
+        with:
+          name: thai-phishing-detector-extension
+          path: dist/*.zip
+          if-no-files-found: error
+
+      - name: Attach to GitHub release on tag
+        if: startsWith(github.ref, 'refs/tags/v')
+        uses: softprops/action-gh-release@v2
+        with:
+          files: dist/*.zip
+          generate_release_notes: true
