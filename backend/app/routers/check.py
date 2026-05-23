@@ -1,4 +1,4 @@
-"""POST /api/v1/check -- score a single URL."""
+"""POST /api/v1/check (single) and /api/v1/check/batch (bulk)."""
 
 from __future__ import annotations
 
@@ -6,12 +6,44 @@ from fastapi import APIRouter, Depends, Request
 from sqlalchemy.ext.asyncio import AsyncSession
 from starlette.concurrency import run_in_threadpool
 
+from app.config import settings
 from app.crud import insert_check
 from app.database import get_session
 from app.deps import get_scorer, verify_api_key
-from app.schemas import CheckRequest, CheckResponse
+from app.errors import AppError
+from app.metrics import CACHE_SIZE, CHECK_LATENCY, CHECKS_TOTAL
+from app.schemas import (
+    BatchCheckRequest,
+    BatchCheckResponse,
+    CheckRequest,
+    CheckResponse,
+)
 
 router = APIRouter()
+
+
+async def _score_and_persist(
+    request: Request, session: AsyncSession, url: str
+) -> dict:
+    """Score one URL with caching, persistence and metric updates."""
+    scorer = get_scorer(request)
+    cache = getattr(request.app.state, "cache", None)
+
+    if cache is not None:
+        cached = cache.get(url)
+        if cached is not None:
+            CHECKS_TOTAL.labels(label=cached["label"], cached="true").inc()
+            return {**cached, "cached": True}
+
+    with CHECK_LATENCY.time():
+        result = await run_in_threadpool(scorer.score, url)
+    await insert_check(session, result)
+
+    if cache is not None:
+        cache.set(url, result)
+        CACHE_SIZE.set(len(cache))
+    CHECKS_TOTAL.labels(label=result["label"], cached="false").inc()
+    return {**result, "cached": False}
 
 
 @router.post(
@@ -25,9 +57,29 @@ async def check_url(
     payload: CheckRequest,
     session: AsyncSession = Depends(get_session),
 ) -> CheckResponse:
-    scorer = get_scorer(request)
-    # Feature extraction may do (timeout-guarded) network I/O -- run it off
-    # the event loop so concurrent requests are not blocked.
-    result = await run_in_threadpool(scorer.score, payload.url)
-    await insert_check(session, result)
+    result = await _score_and_persist(request, session, payload.url)
     return CheckResponse(**result)
+
+
+@router.post(
+    "/check/batch",
+    response_model=BatchCheckResponse,
+    dependencies=[Depends(verify_api_key)],
+    summary="Analyse a batch of URLs in one request",
+)
+async def check_batch(
+    request: Request,
+    payload: BatchCheckRequest,
+    session: AsyncSession = Depends(get_session),
+) -> BatchCheckResponse:
+    if len(payload.urls) > settings.batch_max_size:
+        raise AppError(
+            f"batch is too large (max {settings.batch_max_size} URLs)",
+            code="BATCH_TOO_LARGE",
+            status_code=413,
+        )
+    results = []
+    for url in payload.urls:
+        result = await _score_and_persist(request, session, url)
+        results.append(CheckResponse(**result))
+    return BatchCheckResponse(count=len(results), results=results)

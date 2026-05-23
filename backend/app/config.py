@@ -47,6 +47,12 @@ class Settings(BaseSettings):
     threshold_suspicious: float = Field(default=0.3)
     threshold_phishing: float = Field(default=0.7)
 
+    # --- caching / batch ---
+    enable_cache: bool = Field(default=True)
+    cache_ttl: float = Field(default=60.0)        # seconds
+    cache_maxsize: int = Field(default=2048)
+    batch_max_size: int = Field(default=50)
+
     # --- server ---
     app_name: str = Field(default="Thai Phishing URL Detector")
 

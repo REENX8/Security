@@ -22,7 +22,7 @@ router = APIRouter()
     summary="List past URL checks",
 )
 async def history(
-    limit: int = Query(default=50, ge=1, le=200),
+    limit: int = Query(default=50, ge=1, le=1000),
     offset: int = Query(default=0, ge=0),
     label: str | None = Query(default=None, pattern="^(safe|suspicious|phishing)$"),
     search: str | None = Query(default=None, max_length=255),
@@ -49,6 +49,7 @@ async def history(
             closest_domain=r.closest_domain,
             edit_distance=r.edit_distance,
             checked_at=r.checked_at.isoformat(),
+            features=r.features,
         )
         for r in rows
     ]

@@ -35,6 +35,16 @@ class CheckResponse(BaseModel):
     closest_domain: str | None = None
     edit_distance: int | None = None
     checked_at: str
+    cached: bool = False
+
+
+class BatchCheckRequest(BaseModel):
+    urls: list[str] = Field(..., min_length=1, max_length=100)
+
+
+class BatchCheckResponse(BaseModel):
+    count: int
+    results: list[CheckResponse]
 
 
 class HistoryItem(BaseModel):
@@ -46,6 +56,7 @@ class HistoryItem(BaseModel):
     closest_domain: str | None = None
     edit_distance: int | None = None
     checked_at: str
+    features: dict[str, Any] | None = None
 
 
 class HistoryResponse(BaseModel):

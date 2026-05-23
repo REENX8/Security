@@ -2,21 +2,26 @@
 
 from __future__ import annotations
 
+import datetime as _dt
 import logging
 import time
 from contextlib import asynccontextmanager
 
 from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import JSONResponse
+from fastapi.responses import JSONResponse, Response
 from slowapi.errors import RateLimitExceeded
 from slowapi.middleware import SlowAPIMiddleware
+from sqlalchemy import func, select
 
 from app import __version__
+from app.cache import TTLCache
 from app.config import settings
-from app.database import init_db
+from app.database import SessionLocal, init_db
 from app.errors import register_error_handlers
+from app.metrics import CACHE_SIZE, MODEL_READY, render_metrics
 from app.ml.loader import ModelLoadError, load_scorer
+from app.models import UrlCheck
 from app.rate_limit import limiter
 from app.routers import check, history, stats
 
@@ -29,10 +34,17 @@ logger = logging.getLogger("phish-detector")
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
+    app.state.started_at = _dt.datetime.now(_dt.timezone.utc)
+    app.state.cache = (
+        TTLCache(ttl=settings.cache_ttl, maxsize=settings.cache_maxsize)
+        if settings.enable_cache else None
+    )
+
     await init_db()
     logger.info("database schema ready")
     try:
         app.state.scorer = load_scorer()
+        MODEL_READY.set(1)
         meta = app.state.scorer.features_meta
         logger.info(
             "model loaded (schema=%s, trained=%s, test_f1=%s)",
@@ -42,6 +54,7 @@ async def lifespan(app: FastAPI):
         )
     except ModelLoadError as exc:
         app.state.scorer = None
+        MODEL_READY.set(0)
         logger.warning("model NOT loaded: %s -- /check will return 503", exc)
     yield
     logger.info("shutting down")
@@ -104,14 +117,43 @@ app.include_router(history.router, prefix="/api/v1", tags=["history"])
 @app.get("/health", tags=["meta"])
 async def health(request: Request) -> dict:
     scorer = getattr(request.app.state, "scorer", None)
+    started = getattr(request.app.state, "started_at", None)
+    uptime = (
+        (_dt.datetime.now(_dt.timezone.utc) - started).total_seconds()
+        if started else None
+    )
+    cache = getattr(request.app.state, "cache", None)
+
+    # Lightweight DB check (counts rows).
+    db_ok, db_rows = True, None
+    try:
+        async with SessionLocal() as session:
+            db_rows = (
+                await session.execute(select(func.count()).select_from(UrlCheck))
+            ).scalar_one()
+    except Exception as exc:  # noqa: BLE001
+        db_ok = False
+        logger.warning("health: DB check failed: %s", exc)
+
+    meta = scorer.features_meta if scorer else {}
     return {
-        "status": "ok",
+        "status": "ok" if (scorer and db_ok) else "degraded",
         "model_ready": scorer is not None,
+        "db_ok": db_ok,
         "version": __version__,
-        "schema_version": (
-            scorer.features_meta.get("schema_version") if scorer else None
-        ),
+        "schema_version": meta.get("schema_version"),
+        "model_trained_at": meta.get("trained_at"),
+        "model_metrics": meta.get("metrics", {}),
+        "checks_in_db": db_rows,
+        "cache_size": len(cache) if cache is not None else None,
+        "uptime_seconds": round(uptime, 1) if uptime is not None else None,
     }
+
+
+@app.get("/metrics", tags=["meta"], include_in_schema=False)
+async def metrics_endpoint() -> Response:
+    body, content_type = render_metrics()
+    return Response(content=body, media_type=content_type)
 
 
 @app.get("/", tags=["meta"])
@@ -122,7 +164,10 @@ async def root() -> dict:
         "docs": "/docs",
         "endpoints": [
             "POST /api/v1/check",
+            "POST /api/v1/check/batch",
             "GET /api/v1/stats",
             "GET /api/v1/history",
+            "GET /health",
+            "GET /metrics",
         ],
     }
