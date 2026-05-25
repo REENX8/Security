@@ -1,0 +1,60 @@
+{
+  "schema_version": "1.2.0",
+  "ordered_features": [
+    "url_length",
+    "num_dots",
+    "num_hyphens",
+    "num_at",
+    "num_slash",
+    "num_digits",
+    "has_ip",
+    "entropy",
+    "has_https",
+    "num_subdomains",
+    "domain_age_days",
+    "is_thai_tld",
+    "tld_type_enc",
+    "is_known_registrar",
+    "min_edit_distance",
+    "is_typosquat",
+    "has_valid_cert",
+    "cert_age_days",
+    "is_self_signed",
+    "whois_ok",
+    "tls_ok",
+    "path_depth",
+    "domain_label_max_len",
+    "has_port",
+    "max_digit_run",
+    "has_query_string",
+    "has_punycode",
+    "has_mixed_script",
+    "homoglyph_distance"
+  ],
+  "n_features": 29,
+  "tld_type_map": {
+    "go.th": 0,
+    "ac.th": 1,
+    "or.th": 2,
+    "co.th": 3,
+    "other": 4
+  },
+  "imputed_defaults": {
+    "domain_age_days": -1,
+    "is_known_registrar": 0,
+    "has_valid_cert": 0,
+    "cert_age_days": -1,
+    "is_self_signed": 0,
+    "whois_ok": 0,
+    "tls_ok": 0
+  },
+  "whitelist_sha256": "0f1348f26de6b0f3",
+  "trained_at": "2026-05-25T12:33:37.470200Z",
+  "sklearn_version": "1.5.2",
+  "xgboost_version": "2.1.3",
+  "metrics": {
+    "train_accuracy": 1.0,
+    "test_accuracy": 0.9942,
+    "test_f1": 0.9942
+  }
+}

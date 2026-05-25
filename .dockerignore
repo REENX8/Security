@@ -1,0 +1,17 @@
+**/__pycache__/
+**/*.pyc
+*.egg-info/
+.venv/
+venv/
+.git/
+.gitignore
+.env
+*.db
+dashboard/
+extension/
+ml_pipeline/
+reports/
+data/
+docs/
+*.md
+!README.md

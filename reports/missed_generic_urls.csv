@@ -1,0 +1,5 @@
+url,score,closest_domain,min_edit_distance,is_typosquat,has_punycode,has_mixed_script,tld_type
+https://www.robloxt.cv/charts,0.0722,bot.or.th,4,0,0,0,other
+https://www.vislakotelog.club/login.php,0.0793,disaster.go.th,7,0,0,0,other
+https://bdointegral.cc/ph,0.1489,boontech.ac.th,6,0,0,0,other
+https://icloud.you/joshy911,0.2339,amlo.go.th,4,0,0,0,other
