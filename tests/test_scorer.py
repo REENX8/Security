@@ -53,3 +53,24 @@ class TestScorer:
         # google.com is not whitelisted but is unmistakably legitimate
         result = self.scorer.score("https://www.google.com")
         assert result["label"] == "safe"
+
+    def test_punycode_reason_mentions_punycode(self):
+        result = self.scorer.score("https://xn--obec-9bc.com/login")
+        assert result["label"] in ("phishing", "suspicious")
+        assert result["features"]["has_punycode"] == 1
+        assert "Punycode" in result["reason"]
+
+    def test_cyrillic_homoglyph_reason_mentions_mixed_script(self):
+        # chulа.com with Cyrillic а should be flagged AND the reason should
+        # explain WHY -- mixed-script lookalike, not just "high score".
+        result = self.scorer.score("https://chulа.com/login")
+        assert result["label"] in ("phishing", "suspicious")
+        assert result["features"]["has_mixed_script"] == 1
+        # The reason should mention the lookalike attack class (either
+        # "หลายภาษา" or "Cyrillic" or "Punycode" depending on which branch wins).
+        assert (
+            "หลายภาษา" in result["reason"]
+            or "Cyrillic" in result["reason"]
+            or "Punycode" in result["reason"]
+            or "ปลอม" in result["reason"]  # typosquat fallback wording
+        )
