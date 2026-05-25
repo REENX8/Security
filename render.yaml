@@ -10,6 +10,11 @@
 databases:
   - name: phish-db
     plan: free
+    # IMPORTANT: must match the web service region below. Render's
+    # ``connectionString`` resolves an internal hostname that only works
+    # within the same region's private network. A mismatch surfaces as
+    # ``socket.gaierror: Name or service not known`` at app startup.
+    region: singapore
     databaseName: phishdb
     user: phish
 
