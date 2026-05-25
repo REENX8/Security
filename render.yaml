@@ -1,0 +1,53 @@
+# Render Blueprint -- one-click deploy of the backend + Postgres.
+# Usage:
+#   1. Push to GitHub.
+#   2. In Render dashboard: New + > Blueprint > pick this repo.
+#      Render reads this file and provisions both resources.
+#   3. After first deploy, set API_KEY in the web service's "Environment"
+#      tab to a strong secret (overrides the placeholder below).
+#
+# Docs: https://render.com/docs/blueprint-spec
+databases:
+  - name: phish-db
+    plan: free
+    databaseName: phishdb
+    user: phish
+
+services:
+  - type: web
+    name: phish-backend
+    runtime: docker
+    plan: free
+    region: singapore
+    dockerfilePath: ./backend/Dockerfile
+    # Build context MUST be repo root so the Dockerfile can COPY the shared
+    # phish_features package and the models/ directory.
+    dockerContext: .
+    healthCheckPath: /health
+    autoDeploy: true
+    envVars:
+      # asyncpg DSN derived from the managed Postgres add-on. Render sets
+      # DATABASE_URL to "postgres://..." -- the backend rewrites the scheme
+      # to "postgresql+asyncpg://..." in main.py for SQLAlchemy.
+      - key: DATABASE_URL
+        fromDatabase:
+          name: phish-db
+          property: connectionString
+      # API key gating: change this in the dashboard after first deploy.
+      - key: API_KEY
+        generateValue: true
+      # WHOIS uses TCP 43 outbound and times out on most PaaS free tiers;
+      # disable so feature extraction stays fast. TLS check uses 443 and
+      # works fine, leave it on.
+      - key: ENABLE_WHOIS
+        value: "false"
+      - key: ENABLE_TLS
+        value: "true"
+      - key: NETWORK_TIMEOUT
+        value: "2.0"
+      # CORS: list every origin that should be allowed (dashboard, extension
+      # background page, etc.). Override in dashboard once URLs are known.
+      - key: CORS_ORIGINS
+        value: "https://*.onrender.com"
+      - key: RATE_LIMIT
+        value: "60/minute"
