@@ -87,6 +87,20 @@ def test_whitelist_short_label_not_typosquat(wl):
     assert feat["is_typosquat"] == 0
 
 
+def test_closest_normalized_collapses_cyrillic_lookalike(wl):
+    """The normalized closest call must fold Cyrillic а back to ASCII a
+    so a homoglyph spoof of ``chula`` registers distance 0."""
+    dist, dom = wl.closest_normalized("chulа.com")  # Cyrillic а
+    assert dist == 0
+    assert dom == "chula.ac.th"
+
+
+def test_closest_normalized_passthrough_for_ascii(wl):
+    dist, dom = wl.closest_normalized("obec.go.th")
+    assert dist == 0
+    assert dom == "obec.go.th"
+
+
 def test_whitelist_from_entries_dedupes():
     wl = Whitelist.from_entries([
         WhitelistEntry("Obec.go.th", "OBEC", "go.th"),

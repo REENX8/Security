@@ -13,7 +13,9 @@ and retrain the model. The backend refuses to serve a model whose
 from __future__ import annotations
 
 # Bump on ANY change to ORDERED_FEATURES / encodings / defaults.
-FEATURE_SCHEMA_VERSION = "1.1.0"
+# v1.2.0 adds IDN / homoglyph features to close the Thai-targeting gap
+# (Cyrillic look-alikes, Punycode spoofs, mixed-script labels).
+FEATURE_SCHEMA_VERSION = "1.2.0"
 
 # The exact, ordered list of numeric features fed to the model.
 # Index position IS the contract -- never reorder, only append + bump version.
@@ -50,6 +52,12 @@ ORDERED_FEATURES: list[str] = [
     "has_port",             # 1 if non-standard port (not 80/443) present
     "max_digit_run",        # length of longest consecutive-digit run in host
     "has_query_string",     # 1 if '?' present in URL
+    # --- IDN / homoglyph features (v1.2) ---
+    # All three target attacks that disguise a brand using non-ASCII look-alikes:
+    "has_punycode",         # 1 if any host label starts with xn-- (IDN encoded)
+    "has_mixed_script",     # 1 if a label mixes Unicode scripts (e.g. Latin+Cyrillic)
+    "homoglyph_distance",   # min_edit_distance AFTER confusable fold;
+                            # collapses below min_edit_distance for spoofs.
 ]
 
 N_FEATURES = len(ORDERED_FEATURES)

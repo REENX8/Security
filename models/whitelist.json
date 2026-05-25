@@ -1,9 +1,29 @@
 {
-  "count": 121,
+  "count": 535,
   "entries": [
     {
       "domain": "1212.go.th",
       "agency_name": "Online Fraud Complaint Center",
+      "category": "go.th"
+    },
+    {
+      "domain": "2fibc.ac.th",
+      "agency_name": "(wikipedia)",
+      "category": "ac.th"
+    },
+    {
+      "domain": "2frajapark.ac.th",
+      "agency_name": "(wikipedia)",
+      "category": "ac.th"
+    },
+    {
+      "domain": "acfs.go.th",
+      "agency_name": "ACFS",
+      "category": "go.th"
+    },
+    {
+      "domain": "admincourt.go.th",
+      "agency_name": "Administrative Court",
       "category": "go.th"
     },
     {
@@ -17,8 +37,78 @@
       "category": "co.th"
     },
     {
+      "domain": "ais.co.th",
+      "agency_name": "AIS",
+      "category": "co.th"
+    },
+    {
+      "domain": "ait.ac.th",
+      "agency_name": "(wikipedia)",
+      "category": "ac.th"
+    },
+    {
+      "domain": "amlo.go.th",
+      "agency_name": "Anti-Money Laundering Office",
+      "category": "go.th"
+    },
+    {
+      "domain": "amnatcharoen.go.th",
+      "agency_name": "Amnat Charoen Province",
+      "category": "go.th"
+    },
+    {
+      "domain": "angthong.go.th",
+      "agency_name": "Ang Thong Province",
+      "category": "go.th"
+    },
+    {
+      "domain": "ant.ac.th",
+      "agency_name": "(wikipedia)",
+      "category": "ac.th"
+    },
+    {
+      "domain": "arsomsilp.ac.th",
+      "agency_name": "(wikipedia)",
+      "category": "ac.th"
+    },
+    {
+      "domain": "artsbkk.ac.th",
+      "agency_name": "(wikipedia)",
+      "category": "ac.th"
+    },
+    {
+      "domain": "aru.ac.th",
+      "agency_name": "(wikipedia)",
+      "category": "ac.th"
+    },
+    {
+      "domain": "asianu.ac.th",
+      "agency_name": "(wikipedia)",
+      "category": "ac.th"
+    },
+    {
+      "domain": "asianust.ac.th",
+      "agency_name": "(wikipedia)",
+      "category": "ac.th"
+    },
+    {
+      "domain": "au.edu",
+      "agency_name": "Assumption University",
+      "category": "ac.th"
+    },
+    {
       "domain": "audit.go.th",
       "agency_name": "State Audit Office of Thailand",
+      "category": "go.th"
+    },
+    {
+      "domain": "ayothaya.ac.th",
+      "agency_name": "(wikipedia)",
+      "category": "ac.th"
+    },
+    {
+      "domain": "ayutthaya.go.th",
+      "agency_name": "Phra Nakhon Si Ayutthaya Province",
       "category": "go.th"
     },
     {
@@ -32,9 +122,29 @@
       "category": "go.th"
     },
     {
+      "domain": "bangkokbank.com",
+      "agency_name": "Bangkok Bank",
+      "category": "co.th"
+    },
+    {
+      "domain": "bbl.co.th",
+      "agency_name": "Bangkok Bank corporate",
+      "category": "co.th"
+    },
+    {
+      "domain": "bkkthon.ac.th",
+      "agency_name": "(wikipedia)",
+      "category": "ac.th"
+    },
+    {
       "domain": "boi.go.th",
       "agency_name": "Board of Investment of Thailand",
       "category": "go.th"
+    },
+    {
+      "domain": "boontech.ac.th",
+      "agency_name": "(wikipedia)",
+      "category": "ac.th"
     },
     {
       "domain": "bot.or.th",
@@ -42,13 +152,98 @@
       "category": "or.th"
     },
     {
+      "domain": "bpi.ac.th",
+      "agency_name": "(wikipedia)",
+      "category": "ac.th"
+    },
+    {
+      "domain": "brcc.ac.th",
+      "agency_name": "(wikipedia)",
+      "category": "ac.th"
+    },
+    {
+      "domain": "bru.ac.th",
+      "agency_name": "(wikipedia)",
+      "category": "ac.th"
+    },
+    {
+      "domain": "bsm.ac.th",
+      "agency_name": "(wikipedia)",
+      "category": "ac.th"
+    },
+    {
+      "domain": "bsru.ac.th",
+      "agency_name": "Bansomdejchaopraya Rajabhat",
+      "category": "ac.th"
+    },
+    {
+      "domain": "bsu.ac.th",
+      "agency_name": "(wikipedia)",
+      "category": "ac.th"
+    },
+    {
+      "domain": "bts.co.th",
+      "agency_name": "BTS Group",
+      "category": "co.th"
+    },
+    {
       "domain": "bu.ac.th",
       "agency_name": "Bangkok University",
       "category": "ac.th"
     },
     {
+      "domain": "bueng-kan.go.th",
+      "agency_name": "Bueng Kan Province",
+      "category": "go.th"
+    },
+    {
+      "domain": "bunharnpoly.ac.th",
+      "agency_name": "(wikipedia)",
+      "category": "ac.th"
+    },
+    {
+      "domain": "buriram.go.th",
+      "agency_name": "Buri Ram Province",
+      "category": "go.th"
+    },
+    {
       "domain": "buu.ac.th",
       "agency_name": "Burapha University",
+      "category": "ac.th"
+    },
+    {
+      "domain": "caat.or.th",
+      "agency_name": "Civil Aviation Authority of Thailand",
+      "category": "or.th"
+    },
+    {
+      "domain": "cas.ac.th",
+      "agency_name": "(wikipedia)",
+      "category": "ac.th"
+    },
+    {
+      "domain": "catc.or.th",
+      "agency_name": "(wikipedia)",
+      "category": "or.th"
+    },
+    {
+      "domain": "catv.co.th",
+      "agency_name": "CAT Telecom (legacy)",
+      "category": "co.th"
+    },
+    {
+      "domain": "cdd.go.th",
+      "agency_name": "Community Development Department",
+      "category": "go.th"
+    },
+    {
+      "domain": "cdg.co.th",
+      "agency_name": "Pao Tang (govt wallet)",
+      "category": "co.th"
+    },
+    {
+      "domain": "cdtc.ac.th",
+      "agency_name": "(wikipedia)",
       "category": "ac.th"
     },
     {
@@ -57,8 +252,93 @@
       "category": "go.th"
     },
     {
+      "domain": "cgi.ac.th",
+      "agency_name": "(wikipedia)",
+      "category": "ac.th"
+    },
+    {
+      "domain": "cgsc.ac.th",
+      "agency_name": "(wikipedia)",
+      "category": "ac.th"
+    },
+    {
+      "domain": "chainat.go.th",
+      "agency_name": "Chai Nat Province",
+      "category": "go.th"
+    },
+    {
+      "domain": "chaiyaphum.go.th",
+      "agency_name": "Chaiyaphum Province",
+      "category": "go.th"
+    },
+    {
+      "domain": "chandra.ac.th",
+      "agency_name": "Chandrakasem Rajabhat University",
+      "category": "ac.th"
+    },
+    {
+      "domain": "chanthaburi.go.th",
+      "agency_name": "Chanthaburi Province",
+      "category": "go.th"
+    },
+    {
+      "domain": "chcvc.ac.th",
+      "agency_name": "(wikipedia)",
+      "category": "ac.th"
+    },
+    {
+      "domain": "chiangmai.go.th",
+      "agency_name": "Chiang Mai Province",
+      "category": "go.th"
+    },
+    {
+      "domain": "chiangrai.go.th",
+      "agency_name": "Chiang Rai Province",
+      "category": "go.th"
+    },
+    {
+      "domain": "childfound.or.th",
+      "agency_name": "Children's Foundation Thailand",
+      "category": "or.th"
+    },
+    {
+      "domain": "chonburi.go.th",
+      "agency_name": "Chonburi Province",
+      "category": "go.th"
+    },
+    {
+      "domain": "christian.ac.th",
+      "agency_name": "(wikipedia)",
+      "category": "ac.th"
+    },
+    {
       "domain": "chula.ac.th",
       "agency_name": "Chulalongkorn University",
+      "category": "ac.th"
+    },
+    {
+      "domain": "chulalongkornhospital.go.th",
+      "agency_name": "King Chulalongkorn Memorial Hospital",
+      "category": "go.th"
+    },
+    {
+      "domain": "chumphon.go.th",
+      "agency_name": "Chumphon Province",
+      "category": "go.th"
+    },
+    {
+      "domain": "citibank.co.th",
+      "agency_name": "Citibank Thailand",
+      "category": "co.th"
+    },
+    {
+      "domain": "cmkl.ac.th",
+      "agency_name": "(wikipedia)",
+      "category": "ac.th"
+    },
+    {
+      "domain": "cmru.ac.th",
+      "agency_name": "Chiang Mai Rajabhat",
       "category": "ac.th"
     },
     {
@@ -67,13 +347,58 @@
       "category": "ac.th"
     },
     {
+      "domain": "cnu.ac.th",
+      "agency_name": "(wikipedia)",
+      "category": "ac.th"
+    },
+    {
       "domain": "coj.go.th",
       "agency_name": "Courts of Justice",
       "category": "go.th"
     },
     {
+      "domain": "constitutionalcourt.or.th",
+      "agency_name": "Constitutional Court",
+      "category": "or.th"
+    },
+    {
+      "domain": "cpd.go.th",
+      "agency_name": "Cooperative Promotion Department",
+      "category": "go.th"
+    },
+    {
+      "domain": "cpru.ac.th",
+      "agency_name": "(wikipedia)",
+      "category": "ac.th"
+    },
+    {
+      "domain": "cpu.ac.th",
+      "agency_name": "(wikipedia)",
+      "category": "ac.th"
+    },
+    {
+      "domain": "crc.ac.th",
+      "agency_name": "(wikipedia)",
+      "category": "ac.th"
+    },
+    {
+      "domain": "crru.ac.th",
+      "agency_name": "Chiang Rai Rajabhat",
+      "category": "ac.th"
+    },
+    {
+      "domain": "cru.ac.th",
+      "agency_name": "Chaiyaphum Rajabhat",
+      "category": "ac.th"
+    },
+    {
       "domain": "customs.go.th",
       "agency_name": "The Customs Department",
+      "category": "go.th"
+    },
+    {
+      "domain": "cyberpolice.go.th",
+      "agency_name": "Cyber Crime Investigation Bureau",
       "category": "go.th"
     },
     {
@@ -82,8 +407,28 @@
       "category": "go.th"
     },
     {
+      "domain": "dcy.go.th",
+      "agency_name": "Department of Children and Youth",
+      "category": "go.th"
+    },
+    {
+      "domain": "ddc.go.th",
+      "agency_name": "Department of Disease Control",
+      "category": "go.th"
+    },
+    {
+      "domain": "ddpm.go.th",
+      "agency_name": "DDPM",
+      "category": "go.th"
+    },
+    {
       "domain": "dede.go.th",
       "agency_name": "Department of Alternative Energy Development and Efficiency",
+      "category": "go.th"
+    },
+    {
+      "domain": "dep.go.th",
+      "agency_name": "Department of Empowerment of Persons with Disabilities",
       "category": "go.th"
     },
     {
@@ -102,6 +447,11 @@
       "category": "or.th"
     },
     {
+      "domain": "dgr.go.th",
+      "agency_name": "Department of Groundwater Resources",
+      "category": "go.th"
+    },
+    {
       "domain": "dip.go.th",
       "agency_name": "Department of Industrial Promotion",
       "category": "go.th"
@@ -109,6 +459,21 @@
     {
       "domain": "disaster.go.th",
       "agency_name": "Department of Disaster Prevention and Mitigation",
+      "category": "go.th"
+    },
+    {
+      "domain": "dit.go.th",
+      "agency_name": "Department of Internal Trade",
+      "category": "go.th"
+    },
+    {
+      "domain": "ditp.go.th",
+      "agency_name": "Department of International Trade Promotion",
+      "category": "go.th"
+    },
+    {
+      "domain": "diw.go.th",
+      "agency_name": "Department of Industrial Works",
       "category": "go.th"
     },
     {
@@ -122,8 +487,38 @@
       "category": "go.th"
     },
     {
+      "domain": "dlt.go.th",
+      "agency_name": "Department of Land Transport",
+      "category": "go.th"
+    },
+    {
+      "domain": "dmcr.go.th",
+      "agency_name": "Department of Marine and Coastal Resources",
+      "category": "go.th"
+    },
+    {
+      "domain": "dmh.go.th",
+      "agency_name": "Department of Mental Health",
+      "category": "go.th"
+    },
+    {
+      "domain": "dms.go.th",
+      "agency_name": "Department of Medical Services",
+      "category": "go.th"
+    },
+    {
+      "domain": "dnp.go.th",
+      "agency_name": "Department of National Parks",
+      "category": "go.th"
+    },
+    {
       "domain": "doa.go.th",
       "agency_name": "Department of Agriculture",
+      "category": "go.th"
+    },
+    {
+      "domain": "doae.go.th",
+      "agency_name": "Department of Agricultural Extension",
       "category": "go.th"
     },
     {
@@ -132,8 +527,18 @@
       "category": "go.th"
     },
     {
+      "domain": "doeb.go.th",
+      "agency_name": "Department of Energy Business",
+      "category": "go.th"
+    },
+    {
       "domain": "doh.go.th",
       "agency_name": "Department of Health",
+      "category": "go.th"
+    },
+    {
+      "domain": "doi.go.th",
+      "agency_name": "Department of Insurance (legacy)",
       "category": "go.th"
     },
     {
@@ -142,13 +547,68 @@
       "category": "go.th"
     },
     {
+      "domain": "donboscobkk.ac.th",
+      "agency_name": "(wikipedia)",
+      "category": "ac.th"
+    },
+    {
+      "domain": "dop.go.th",
+      "agency_name": "Department of Older Persons",
+      "category": "go.th"
+    },
+    {
       "domain": "dopa.go.th",
+      "agency_name": "Bureau of Registration Administration",
+      "category": "go.th"
+    },
+    {
+      "domain": "dot.go.th",
+      "agency_name": "Department of Tourism",
+      "category": "go.th"
+    },
+    {
+      "domain": "dpa.or.th",
+      "agency_name": "Deposit Protection Agency",
+      "category": "or.th"
+    },
+    {
+      "domain": "dpe.go.th",
+      "agency_name": "Department of Physical Education",
+      "category": "go.th"
+    },
+    {
+      "domain": "dpim.go.th",
+      "agency_name": "Department of Primary Industries and Mines",
+      "category": "go.th"
+    },
+    {
+      "domain": "dpr.go.th",
       "agency_name": "Department of Provincial Administration",
+      "category": "go.th"
+    },
+    {
+      "domain": "dpt.go.th",
+      "agency_name": "Department of Public Works",
       "category": "go.th"
     },
     {
       "domain": "dpu.ac.th",
       "agency_name": "Dhurakij Pundit University",
+      "category": "ac.th"
+    },
+    {
+      "domain": "dra.go.th",
+      "agency_name": "Department of Religious Affairs",
+      "category": "go.th"
+    },
+    {
+      "domain": "drr.go.th",
+      "agency_name": "Department of Rural Roads",
+      "category": "go.th"
+    },
+    {
+      "domain": "dru.ac.th",
+      "agency_name": "Dhonburi Rajabhat University",
       "category": "ac.th"
     },
     {
@@ -167,14 +627,74 @@
       "category": "go.th"
     },
     {
+      "domain": "dtac.co.th",
+      "agency_name": "DTAC",
+      "category": "co.th"
+    },
+    {
+      "domain": "dtc.ac.th",
+      "agency_name": "(wikipedia)",
+      "category": "ac.th"
+    },
+    {
+      "domain": "dusit.ac.th",
+      "agency_name": "(wikipedia)",
+      "category": "ac.th"
+    },
+    {
+      "domain": "dwf.go.th",
+      "agency_name": "Department of Women's Affairs",
+      "category": "go.th"
+    },
+    {
+      "domain": "dwr.go.th",
+      "agency_name": "Department of Water Resources",
+      "category": "go.th"
+    },
+    {
+      "domain": "eau.ac.th",
+      "agency_name": "(wikipedia)",
+      "category": "ac.th"
+    },
+    {
+      "domain": "ect.go.th",
+      "agency_name": "Election Commission of Thailand",
+      "category": "go.th"
+    },
+    {
       "domain": "egat.co.th",
       "agency_name": "Electricity Generating Authority of Thailand",
       "category": "co.th"
     },
     {
+      "domain": "egov.go.th",
+      "agency_name": "(wikipedia)",
+      "category": "go.th"
+    },
+    {
+      "domain": "energy.go.th",
+      "agency_name": "Ministry of Energy",
+      "category": "go.th"
+    },
+    {
+      "domain": "eppo.go.th",
+      "agency_name": "Energy Policy and Planning Office",
+      "category": "go.th"
+    },
+    {
+      "domain": "esu.ac.th",
+      "agency_name": "(wikipedia)",
+      "category": "ac.th"
+    },
+    {
       "domain": "etda.or.th",
       "agency_name": "Electronic Transactions Development Agency",
       "category": "or.th"
+    },
+    {
+      "domain": "evc.ac.th",
+      "agency_name": "(wikipedia)",
+      "category": "ac.th"
     },
     {
       "domain": "excise.go.th",
@@ -187,9 +707,34 @@
       "category": "go.th"
     },
     {
+      "domain": "feu.ac.th",
+      "agency_name": "(wikipedia)",
+      "category": "ac.th"
+    },
+    {
+      "domain": "finearts.go.th",
+      "agency_name": "Fine Arts Department",
+      "category": "go.th"
+    },
+    {
+      "domain": "fisheries.go.th",
+      "agency_name": "Department of Fisheries",
+      "category": "go.th"
+    },
+    {
+      "domain": "flashexpress.com",
+      "agency_name": "Flash Express",
+      "category": "co.th"
+    },
+    {
       "domain": "fpo.go.th",
       "agency_name": "Fiscal Policy Office",
       "category": "go.th"
+    },
+    {
+      "domain": "ftu.ac.th",
+      "agency_name": "(wikipedia)",
+      "category": "ac.th"
     },
     {
       "domain": "ghbank.co.th",
@@ -202,9 +747,59 @@
       "category": "or.th"
     },
     {
+      "domain": "govchannel.go.th",
+      "agency_name": "(wikipedia)",
+      "category": "go.th"
+    },
+    {
       "domain": "gsb.or.th",
       "agency_name": "Government Savings Bank",
       "category": "or.th"
+    },
+    {
+      "domain": "hcu.ac.th",
+      "agency_name": "Huachiew Chalermprakiet University",
+      "category": "ac.th"
+    },
+    {
+      "domain": "highwaypolice.go.th",
+      "agency_name": "Highway Police",
+      "category": "go.th"
+    },
+    {
+      "domain": "hsbc.co.th",
+      "agency_name": "HSBC Thailand",
+      "category": "co.th"
+    },
+    {
+      "domain": "hu.ac.th",
+      "agency_name": "(wikipedia)",
+      "category": "ac.th"
+    },
+    {
+      "domain": "i-tim.ac.th",
+      "agency_name": "(wikipedia)",
+      "category": "ac.th"
+    },
+    {
+      "domain": "ibank.co.th",
+      "agency_name": "Islamic Bank of Thailand",
+      "category": "co.th"
+    },
+    {
+      "domain": "ibc.ac.th",
+      "agency_name": "(wikipedia)",
+      "category": "ac.th"
+    },
+    {
+      "domain": "iccs.ac.th",
+      "agency_name": "(wikipedia)",
+      "category": "ac.th"
+    },
+    {
+      "domain": "ieat.go.th",
+      "agency_name": "Industrial Estate Authority",
+      "category": "go.th"
     },
     {
       "domain": "immigration.go.th",
@@ -212,8 +807,78 @@
       "category": "go.th"
     },
     {
+      "domain": "industry.go.th",
+      "agency_name": "Ministry of Industry",
+      "category": "go.th"
+    },
+    {
+      "domain": "inter-tech.ac.th",
+      "agency_name": "(wikipedia)",
+      "category": "ac.th"
+    },
+    {
       "domain": "ipthailand.go.th",
       "agency_name": "Department of Intellectual Property",
+      "category": "go.th"
+    },
+    {
+      "domain": "jtexpress.co.th",
+      "agency_name": "J&T Express",
+      "category": "co.th"
+    },
+    {
+      "domain": "kalasin.go.th",
+      "agency_name": "Kalasin Province",
+      "category": "go.th"
+    },
+    {
+      "domain": "kamphaengphet.go.th",
+      "agency_name": "Kamphaeng Phet Province",
+      "category": "go.th"
+    },
+    {
+      "domain": "kanchanaburi.go.th",
+      "agency_name": "Kanchanaburi Province",
+      "category": "go.th"
+    },
+    {
+      "domain": "kanchanapisek.or.th",
+      "agency_name": "Kanchanapisek Network",
+      "category": "or.th"
+    },
+    {
+      "domain": "kapook.com",
+      "agency_name": "Kapook",
+      "category": "co.th"
+    },
+    {
+      "domain": "kasikornbank.com",
+      "agency_name": "Kasikornbank (KBank)",
+      "category": "co.th"
+    },
+    {
+      "domain": "kbank.co.th",
+      "agency_name": "KBank (legacy)",
+      "category": "co.th"
+    },
+    {
+      "domain": "kbu.ac.th",
+      "agency_name": "Kasem Bundit University",
+      "category": "ac.th"
+    },
+    {
+      "domain": "kerryexpress.com",
+      "agency_name": "Kerry Express Thailand",
+      "category": "co.th"
+    },
+    {
+      "domain": "khice.ac.th",
+      "agency_name": "(wikipedia)",
+      "category": "ac.th"
+    },
+    {
+      "domain": "khonkaen.go.th",
+      "agency_name": "Khon Kaen Province",
       "category": "go.th"
     },
     {
@@ -237,9 +902,59 @@
       "category": "ac.th"
     },
     {
+      "domain": "kpru.ac.th",
+      "agency_name": "(wikipedia)",
+      "category": "ac.th"
+    },
+    {
+      "domain": "kpsptc.ac.th",
+      "agency_name": "(wikipedia)",
+      "category": "ac.th"
+    },
+    {
+      "domain": "krabi.go.th",
+      "agency_name": "Krabi Province",
+      "category": "go.th"
+    },
+    {
+      "domain": "krirk.ac.th",
+      "agency_name": "(wikipedia)",
+      "category": "ac.th"
+    },
+    {
       "domain": "krisdika.go.th",
       "agency_name": "Office of the Council of State",
       "category": "go.th"
+    },
+    {
+      "domain": "kru.ac.th",
+      "agency_name": "(wikipedia)",
+      "category": "ac.th"
+    },
+    {
+      "domain": "krungsri.com",
+      "agency_name": "Krungsri (Bank of Ayudhya)",
+      "category": "co.th"
+    },
+    {
+      "domain": "krungthai-axa.co.th",
+      "agency_name": "Krungthai AXA",
+      "category": "co.th"
+    },
+    {
+      "domain": "krungthai.com",
+      "agency_name": "Krung Thai Bank corporate",
+      "category": "co.th"
+    },
+    {
+      "domain": "ksp.or.th",
+      "agency_name": "Teachers Council of Thailand",
+      "category": "or.th"
+    },
+    {
+      "domain": "ksu.ac.th",
+      "agency_name": "(wikipedia)",
+      "category": "ac.th"
     },
     {
       "domain": "ktb.co.th",
@@ -247,8 +962,78 @@
       "category": "co.th"
     },
     {
+      "domain": "ktl.ac.th",
+      "agency_name": "(wikipedia)",
+      "category": "ac.th"
+    },
+    {
       "domain": "ku.ac.th",
       "agency_name": "Kasetsart University",
+      "category": "ac.th"
+    },
+    {
+      "domain": "labour.go.th",
+      "agency_name": "Department of Labour Protection",
+      "category": "go.th"
+    },
+    {
+      "domain": "lampang.go.th",
+      "agency_name": "Lampang Province",
+      "category": "go.th"
+    },
+    {
+      "domain": "lamphun.go.th",
+      "agency_name": "Lamphun Province",
+      "category": "go.th"
+    },
+    {
+      "domain": "lazada.co.th",
+      "agency_name": "Lazada Thailand",
+      "category": "co.th"
+    },
+    {
+      "domain": "lbtc2.ac.th",
+      "agency_name": "(wikipedia)",
+      "category": "ac.th"
+    },
+    {
+      "domain": "ldd.go.th",
+      "agency_name": "Land Development Department",
+      "category": "go.th"
+    },
+    {
+      "domain": "licec.ac.th",
+      "agency_name": "(wikipedia)",
+      "category": "ac.th"
+    },
+    {
+      "domain": "life.ac.th",
+      "agency_name": "(wikipedia)",
+      "category": "ac.th"
+    },
+    {
+      "domain": "lit.ac.th",
+      "agency_name": "(wikipedia)",
+      "category": "ac.th"
+    },
+    {
+      "domain": "loei.go.th",
+      "agency_name": "Loei Province",
+      "category": "go.th"
+    },
+    {
+      "domain": "lopburi.go.th",
+      "agency_name": "Lopburi Province",
+      "category": "go.th"
+    },
+    {
+      "domain": "lpru.ac.th",
+      "agency_name": "Lampang Rajabhat",
+      "category": "ac.th"
+    },
+    {
+      "domain": "lru.ac.th",
+      "agency_name": "(wikipedia)",
       "category": "ac.th"
     },
     {
@@ -262,9 +1047,49 @@
       "category": "go.th"
     },
     {
+      "domain": "maehongson.go.th",
+      "agency_name": "Mae Hong Son Province",
+      "category": "go.th"
+    },
+    {
+      "domain": "mahasarakham.go.th",
+      "agency_name": "Maha Sarakham Province",
+      "category": "go.th"
+    },
+    {
       "domain": "mahidol.ac.th",
       "agency_name": "Mahidol University",
       "category": "ac.th"
+    },
+    {
+      "domain": "mbu.ac.th",
+      "agency_name": "Mahamakut Buddhist University",
+      "category": "ac.th"
+    },
+    {
+      "domain": "mcc.ac.th",
+      "agency_name": "(wikipedia)",
+      "category": "ac.th"
+    },
+    {
+      "domain": "mcot.net",
+      "agency_name": "MCOT Public",
+      "category": "or.th"
+    },
+    {
+      "domain": "mcru.ac.th",
+      "agency_name": "(wikipedia)",
+      "category": "ac.th"
+    },
+    {
+      "domain": "mcu.ac.th",
+      "agency_name": "Mahachulalongkornrajavidyalaya University",
+      "category": "ac.th"
+    },
+    {
+      "domain": "md.go.th",
+      "agency_name": "Marine Department",
+      "category": "go.th"
     },
     {
       "domain": "mdes.go.th",
@@ -277,8 +1102,13 @@
       "category": "co.th"
     },
     {
+      "domain": "mea.or.th",
+      "agency_name": "Metropolitan Electricity Authority",
+      "category": "or.th"
+    },
+    {
       "domain": "mfa.go.th",
-      "agency_name": "Ministry of Foreign Affairs",
+      "agency_name": "Department of Consular Affairs",
       "category": "go.th"
     },
     {
@@ -287,9 +1117,29 @@
       "category": "ac.th"
     },
     {
+      "domain": "mfu.or.th",
+      "agency_name": "Mae Fah Luang Foundation",
+      "category": "or.th"
+    },
+    {
       "domain": "mhesi.go.th",
       "agency_name": "Ministry of Higher Education Science Research and Innovation",
       "category": "go.th"
+    },
+    {
+      "domain": "mju.ac.th",
+      "agency_name": "Maejo University",
+      "category": "ac.th"
+    },
+    {
+      "domain": "ml.ac.th",
+      "agency_name": "(wikipedia)",
+      "category": "ac.th"
+    },
+    {
+      "domain": "mmtc.ac.th",
+      "agency_name": "(wikipedia)",
+      "category": "ac.th"
     },
     {
       "domain": "mnre.go.th",
@@ -327,13 +1177,23 @@
       "category": "go.th"
     },
     {
+      "domain": "moj.go.th",
+      "agency_name": "(wikipedia)",
+      "category": "go.th"
+    },
+    {
       "domain": "mol.go.th",
       "agency_name": "Ministry of Labour",
       "category": "go.th"
     },
     {
       "domain": "moph.go.th",
-      "agency_name": "Ministry of Public Health",
+      "agency_name": "Department of Health",
+      "category": "go.th"
+    },
+    {
+      "domain": "most.go.th",
+      "agency_name": "Ministry of Science and Technology (legacy)",
       "category": "go.th"
     },
     {
@@ -347,6 +1207,11 @@
       "category": "go.th"
     },
     {
+      "domain": "mrta.co.th",
+      "agency_name": "MRTA",
+      "category": "co.th"
+    },
+    {
       "domain": "msu.ac.th",
       "agency_name": "Mahasarakham University",
       "category": "ac.th"
@@ -355,6 +1220,21 @@
       "domain": "mua.go.th",
       "agency_name": "Office of the Higher Education Commission",
       "category": "go.th"
+    },
+    {
+      "domain": "mukcc.ac.th",
+      "agency_name": "(wikipedia)",
+      "category": "ac.th"
+    },
+    {
+      "domain": "mukdahan.go.th",
+      "agency_name": "Mukdahan Province",
+      "category": "go.th"
+    },
+    {
+      "domain": "mut.ac.th",
+      "agency_name": "(wikipedia)",
+      "category": "ac.th"
     },
     {
       "domain": "mwa.co.th",
@@ -367,14 +1247,109 @@
       "category": "go.th"
     },
     {
+      "domain": "nakhonnayok.go.th",
+      "agency_name": "Nakhon Nayok Province",
+      "category": "go.th"
+    },
+    {
+      "domain": "nakhonpathom.go.th",
+      "agency_name": "Nakhon Pathom Province",
+      "category": "go.th"
+    },
+    {
+      "domain": "nakhonphanom.go.th",
+      "agency_name": "Nakhon Phanom Province",
+      "category": "go.th"
+    },
+    {
+      "domain": "nakhonratchasima.go.th",
+      "agency_name": "Nakhon Ratchasima Province",
+      "category": "go.th"
+    },
+    {
+      "domain": "nakhonratchasimaboardingschool.ac.th",
+      "agency_name": "NR Boarding School",
+      "category": "ac.th"
+    },
+    {
+      "domain": "nakhonsawan.go.th",
+      "agency_name": "Nakhon Sawan Province",
+      "category": "go.th"
+    },
+    {
+      "domain": "nakhonsithammarat.go.th",
+      "agency_name": "Nakhon Si Thammarat Province",
+      "category": "go.th"
+    },
+    {
+      "domain": "nan.go.th",
+      "agency_name": "Nan Province",
+      "category": "go.th"
+    },
+    {
+      "domain": "nancc.ac.th",
+      "agency_name": "(wikipedia)",
+      "category": "ac.th"
+    },
+    {
+      "domain": "narathiwat.go.th",
+      "agency_name": "Narathiwat Province",
+      "category": "go.th"
+    },
+    {
+      "domain": "nation.ac.th",
+      "agency_name": "(wikipedia)",
+      "category": "ac.th"
+    },
+    {
+      "domain": "navy.mi.th",
+      "agency_name": "Royal Thai Navy",
+      "category": "go.th"
+    },
+    {
+      "domain": "nbcc.ac.th",
+      "agency_name": "(wikipedia)",
+      "category": "ac.th"
+    },
+    {
       "domain": "nbtc.go.th",
       "agency_name": "National Broadcasting and Telecommunications Commission",
       "category": "go.th"
     },
     {
+      "domain": "ncc.ac.th",
+      "agency_name": "(wikipedia)",
+      "category": "ac.th"
+    },
+    {
+      "domain": "ncsa.or.th",
+      "agency_name": "National Cyber Security Agency",
+      "category": "or.th"
+    },
+    {
+      "domain": "nectec.or.th",
+      "agency_name": "NECTEC",
+      "category": "or.th"
+    },
+    {
       "domain": "nesdc.go.th",
       "agency_name": "Office of the National Economic and Social Development Council",
       "category": "go.th"
+    },
+    {
+      "domain": "neu.ac.th",
+      "agency_name": "(wikipedia)",
+      "category": "ac.th"
+    },
+    {
+      "domain": "nfe.go.th",
+      "agency_name": "Office of Non-formal Education",
+      "category": "go.th"
+    },
+    {
+      "domain": "nhrc.or.th",
+      "agency_name": "National Human Rights Commission",
+      "category": "or.th"
     },
     {
       "domain": "nhso.go.th",
@@ -397,14 +1372,119 @@
       "category": "ac.th"
     },
     {
+      "domain": "nimt.or.th",
+      "agency_name": "National Institute of Metrology",
+      "category": "or.th"
+    },
+    {
+      "domain": "nmc.ac.th",
+      "agency_name": "(wikipedia)",
+      "category": "ac.th"
+    },
+    {
+      "domain": "nmptc.ac.th",
+      "agency_name": "(wikipedia)",
+      "category": "ac.th"
+    },
+    {
+      "domain": "nmu.ac.th",
+      "agency_name": "(wikipedia)",
+      "category": "ac.th"
+    },
+    {
+      "domain": "nongbualamphu.go.th",
+      "agency_name": "Nong Bua Lamphu Province",
+      "category": "go.th"
+    },
+    {
+      "domain": "nongkhai.go.th",
+      "agency_name": "Nong Khai Province",
+      "category": "go.th"
+    },
+    {
+      "domain": "nonthaburi.go.th",
+      "agency_name": "Nonthaburi Province",
+      "category": "go.th"
+    },
+    {
+      "domain": "northbkk.ac.th",
+      "agency_name": "(wikipedia)",
+      "category": "ac.th"
+    },
+    {
+      "domain": "northcm.ac.th",
+      "agency_name": "(wikipedia)",
+      "category": "ac.th"
+    },
+    {
+      "domain": "npkschool.ac.th",
+      "agency_name": "(wikipedia)",
+      "category": "ac.th"
+    },
+    {
+      "domain": "npru.ac.th",
+      "agency_name": "Nakhon Pathom Rajabhat",
+      "category": "ac.th"
+    },
+    {
+      "domain": "npu.ac.th",
+      "agency_name": "Nakhon Phanom University",
+      "category": "ac.th"
+    },
+    {
+      "domain": "npu.edu",
+      "agency_name": "Naval Academy of Thailand",
+      "category": "ac.th"
+    },
+    {
+      "domain": "nrct.go.th",
+      "agency_name": "National Research Council of Thailand",
+      "category": "go.th"
+    },
+    {
+      "domain": "nrru.ac.th",
+      "agency_name": "Nakhon Ratchasima Rajabhat",
+      "category": "ac.th"
+    },
+    {
       "domain": "nso.go.th",
       "agency_name": "National Statistical Office",
       "category": "go.th"
     },
     {
+      "domain": "nso.mi.th",
+      "agency_name": "Naval Special Operations",
+      "category": "go.th"
+    },
+    {
+      "domain": "nsru.ac.th",
+      "agency_name": "Nakhon Sawan Rajabhat",
+      "category": "ac.th"
+    },
+    {
       "domain": "nstda.or.th",
       "agency_name": "National Science and Technology Development Agency",
       "category": "or.th"
+    },
+    {
+      "domain": "nstru.ac.th",
+      "agency_name": "(wikipedia)",
+      "category": "ac.th"
+    },
+    {
+      "domain": "nt.co.th",
+      "agency_name": "National Telecom",
+      "category": "co.th"
+    },
+    {
+      "domain": "nta.go.th",
+      "agency_name": "National Tobacco Authority",
+      "category": "go.th"
+    },
+    {
+      "domain": "ntckk.ac.th",
+      "agency_name": "(wikipedia)",
+      "category": "ac.th"
     },
     {
       "domain": "ntplc.co.th",
@@ -417,6 +1497,16 @@
       "category": "ac.th"
     },
     {
+      "domain": "oae.go.th",
+      "agency_name": "Office of Agricultural Economics",
+      "category": "go.th"
+    },
+    {
+      "domain": "oag.go.th",
+      "agency_name": "Office of the Auditor General",
+      "category": "go.th"
+    },
+    {
       "domain": "obec.go.th",
       "agency_name": "Office of the Basic Education Commission",
       "category": "go.th"
@@ -427,9 +1517,64 @@
       "category": "go.th"
     },
     {
+      "domain": "ohec.go.th",
+      "agency_name": "Office of the Higher Education Commission (legacy)",
+      "category": "go.th"
+    },
+    {
+      "domain": "oic.or.th",
+      "agency_name": "Office of Insurance Commission",
+      "category": "or.th"
+    },
+    {
+      "domain": "ombudsman.go.th",
+      "agency_name": "Office of the Ombudsman",
+      "category": "go.th"
+    },
+    {
+      "domain": "onec.go.th",
+      "agency_name": "Office of the Education Council",
+      "category": "go.th"
+    },
+    {
       "domain": "opdc.go.th",
       "agency_name": "Office of the Public Sector Development Commission",
       "category": "go.th"
+    },
+    {
+      "domain": "opec.go.th",
+      "agency_name": "Office of Private Education Commission",
+      "category": "go.th"
+    },
+    {
+      "domain": "openforum.or.th",
+      "agency_name": "Open Forum TH",
+      "category": "or.th"
+    },
+    {
+      "domain": "opm.go.th",
+      "agency_name": "Office of the Prime Minister",
+      "category": "go.th"
+    },
+    {
+      "domain": "ops.go.th",
+      "agency_name": "Office of the Permanent Secretary, PMO",
+      "category": "go.th"
+    },
+    {
+      "domain": "ovec.go.th",
+      "agency_name": "Office of the Vocational Education Commission",
+      "category": "go.th"
+    },
+    {
+      "domain": "pangnga.go.th",
+      "agency_name": "Phang Nga Province",
+      "category": "go.th"
+    },
+    {
+      "domain": "pantip.com",
+      "agency_name": "Pantip",
+      "category": "co.th"
     },
     {
       "domain": "parliament.go.th",
@@ -437,8 +1582,53 @@
       "category": "go.th"
     },
     {
+      "domain": "pathumthani.go.th",
+      "agency_name": "Pathum Thani Province",
+      "category": "go.th"
+    },
+    {
+      "domain": "pattani.go.th",
+      "agency_name": "Pattani Province",
+      "category": "go.th"
+    },
+    {
+      "domain": "payap.ac.th",
+      "agency_name": "Payap University",
+      "category": "ac.th"
+    },
+    {
+      "domain": "pbru.ac.th",
+      "agency_name": "(wikipedia)",
+      "category": "ac.th"
+    },
+    {
+      "domain": "pcc.ac.th",
+      "agency_name": "(wikipedia)",
+      "category": "ac.th"
+    },
+    {
+      "domain": "pccms.ac.th",
+      "agency_name": "(wikipedia)",
+      "category": "ac.th"
+    },
+    {
       "domain": "pcd.go.th",
       "agency_name": "Pollution Control Department",
+      "category": "go.th"
+    },
+    {
+      "domain": "pcm.ac.th",
+      "agency_name": "(wikipedia)",
+      "category": "ac.th"
+    },
+    {
+      "domain": "pcru.ac.th",
+      "agency_name": "Phetchabun Rajabhat University",
+      "category": "ac.th"
+    },
+    {
+      "domain": "pdmo.go.th",
+      "agency_name": "Public Debt Management Office",
       "category": "go.th"
     },
     {
@@ -447,14 +1637,144 @@
       "category": "co.th"
     },
     {
+      "domain": "petchabun.go.th",
+      "agency_name": "Phetchabun Province",
+      "category": "go.th"
+    },
+    {
+      "domain": "petchaburi.go.th",
+      "agency_name": "Phetchaburi Province",
+      "category": "go.th"
+    },
+    {
+      "domain": "pgvim.ac.th",
+      "agency_name": "(wikipedia)",
+      "category": "ac.th"
+    },
+    {
+      "domain": "phanomwan.ac.th",
+      "agency_name": "(wikipedia)",
+      "category": "ac.th"
+    },
+    {
+      "domain": "phatthalung.go.th",
+      "agency_name": "Phatthalung Province",
+      "category": "go.th"
+    },
+    {
+      "domain": "phayao.go.th",
+      "agency_name": "Phayao Province",
+      "category": "go.th"
+    },
+    {
+      "domain": "phetpoly.ac.th",
+      "agency_name": "(wikipedia)",
+      "category": "ac.th"
+    },
+    {
+      "domain": "phichit.go.th",
+      "agency_name": "Phichit Province",
+      "category": "go.th"
+    },
+    {
+      "domain": "phitsanulok.go.th",
+      "agency_name": "Phitsanulok Province",
+      "category": "go.th"
+    },
+    {
+      "domain": "phrae.go.th",
+      "agency_name": "Phrae Province",
+      "category": "go.th"
+    },
+    {
+      "domain": "phrcc.ac.th",
+      "agency_name": "(wikipedia)",
+      "category": "ac.th"
+    },
+    {
+      "domain": "phuket.go.th",
+      "agency_name": "Phuket Province",
+      "category": "go.th"
+    },
+    {
+      "domain": "pi.ac.th",
+      "agency_name": "(wikipedia)",
+      "category": "ac.th"
+    },
+    {
+      "domain": "pim.ac.th",
+      "agency_name": "(wikipedia)",
+      "category": "ac.th"
+    },
+    {
+      "domain": "pkru.ac.th",
+      "agency_name": "(wikipedia)",
+      "category": "ac.th"
+    },
+    {
+      "domain": "plu.ac.th",
+      "agency_name": "(wikipedia)",
+      "category": "ac.th"
+    },
+    {
+      "domain": "pmk.ac.th",
+      "agency_name": "Phramongkutklao College of Medicine",
+      "category": "ac.th"
+    },
+    {
+      "domain": "pncc.ac.th",
+      "agency_name": "(wikipedia)",
+      "category": "ac.th"
+    },
+    {
+      "domain": "pngcc.ac.th",
+      "agency_name": "(wikipedia)",
+      "category": "ac.th"
+    },
+    {
+      "domain": "pnru.ac.th",
+      "agency_name": "Phranakhon Rajabhat",
+      "category": "ac.th"
+    },
+    {
+      "domain": "pnu.ac.th",
+      "agency_name": "(wikipedia)",
+      "category": "ac.th"
+    },
+    {
       "domain": "police.go.th",
       "agency_name": "Royal Thai Police",
       "category": "go.th"
     },
     {
-      "domain": "prd.go.th",
-      "agency_name": "The Government Public Relations Department",
+      "domain": "ppice.ac.th",
+      "agency_name": "(wikipedia)",
+      "category": "ac.th"
+    },
+    {
+      "domain": "prachinburi.go.th",
+      "agency_name": "Prachin Buri Province",
       "category": "go.th"
+    },
+    {
+      "domain": "prachuap.go.th",
+      "agency_name": "Prachuap Khiri Khan Province",
+      "category": "go.th"
+    },
+    {
+      "domain": "prd.go.th",
+      "agency_name": "National TV",
+      "category": "go.th"
+    },
+    {
+      "domain": "psdg.go.th",
+      "agency_name": "Public Sector Development Group",
+      "category": "go.th"
+    },
+    {
+      "domain": "psru.ac.th",
+      "agency_name": "Pibulsongkram Rajabhat",
+      "category": "ac.th"
     },
     {
       "domain": "psu.ac.th",
@@ -462,9 +1782,79 @@
       "category": "ac.th"
     },
     {
+      "domain": "ptl.ac.th",
+      "agency_name": "(wikipedia)",
+      "category": "ac.th"
+    },
+    {
+      "domain": "pttc.ac.th",
+      "agency_name": "(wikipedia)",
+      "category": "ac.th"
+    },
+    {
+      "domain": "ptu.ac.th",
+      "agency_name": "(wikipedia)",
+      "category": "ac.th"
+    },
+    {
+      "domain": "ptwit.ac.th",
+      "agency_name": "(wikipedia)",
+      "category": "ac.th"
+    },
+    {
       "domain": "pwa.co.th",
       "agency_name": "Provincial Waterworks Authority",
       "category": "co.th"
+    },
+    {
+      "domain": "queensavang.org",
+      "agency_name": "Queen Savang Memorial Hospital",
+      "category": "or.th"
+    },
+    {
+      "domain": "raffles.ac.th",
+      "agency_name": "(wikipedia)",
+      "category": "ac.th"
+    },
+    {
+      "domain": "railway.co.th",
+      "agency_name": "State Railway of Thailand",
+      "category": "co.th"
+    },
+    {
+      "domain": "rajabhat.ac.th",
+      "agency_name": "Loei Rajabhat",
+      "category": "ac.th"
+    },
+    {
+      "domain": "rajapark.ac.th",
+      "agency_name": "(wikipedia)",
+      "category": "ac.th"
+    },
+    {
+      "domain": "ranong.go.th",
+      "agency_name": "Ranong Province",
+      "category": "go.th"
+    },
+    {
+      "domain": "ratchaburi.go.th",
+      "agency_name": "Ratchaburi Province",
+      "category": "go.th"
+    },
+    {
+      "domain": "rayong.go.th",
+      "agency_name": "Rayong Province",
+      "category": "go.th"
+    },
+    {
+      "domain": "rbac.ac.th",
+      "agency_name": "(wikipedia)",
+      "category": "ac.th"
+    },
+    {
+      "domain": "rbru.ac.th",
+      "agency_name": "Rambhai Barni Rajabhat",
+      "category": "ac.th"
     },
     {
       "domain": "rd.go.th",
@@ -477,13 +1867,103 @@
       "category": "or.th"
     },
     {
+      "domain": "reru.ac.th",
+      "agency_name": "(wikipedia)",
+      "category": "ac.th"
+    },
+    {
+      "domain": "rfd.go.th",
+      "agency_name": "Royal Forest Department",
+      "category": "go.th"
+    },
+    {
       "domain": "rid.go.th",
       "agency_name": "Royal Irrigation Department",
       "category": "go.th"
     },
     {
+      "domain": "rmu.ac.th",
+      "agency_name": "(wikipedia)",
+      "category": "ac.th"
+    },
+    {
+      "domain": "rmuti.ac.th",
+      "agency_name": "RMUT Isan",
+      "category": "ac.th"
+    },
+    {
+      "domain": "rmutk.ac.th",
+      "agency_name": "RMUT Krungthep",
+      "category": "ac.th"
+    },
+    {
+      "domain": "rmutl.ac.th",
+      "agency_name": "RMUT Lanna",
+      "category": "ac.th"
+    },
+    {
+      "domain": "rmutp.ac.th",
+      "agency_name": "RMUT Phra Nakhon",
+      "category": "ac.th"
+    },
+    {
+      "domain": "rmutr.ac.th",
+      "agency_name": "RMUT Rattanakosin",
+      "category": "ac.th"
+    },
+    {
+      "domain": "rmutsb.ac.th",
+      "agency_name": "(wikipedia)",
+      "category": "ac.th"
+    },
+    {
+      "domain": "rmutsv.ac.th",
+      "agency_name": "RMUT Srivijaya",
+      "category": "ac.th"
+    },
+    {
       "domain": "rmutt.ac.th",
       "agency_name": "Rajamangala University of Technology Thanyaburi",
+      "category": "ac.th"
+    },
+    {
+      "domain": "rmutto.ac.th",
+      "agency_name": "RMUT Tawan-ok",
+      "category": "ac.th"
+    },
+    {
+      "domain": "rncc.ac.th",
+      "agency_name": "(wikipedia)",
+      "category": "ac.th"
+    },
+    {
+      "domain": "rntc.ac.th",
+      "agency_name": "(wikipedia)",
+      "category": "ac.th"
+    },
+    {
+      "domain": "roiet.go.th",
+      "agency_name": "Roi Et Province",
+      "category": "go.th"
+    },
+    {
+      "domain": "royalthaipolice.go.th",
+      "agency_name": "Royal Thai Police",
+      "category": "go.th"
+    },
+    {
+      "domain": "rpca.ac.th",
+      "agency_name": "(wikipedia)",
+      "category": "ac.th"
+    },
+    {
+      "domain": "rru.ac.th",
+      "agency_name": "(wikipedia)",
+      "category": "ac.th"
+    },
+    {
+      "domain": "rstech.ac.th",
+      "agency_name": "(wikipedia)",
       "category": "ac.th"
     },
     {
@@ -492,8 +1972,108 @@
       "category": "ac.th"
     },
     {
+      "domain": "rta.ac.th",
+      "agency_name": "Chulachomklao Royal Military Academy",
+      "category": "ac.th"
+    },
+    {
+      "domain": "rta.mi.th",
+      "agency_name": "Royal Thai Army",
+      "category": "go.th"
+    },
+    {
+      "domain": "rtaf-academy.ac.th",
+      "agency_name": "Royal Thai Air Force Academy",
+      "category": "ac.th"
+    },
+    {
+      "domain": "rtaf.mi.th",
+      "agency_name": "Royal Thai Air Force",
+      "category": "go.th"
+    },
+    {
+      "domain": "rtafa.ac.th",
+      "agency_name": "(wikipedia)",
+      "category": "ac.th"
+    },
+    {
+      "domain": "rtna.ac.th",
+      "agency_name": "(wikipedia)",
+      "category": "ac.th"
+    },
+    {
+      "domain": "rtu.ac.th",
+      "agency_name": "(wikipedia)",
+      "category": "ac.th"
+    },
+    {
       "domain": "ru.ac.th",
       "agency_name": "Ramkhamhaeng University",
+      "category": "ac.th"
+    },
+    {
+      "domain": "saengtham.ac.th",
+      "agency_name": "(wikipedia)",
+      "category": "ac.th"
+    },
+    {
+      "domain": "sakonnakhon.go.th",
+      "agency_name": "Sakon Nakhon Province",
+      "category": "go.th"
+    },
+    {
+      "domain": "samutprakan.go.th",
+      "agency_name": "Samut Prakan Province",
+      "category": "go.th"
+    },
+    {
+      "domain": "samutsakhon.go.th",
+      "agency_name": "Samut Sakhon Province",
+      "category": "go.th"
+    },
+    {
+      "domain": "samutsongkhram.go.th",
+      "agency_name": "Samut Songkhram Province",
+      "category": "go.th"
+    },
+    {
+      "domain": "sanook.com",
+      "agency_name": "Sanook",
+      "category": "co.th"
+    },
+    {
+      "domain": "saraburi.go.th",
+      "agency_name": "Saraburi Province",
+      "category": "go.th"
+    },
+    {
+      "domain": "sat.or.th",
+      "agency_name": "Sports Authority of Thailand",
+      "category": "or.th"
+    },
+    {
+      "domain": "satun.go.th",
+      "agency_name": "Satun Province",
+      "category": "go.th"
+    },
+    {
+      "domain": "sau.ac.th",
+      "agency_name": "(wikipedia)",
+      "category": "ac.th"
+    },
+    {
+      "domain": "scb.co.th",
+      "agency_name": "Siam Commercial Bank",
+      "category": "co.th"
+    },
+    {
+      "domain": "scbeasy.com",
+      "agency_name": "SCB Easy",
+      "category": "co.th"
+    },
+    {
+      "domain": "sct.ac.th",
+      "agency_name": "(wikipedia)",
       "category": "ac.th"
     },
     {
@@ -507,18 +2087,153 @@
       "category": "go.th"
     },
     {
+      "domain": "sepo.go.th",
+      "agency_name": "State Enterprise Policy Office",
+      "category": "go.th"
+    },
+    {
       "domain": "set.or.th",
       "agency_name": "The Stock Exchange of Thailand",
       "category": "or.th"
     },
     {
-      "domain": "soc.go.th",
-      "agency_name": "Secretariat of the Cabinet",
+      "domain": "shopee.co.th",
+      "agency_name": "Shopee Thailand",
+      "category": "co.th"
+    },
+    {
+      "domain": "siam.edu",
+      "agency_name": "Siam University",
+      "category": "ac.th"
+    },
+    {
+      "domain": "siamtechno.ac.th",
+      "agency_name": "(wikipedia)",
+      "category": "ac.th"
+    },
+    {
+      "domain": "siamthanyaburi.ac.th",
+      "agency_name": "(wikipedia)",
+      "category": "ac.th"
+    },
+    {
+      "domain": "sicec.ac.th",
+      "agency_name": "(wikipedia)",
+      "category": "ac.th"
+    },
+    {
+      "domain": "singburi.go.th",
+      "agency_name": "Sing Buri Province",
       "category": "go.th"
+    },
+    {
+      "domain": "siphhospital.com",
+      "agency_name": "Siriraj Piyamaharajkarun Hospital",
+      "category": "co.th"
+    },
+    {
+      "domain": "sisaket.go.th",
+      "agency_name": "Sisaket Province",
+      "category": "go.th"
+    },
+    {
+      "domain": "siu.ac.th",
+      "agency_name": "(wikipedia)",
+      "category": "ac.th"
+    },
+    {
+      "domain": "sivc.ac.th",
+      "agency_name": "(wikipedia)",
+      "category": "ac.th"
+    },
+    {
+      "domain": "sk-cc.ac.th",
+      "agency_name": "(wikipedia)",
+      "category": "ac.th"
+    },
+    {
+      "domain": "skcc.ac.th",
+      "agency_name": "(wikipedia)",
+      "category": "ac.th"
+    },
+    {
+      "domain": "skru.ac.th",
+      "agency_name": "Songkhla Rajabhat",
+      "category": "ac.th"
+    },
+    {
+      "domain": "sktcc.ac.th",
+      "agency_name": "(wikipedia)",
+      "category": "ac.th"
+    },
+    {
+      "domain": "slc.ac.th",
+      "agency_name": "(wikipedia)",
+      "category": "ac.th"
+    },
+    {
+      "domain": "smebank.co.th",
+      "agency_name": "SME Bank",
+      "category": "co.th"
+    },
+    {
+      "domain": "smkcc.ac.th",
+      "agency_name": "(wikipedia)",
+      "category": "ac.th"
+    },
+    {
+      "domain": "snru.ac.th",
+      "agency_name": "Sakon Nakhon Rajabhat",
+      "category": "ac.th"
+    },
+    {
+      "domain": "soc.go.th",
+      "agency_name": "Royal Thai Government Gazette",
+      "category": "go.th"
+    },
+    {
+      "domain": "songkhla.go.th",
+      "agency_name": "Songkhla Province",
+      "category": "go.th"
+    },
+    {
+      "domain": "southeast.ac.th",
+      "agency_name": "(wikipedia)",
+      "category": "ac.th"
+    },
+    {
+      "domain": "sptc.ac.th",
+      "agency_name": "(wikipedia)",
+      "category": "ac.th"
     },
     {
       "domain": "spu.ac.th",
       "agency_name": "Sripatum University",
+      "category": "ac.th"
+    },
+    {
+      "domain": "sripatum.ac.th",
+      "agency_name": "Sripatum University",
+      "category": "ac.th"
+    },
+    {
+      "domain": "srru.ac.th",
+      "agency_name": "(wikipedia)",
+      "category": "ac.th"
+    },
+    {
+      "domain": "sru.ac.th",
+      "agency_name": "Surat Thani Rajabhat",
+      "category": "ac.th"
+    },
+    {
+      "domain": "ssir.or.th",
+      "agency_name": "Stanford Social Innovation Review (TH)",
+      "category": "or.th"
+    },
+    {
+      "domain": "sskru.ac.th",
+      "agency_name": "(wikipedia)",
       "category": "ac.th"
     },
     {
@@ -527,8 +2242,38 @@
       "category": "go.th"
     },
     {
+      "domain": "ssrru.ac.th",
+      "agency_name": "Suan Sunandha Rajabhat (alt)",
+      "category": "ac.th"
+    },
+    {
       "domain": "ssru.ac.th",
       "agency_name": "Suan Sunandha Rajabhat University",
+      "category": "ac.th"
+    },
+    {
+      "domain": "stc.ac.th",
+      "agency_name": "(wikipedia)",
+      "category": "ac.th"
+    },
+    {
+      "domain": "stcc.ac.th",
+      "agency_name": "(wikipedia)",
+      "category": "ac.th"
+    },
+    {
+      "domain": "stic.ac.th",
+      "agency_name": "(wikipedia)",
+      "category": "ac.th"
+    },
+    {
+      "domain": "stin.ac.th",
+      "agency_name": "(wikipedia)",
+      "category": "ac.th"
+    },
+    {
+      "domain": "stjohn.ac.th",
+      "agency_name": "(wikipedia)",
       "category": "ac.th"
     },
     {
@@ -537,13 +2282,63 @@
       "category": "ac.th"
     },
     {
+      "domain": "stu.ac.th",
+      "agency_name": "(wikipedia)",
+      "category": "ac.th"
+    },
+    {
       "domain": "su.ac.th",
       "agency_name": "Silpakorn University",
       "category": "ac.th"
     },
     {
+      "domain": "sukhothai.go.th",
+      "agency_name": "Sukhothai Province",
+      "category": "go.th"
+    },
+    {
+      "domain": "suphanburi.go.th",
+      "agency_name": "Suphan Buri Province",
+      "category": "go.th"
+    },
+    {
+      "domain": "supremecourt.or.th",
+      "agency_name": "Supreme Court of Thailand",
+      "category": "or.th"
+    },
+    {
+      "domain": "suratthani.go.th",
+      "agency_name": "Surat Thani Province",
+      "category": "go.th"
+    },
+    {
+      "domain": "surin.go.th",
+      "agency_name": "Surin Province",
+      "category": "go.th"
+    },
+    {
+      "domain": "sut.ac.th",
+      "agency_name": "(wikipedia)",
+      "category": "ac.th"
+    },
+    {
       "domain": "swu.ac.th",
       "agency_name": "Srinakharinwirot University",
+      "category": "ac.th"
+    },
+    {
+      "domain": "tak.go.th",
+      "agency_name": "Tak Province",
+      "category": "go.th"
+    },
+    {
+      "domain": "takcc.ac.th",
+      "agency_name": "(wikipedia)",
+      "category": "ac.th"
+    },
+    {
+      "domain": "tapee.ac.th",
+      "agency_name": "(wikipedia)",
       "category": "ac.th"
     },
     {
@@ -554,6 +2349,36 @@
     {
       "domain": "tcdc.or.th",
       "agency_name": "Thailand Creative and Design Center",
+      "category": "or.th"
+    },
+    {
+      "domain": "tcels.or.th",
+      "agency_name": "Thailand Center of Excellence for Life Sciences",
+      "category": "or.th"
+    },
+    {
+      "domain": "tcsd.go.th",
+      "agency_name": "Technology Crime Suppression Division",
+      "category": "go.th"
+    },
+    {
+      "domain": "technicnon.ac.th",
+      "agency_name": "(wikipedia)",
+      "category": "ac.th"
+    },
+    {
+      "domain": "thaibevsi.co.th",
+      "agency_name": "Thai Beverage SI",
+      "category": "co.th"
+    },
+    {
+      "domain": "thaicert.or.th",
+      "agency_name": "ThaiCERT",
+      "category": "or.th"
+    },
+    {
+      "domain": "thaiembassy.org",
+      "agency_name": "Thai Embassy portal",
       "category": "or.th"
     },
     {
@@ -577,13 +2402,138 @@
       "category": "co.th"
     },
     {
+      "domain": "thaipbs.or.th",
+      "agency_name": "Thai PBS",
+      "category": "or.th"
+    },
+    {
+      "domain": "thairath.co.th",
+      "agency_name": "Thairath",
+      "category": "co.th"
+    },
+    {
+      "domain": "thairra.or.th",
+      "agency_name": "Thai Radio Regulatory Association",
+      "category": "or.th"
+    },
+    {
+      "domain": "thonburi-u.ac.th",
+      "agency_name": "(wikipedia)",
+      "category": "ac.th"
+    },
+    {
+      "domain": "tisi.go.th",
+      "agency_name": "Thai Industrial Standards Institute",
+      "category": "go.th"
+    },
+    {
+      "domain": "tistr.or.th",
+      "agency_name": "TISTR",
+      "category": "or.th"
+    },
+    {
+      "domain": "tmbthanachart.com",
+      "agency_name": "ttb bank",
+      "category": "co.th"
+    },
+    {
       "domain": "tmd.go.th",
       "agency_name": "Thai Meteorological Department",
       "category": "go.th"
     },
     {
+      "domain": "tni.ac.th",
+      "agency_name": "(wikipedia)",
+      "category": "ac.th"
+    },
+    {
+      "domain": "tnsu.ac.th",
+      "agency_name": "(wikipedia)",
+      "category": "ac.th"
+    },
+    {
+      "domain": "tot.co.th",
+      "agency_name": "TOT (legacy)",
+      "category": "co.th"
+    },
+    {
+      "domain": "tourismthailand.org",
+      "agency_name": "Tourism Authority (en)",
+      "category": "or.th"
+    },
+    {
+      "domain": "tpso.go.th",
+      "agency_name": "Trade Policy and Strategy Office",
+      "category": "go.th"
+    },
+    {
+      "domain": "trang.go.th",
+      "agency_name": "Trang Province",
+      "category": "go.th"
+    },
+    {
+      "domain": "trat.go.th",
+      "agency_name": "Trat Province",
+      "category": "go.th"
+    },
+    {
+      "domain": "tratcc.ac.th",
+      "agency_name": "(wikipedia)",
+      "category": "ac.th"
+    },
+    {
+      "domain": "treasury.go.th",
+      "agency_name": "Treasury Department",
+      "category": "go.th"
+    },
+    {
+      "domain": "trt.ac.th",
+      "agency_name": "(wikipedia)",
+      "category": "ac.th"
+    },
+    {
+      "domain": "tru.ac.th",
+      "agency_name": "(wikipedia)",
+      "category": "ac.th"
+    },
+    {
+      "domain": "truecorp.co.th",
+      "agency_name": "True Corp",
+      "category": "co.th"
+    },
+    {
+      "domain": "truemoneywallet.com",
+      "agency_name": "TrueMoney Wallet",
+      "category": "co.th"
+    },
+    {
+      "domain": "tsu.ac.th",
+      "agency_name": "(wikipedia)",
+      "category": "ac.th"
+    },
+    {
+      "domain": "ttbbank.com",
+      "agency_name": "ttb bank",
+      "category": "co.th"
+    },
+    {
       "domain": "tu.ac.th",
       "agency_name": "Thammasat University",
+      "category": "ac.th"
+    },
+    {
+      "domain": "tuct.ac.th",
+      "agency_name": "(wikipedia)",
+      "category": "ac.th"
+    },
+    {
+      "domain": "ubonratchathani.go.th",
+      "agency_name": "Ubon Ratchathani Province",
+      "category": "go.th"
+    },
+    {
+      "domain": "ubru.ac.th",
+      "agency_name": "(wikipedia)",
       "category": "ac.th"
     },
     {
@@ -592,8 +2542,48 @@
       "category": "ac.th"
     },
     {
+      "domain": "udonthani.go.th",
+      "agency_name": "Udon Thani Province",
+      "category": "go.th"
+    },
+    {
+      "domain": "udru.ac.th",
+      "agency_name": "(wikipedia)",
+      "category": "ac.th"
+    },
+    {
+      "domain": "udvc.ac.th",
+      "agency_name": "(wikipedia)",
+      "category": "ac.th"
+    },
+    {
+      "domain": "umt.ac.th",
+      "agency_name": "(wikipedia)",
+      "category": "ac.th"
+    },
+    {
+      "domain": "unicentre.co.th",
+      "agency_name": "(wikipedia)",
+      "category": "co.th"
+    },
+    {
+      "domain": "uob.co.th",
+      "agency_name": "UOB Thailand",
+      "category": "co.th"
+    },
+    {
+      "domain": "uobgroup.com",
+      "agency_name": "UOB Thailand",
+      "category": "co.th"
+    },
+    {
       "domain": "up.ac.th",
       "agency_name": "University of Phayao",
+      "category": "ac.th"
+    },
+    {
+      "domain": "uru.ac.th",
+      "agency_name": "Uttaradit Rajabhat",
       "category": "ac.th"
     },
     {
@@ -602,8 +2592,88 @@
       "category": "ac.th"
     },
     {
+      "domain": "uthaithani.go.th",
+      "agency_name": "Uthai Thani Province",
+      "category": "go.th"
+    },
+    {
+      "domain": "uttaradit.go.th",
+      "agency_name": "Uttaradit Province",
+      "category": "go.th"
+    },
+    {
+      "domain": "vajira.ac.th",
+      "agency_name": "Vajira Hospital",
+      "category": "ac.th"
+    },
+    {
+      "domain": "vec.go.th",
+      "agency_name": "Vocational Education Commission",
+      "category": "go.th"
+    },
+    {
+      "domain": "vfsglobal.com",
+      "agency_name": "VFS Visa (informational)",
+      "category": "co.th"
+    },
+    {
+      "domain": "vistec.ac.th",
+      "agency_name": "(wikipedia)",
+      "category": "ac.th"
+    },
+    {
+      "domain": "vru.ac.th",
+      "agency_name": "Valaya Alongkorn Rajabhat",
+      "category": "ac.th"
+    },
+    {
+      "domain": "vu.ac.th",
+      "agency_name": "(wikipedia)",
+      "category": "ac.th"
+    },
+    {
+      "domain": "webster.ac.th",
+      "agency_name": "(wikipedia)",
+      "category": "ac.th"
+    },
+    {
+      "domain": "western.ac.th",
+      "agency_name": "(wikipedia)",
+      "category": "ac.th"
+    },
+    {
       "domain": "wu.ac.th",
       "agency_name": "Walailak University",
+      "category": "ac.th"
+    },
+    {
+      "domain": "yala.go.th",
+      "agency_name": "Yala Province",
+      "category": "go.th"
+    },
+    {
+      "domain": "yasocc.ac.th",
+      "agency_name": "(wikipedia)",
+      "category": "ac.th"
+    },
+    {
+      "domain": "yasothon.go.th",
+      "agency_name": "Yasothon Province",
+      "category": "go.th"
+    },
+    {
+      "domain": "ycc.ac.th",
+      "agency_name": "(wikipedia)",
+      "category": "ac.th"
+    },
+    {
+      "domain": "yiu.ac.th",
+      "agency_name": "(wikipedia)",
+      "category": "ac.th"
+    },
+    {
+      "domain": "yru.ac.th",
+      "agency_name": "Yala Rajabhat",
       "category": "ac.th"
     }
   ]

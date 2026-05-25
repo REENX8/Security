@@ -37,6 +37,11 @@ RISKY_URLS = [
     "https://www.ku.ac.th@phish-site.xyz/login",
     "http://secure-bot-or-th-update.club/webscr",
     "http://obec.go.th.evil-domain.net/wp-login.php",
+    # IDN / homoglyph attacks targeting Thai brands -- the v1.2 features must
+    # catch these even though they pass straight ASCII edit-distance unseen.
+    "https://chulа.com/login",                   # Cyrillic а
+    "https://krungthаi.com/secure",              # Cyrillic а in krungthai
+    "https://paotang-th.com/login",              # well-known Thai-wallet phish
 ]
 
 

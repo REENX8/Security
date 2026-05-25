@@ -45,6 +45,12 @@ THAI_HOLDOUT_CSV = os.path.join(DATA_DIR, "thai_phish_holdout.csv")
 THAI_HOLDOUT_METRICS_JSON = os.path.join(REPORTS_DIR, "thai_holdout_metrics.json")
 EVALUATION_SUMMARY_JSON = os.path.join(REPORTS_DIR, "evaluation_summary.json")
 
+# Curated Thai-targeting phishing seed corpus (committed to repo, no network).
+THAI_PHISH_SEED_CSV = os.path.join(DATA_DIR, "thai_phishing_seed.csv")
+# Fraction of the seed corpus routed into training; rest goes to the
+# Thai-targeting holdout used as the primary alignment metric.
+THAI_SEED_TRAIN_FRACTION = 0.70
+
 
 def ensure_dirs() -> None:
     for path in (DATA_DIR, MODELS_DIR, REPORTS_DIR, RAW_DIR):

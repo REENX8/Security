@@ -30,6 +30,8 @@ from ml_pipeline.config import (
     REAL_HOLDOUT_CSV,
     REAL_HOLDOUT_FRACTION,
     THAI_HOLDOUT_CSV,
+    THAI_PHISH_SEED_CSV,
+    THAI_SEED_TRAIN_FRACTION,
     TARGET_ROWS,
     URLHAUS_URL,
     WHITELIST_CSV,
@@ -117,14 +119,45 @@ def _fetch_urlhaus(max_urls: int) -> list[str]:
     return []
 
 
-_THAI_BRANDS = {
-    "moe", "obec", "rd", "dbd", "dopa", "dsi", "ago", "parliament",
-    "senate", "thaigov", "mahidol", "chula", "kasetsart", "kmutt",
-    "kmitl", "kbank", "scb", "ktb", "bbl", "gsb", "bot", "set",
-    "sec", "egat", "pea", "mwa", "pwa", "ntplc", "airportthai",
-    "thaipost", "moph", "moi", "mof", "mfa", "mnre",
-}
 _THAI_TLDS = (".go.th", ".ac.th", ".or.th", ".co.th")
+
+# A small high-signal seed of 3-letter institutional codes that are too short
+# to survive the "len >= 4" filter when auto-deriving brands from the whitelist
+# but are nonetheless heavily impersonated (financial regulators, ministries).
+_THAI_BRAND_SEED = {
+    "rd", "set", "sec", "ktb", "scb", "bbl", "gsb", "ghb",
+    "moe", "moi", "mof", "mot", "bot", "pea", "mwa", "dbd",
+    "sso", "tat", "sat", "moc", "mod", "doh", "dlt", "dla",
+    "dms", "ddc", "dop", "dpr", "doe", "dft", "dft", "dft",
+    "ago", "dsi", "nhso", "nbtc",
+}
+
+
+def _load_thai_brands(whitelist_csv: str = WHITELIST_CSV) -> set[str]:
+    """Derive Thai brand keywords from the whitelist CSV at runtime.
+
+    Auto-deriving from the whitelist means new agencies added to the CSV
+    automatically become recognised as Thai-targeting brands, so the
+    routing into the Thai holdout stays in sync with the whitelist.
+    """
+    brands: set[str] = set(_THAI_BRAND_SEED)
+    if not os.path.exists(whitelist_csv):
+        return brands
+    import csv as _csv
+    with open(whitelist_csv, newline="", encoding="utf-8") as fh:
+        for row in _csv.DictReader(fh):
+            d = (row.get("domain") or "").strip().lower()
+            if not d:
+                continue
+            label = d.split(".")[0]
+            # Skip generic / too-short labels to avoid false-positive
+            # routing of unrelated phishing into the Thai holdout.
+            if len(label) >= 4 and label.isascii() and label.isalpha():
+                brands.add(label)
+    return brands
+
+
+_THAI_BRANDS = _load_thai_brands()
 
 
 def _is_thai_targeting(url: str) -> bool:
@@ -150,6 +183,23 @@ def _is_thai_targeting(url: str) -> bool:
     return False
 
 
+def _load_thai_phish_seed() -> list[str]:
+    """Load the curated Thai-targeting phishing seed corpus (urls only)."""
+    if not os.path.exists(THAI_PHISH_SEED_CSV):
+        print(f"[seed] no seed corpus at {THAI_PHISH_SEED_CSV} "
+              "(run scripts/collect_thai_phishing_seed.py to build it)")
+        return []
+    urls: list[str] = []
+    import csv as _csv
+    with open(THAI_PHISH_SEED_CSV, newline="", encoding="utf-8") as fh:
+        for row in _csv.DictReader(fh):
+            u = (row.get("url") or "").strip()
+            if u.startswith(("http://", "https://")):
+                urls.append(u)
+    print(f"[seed] loaded {len(urls)} curated Thai-targeting phishing URLs")
+    return urls
+
+
 def main(use_feeds: bool = True) -> None:
     ensure_dirs()
     wl = Whitelist.from_csv(WHITELIST_CSV)
@@ -167,6 +217,19 @@ def main(use_feeds: bool = True) -> None:
     real_train: list[dict] = []
     real_holdout: list[dict] = []
     thai_holdout: list[dict] = []
+    thai_train: list[dict] = []
+
+    # --- curated Thai-targeting seed corpus (always loaded, no network) ---
+    seed_urls = _load_thai_phish_seed()
+    if seed_urls:
+        gen.rng.shuffle(seed_urls)
+        n_train = int(round(len(seed_urls) * THAI_SEED_TRAIN_FRACTION))
+        for i, url in enumerate(seed_urls):
+            net = gen.sim_network(1, url.startswith("https://"))
+            row = {"url": url, "label": 1, **net}
+            (thai_train if i < n_train else thai_holdout).append(row)
+        print(f"[seed] split: train={len(thai_train)}  holdout={len(thai_holdout)}")
+
     if use_feeds:
         feed_urls = _fetch_feed_urls(max_urls=n_each // 2)
         feed_urls += _fetch_urlhaus(max_urls=n_each // 4)
@@ -193,11 +256,12 @@ def main(use_feeds: bool = True) -> None:
           f"holdout: {len(real_holdout)}  thai-holdout: {len(thai_holdout)}")
 
     # --- synthetic phishing top-up to balance the classes (training only) ---
-    need = n_legit - len(real_train)
+    need = n_legit - len(real_train) - len(thai_train)
     synth_phish = gen.generate(n_legit=0, n_phish=max(need, 0))
     print(f"[dataset] synthetic phishing rows: {len(synth_phish)}")
 
     rows.extend(real_train)
+    rows.extend(thai_train)
     rows.extend(synth_phish)
     gen.rng.shuffle(rows)
 

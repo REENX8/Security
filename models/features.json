@@ -1,5 +1,5 @@
 {
-  "schema_version": "1.1.0",
+  "schema_version": "1.2.0",
   "ordered_features": [
     "url_length",
     "num_dots",
@@ -26,9 +26,12 @@
     "domain_label_max_len",
     "has_port",
     "max_digit_run",
-    "has_query_string"
+    "has_query_string",
+    "has_punycode",
+    "has_mixed_script",
+    "homoglyph_distance"
   ],
-  "n_features": 26,
+  "n_features": 29,
   "tld_type_map": {
     "go.th": 0,
     "ac.th": 1,
@@ -45,13 +48,13 @@
     "whois_ok": 0,
     "tls_ok": 0
   },
-  "whitelist_sha256": "0d677eb51e631f83",
-  "trained_at": "2026-05-23T09:54:56.897404Z",
+  "whitelist_sha256": "0f1348f26de6b0f3",
+  "trained_at": "2026-05-25T02:21:41.152350Z",
   "sklearn_version": "1.5.2",
   "xgboost_version": "2.1.3",
   "metrics": {
     "train_accuracy": 1.0,
-    "test_accuracy": 0.9933,
-    "test_f1": 0.9934
+    "test_accuracy": 0.9892,
+    "test_f1": 0.9891
   }
 }

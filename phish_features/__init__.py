@@ -5,6 +5,13 @@ model never sees train/serve skew.
 """
 
 from .extractor import FeatureExtractor, classify_tld, extract_features
+from .homoglyph import (
+    decode_idn,
+    fold_confusables,
+    has_mixed_script,
+    has_punycode,
+    normalize_for_lookup,
+)
 from .lexical import get_host, normalize_url, shannon_entropy
 from .schema import (
     FEATURE_SCHEMA_VERSION,
@@ -34,8 +41,13 @@ __all__ = [
     "Whitelist",
     "WhitelistEntry",
     "classify_tld",
+    "decode_idn",
     "extract_features",
+    "fold_confusables",
     "get_host",
+    "has_mixed_script",
+    "has_punycode",
+    "normalize_for_lookup",
     "normalize_url",
     "registrable_domain",
     "shannon_entropy",
