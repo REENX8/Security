@@ -34,6 +34,18 @@ services:
       # asyncpg DSN derived from the managed Postgres add-on. Render sets
       # DATABASE_URL to "postgres://..." -- the backend rewrites the scheme
       # to "postgresql+asyncpg://..." in main.py for SQLAlchemy.
+      #
+      # NOTE: The web service and database MUST be in the same region or
+      # the internal hostname returned by ``connectionString`` will not
+      # resolve (``socket.gaierror: Name or service not known``). If you
+      # see that error, delete the database from the dashboard and re-sync
+      # the Blueprint so a fresh DB is created in the right region.
+      #
+      # The backend tolerates DB unreachability at startup: /health and
+      # /check still work, but /history /stats /admin return 503 until
+      # the DB is reachable. To skip Postgres entirely (ephemeral history,
+      # zero setup) override DATABASE_URL in the dashboard to:
+      #   sqlite+aiosqlite:///./phish.db
       - key: DATABASE_URL
         fromDatabase:
           name: phish-db

@@ -77,9 +77,25 @@ async def lifespan(app: FastAPI):
         if settings.enable_cache else None
     )
 
-    await init_db()
-    logger.info("database schema ready")
-    await _seed_whitelist_from_json()
+    # The core URL scorer does not need the database -- history, stats and
+    # admin endpoints do. Tolerate a missing/unreachable DB at startup so
+    # the app still serves /health and /check; DB-backed routes will fail
+    # at request time with a clear error. This makes the service resilient
+    # to managed-DB DNS hiccups (e.g. cross-region Render Postgres) and
+    # lets users run the detector even before provisioning a DB.
+    app.state.db_ready = False
+    try:
+        await init_db()
+        await _seed_whitelist_from_json()
+        app.state.db_ready = True
+        logger.info("database schema ready")
+    except Exception as exc:  # broad: any DB driver / network error
+        logger.warning(
+            "database NOT ready (%s) -- /check and /health still work, "
+            "but /history /stats /admin will return 503",
+            exc,
+        )
+
     try:
         app.state.scorer = load_scorer()
         MODEL_READY.set(1)

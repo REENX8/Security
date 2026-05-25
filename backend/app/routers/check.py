@@ -37,7 +37,16 @@ async def _score_and_persist(
 
     with CHECK_LATENCY.time():
         result = await run_in_threadpool(scorer.score, url)
-    await insert_check(session, result)
+    # Persist history best-effort: a managed-DB outage (Render free tier
+    # cold start, DNS hiccup) should never block scoring. The scorer's
+    # job is to score; history is observability, not a hard dependency.
+    try:
+        await insert_check(session, result)
+    except Exception as exc:  # noqa: BLE001 - any DB driver/network error
+        import logging
+        logging.getLogger("phish-detector").warning(
+            "history persist skipped (db unreachable): %s", exc
+        )
 
     if cache is not None:
         cache.set(url, result)
