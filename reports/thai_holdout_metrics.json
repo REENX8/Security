@@ -1,16 +1,17 @@
 {
-  "sample_size": 29,
-  "recall_phishing_threshold": 1.0,
+  "sample_size": 53,
+  "recall_phishing_threshold": 0.9811,
   "recall_phishing_ci_95": [
-    0.883,
-    1.0
+    0.9006,
+    0.9967
   ],
   "recall_suspicious_threshold": 1.0,
   "recall_suspicious_ci_95": [
-    0.883,
+    0.9324,
     1.0
   ],
-  "mean_score": 0.9886,
-  "median_score": 0.9938,
-  "missed_count": 0
+  "mean_score": 0.9859,
+  "median_score": 1.0,
+  "missed_count": 0,
+  "missed_urls": []
 }

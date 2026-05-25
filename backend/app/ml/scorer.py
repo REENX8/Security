@@ -33,6 +33,39 @@ def _build_reason(feat: dict, label: str, is_whitelisted: bool) -> str:
             f"โดเมนคล้ายกับเว็บไซต์ทางการ {closest} มาก "
             f"(edit distance: {dist}) อาจเป็นการปลอมแปลง"
         )
+    # IDN / Punycode is a stronger lookalike signal than typosquat because
+    # the displayed URL can appear pixel-identical to the real brand. List
+    # these reasons next so the user sees the right framing.
+    if feat.get("has_punycode"):
+        closest = feat.get("closest_domain")
+        if closest:
+            reasons.append(
+                f"URL ใช้ Punycode (xn--...) ซ่อนตัวอักษรที่อาจหน้าตาเหมือน "
+                f"ชื่อเว็บจริง {closest}"
+            )
+        else:
+            reasons.append(
+                "URL ใช้ Punycode (xn--...) ซึ่งมักใช้ซ่อนตัวอักษร "
+                "ที่หน้าตาเหมือนชื่อเว็บจริงจากภาษาอื่น"
+            )
+    elif (
+        feat.get("has_mixed_script")
+        and feat.get("homoglyph_distance", 999) < feat.get("min_edit_distance", 999)
+    ):
+        # Only flag mixed-script when the confusable-fold collapsed the
+        # distance -- pure non-Thai-script legitimate domains would also
+        # carry has_mixed_script=1 without being suspicious.
+        closest = feat.get("closest_domain")
+        if closest:
+            reasons.append(
+                f"ตัวอักษรในชื่อโดเมนใช้หลายภาษาผสมกัน "
+                f"(เช่น Latin + Cyrillic) อาจปลอมเป็น {closest}"
+            )
+        else:
+            reasons.append(
+                "ตัวอักษรในชื่อโดเมนใช้หลายภาษาผสมกัน "
+                "(เช่น Latin + Cyrillic) ซึ่งเป็นเทคนิคปลอมแปลงที่พบบ่อย"
+            )
     if feat.get("has_ip"):
         reasons.append("URL ใช้หมายเลข IP แทนชื่อโดเมน ซึ่งพบบ่อยในเว็บฟิชชิง")
     if feat.get("num_at", 0) >= 1:

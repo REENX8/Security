@@ -51,6 +51,14 @@ THAI_PHISH_SEED_CSV = os.path.join(DATA_DIR, "thai_phishing_seed.csv")
 # Thai-targeting holdout used as the primary alignment metric.
 THAI_SEED_TRAIN_FRACTION = 0.70
 
+# CI gate: minimum recall on the Thai-targeting holdout at the phishing
+# threshold (score >= 0.7). evaluate.py exits non-zero when run with
+# --enforce-threshold and the measured value drops below this. The env
+# variable lets CI raise the bar over time without editing source.
+THAI_RECALL_MIN_THRESHOLD = float(
+    os.environ.get("THAI_RECALL_MIN_THRESHOLD", "0.85")
+)
+
 
 def ensure_dirs() -> None:
     for path in (DATA_DIR, MODELS_DIR, REPORTS_DIR, RAW_DIR):

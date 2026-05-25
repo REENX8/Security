@@ -21,7 +21,7 @@
 
 ## จุดเด่น
 
-**ความแม่นยำสูง** — โมเดลใช้ feature 26 ตัวร่วมกับ ensemble ของ RandomForest และ XGBoost จับ phishing URL ที่เลียนแบบเว็บรัฐ/การศึกษาไทยจาก holdout ได้ **100%** (ที่ threshold ≥ 0.7) บน corpus จริง 29 รายการที่โมเดลไม่เคยเห็น
+**ความแม่นยำสูง** — โมเดลใช้ feature 26 ตัวร่วมกับ ensemble ของ RandomForest และ XGBoost จับ phishing URL ที่เลียนแบบเว็บรัฐ/การศึกษาไทยจาก holdout ได้ **98.1%** (52/53 ที่ threshold ≥ 0.7, 95% CI [0.90, 1.00]) บน Thai-targeting corpus ที่โมเดลไม่เคยเห็น และ generic real phishing recall อยู่ที่ **92.2%** (ดีขึ้นจาก 87.8% หลังขยาย seed)
 
 **จับการปลอมแปลงโดเมนได้** — ระบบวัดความใกล้เคียงระหว่างชื่อโดเมนกับโดเมนราชการ/การศึกษา/ธนาคารรัฐที่เชื่อถือได้ **500+ รายการ** ไม่ว่าจะเป็นการพิมพ์ผิดเล็กน้อย (`0bec.go.th`) เปลี่ยน TLD (`obec.com`) หรือใช้ตัวอักษรซีริลลิกหน้าตาเหมือนกัน (`chulа.com` ที่ а เป็น Cyrillic) ก็จับได้
 
@@ -39,25 +39,28 @@
 
 ระบบนี้ทำมาเพื่อจับ phishing ที่เลียนแบบเว็บราชการ/การศึกษาไทย **metric หลัก**จึงเป็นค่า recall บนชุด Thai-targeting (ไม่ใช่ค่า recall บน phishing ทั่วโลกแบบสุ่ม)
 
-### 🎯 Primary metric — Thai-targeting phishing holdout (29 URLs, โมเดลไม่เคยเห็น)
+### 🎯 Primary metric — Thai-targeting phishing holdout (53 URLs, โมเดลไม่เคยเห็น)
 | เกณฑ์                              | ผลลัพธ์ |
 |------------------------------------|---------|
-| Recall ที่ threshold ≥ 0.7         | **100.0%** (29 / 29) |
-| 95% CI                             | [0.883, 1.000] |
-| คะแนนเฉลี่ย                        | 0.989 |
+| Recall ที่ threshold ≥ 0.7         | **98.11%** (52 / 53) |
+| Recall ที่ threshold ≥ 0.3         | **100%** (53 / 53) |
+| 95% CI (phishing threshold)        | [0.901, 0.997] |
+| คะแนนเฉลี่ย                        | 0.986 |
 
-ชุดทดสอบนี้คือ 30% ของ curated Thai-targeting phishing seed (`data/thai_phishing_seed.csv`) ที่ split ออกก่อนการฝึกและไม่ถูกใช้ในการเทรน
+ชุดทดสอบนี้คือ 30% ของ curated Thai-targeting phishing seed (`data/thai_phishing_seed.csv`, 175 รายการ ครอบคลุม 90+ brands) ที่ split ออกก่อนการฝึกและไม่ถูกใช้ในการเทรน
+
+มี **CI gate** ที่ `THAI_RECALL_MIN_THRESHOLD = 0.85` — ถ้า primary metric ตกต่ำกว่าค่านี้ CI จะ fail ทันที (`python -m ml_pipeline.evaluate --enforce-threshold`)
 
 ### Secondary — Generic real phishing holdout (90 URLs จาก OpenPhish, ไม่ใช่ Thai-targeting)
 | เกณฑ์                              | ผลลัพธ์ |
 |------------------------------------|---------|
-| Recall ที่ threshold ≥ 0.7         | **87.8%** (79 / 90) |
-| Recall ที่ threshold ≥ 0.3         | **93.3%** (84 / 90) |
+| Recall ที่ threshold ≥ 0.7         | **92.22%** (83 / 90) |
+| Recall ที่ threshold ≥ 0.3         | **95.56%** (86 / 90) |
 
 ตัวเลขนี้ใช้เป็น cross-check ว่าการปรับให้แม่นกับ Thai-targeting ไม่ทำให้ทั่วไปแย่ลงเกินไป
 
 ### Alignment score
-`thai_recall − generic_recall = +0.122` — โมเดลทำงานดีกว่าบนกลุ่มเป้าหมายที่ตั้งใจไว้ (Thai gov/edu) มากกว่ากลุ่มทั่วไป **+12.2 percentage points** ซึ่งเป็นพฤติกรรมที่ออกแบบไว้
+`thai_recall − generic_recall = +0.0589` — โมเดลทำงานดีกว่าบนกลุ่มเป้าหมายที่ตั้งใจไว้ (Thai gov/edu) มากกว่ากลุ่มทั่วไป **+5.9 percentage points** ซึ่งเป็นพฤติกรรมที่ออกแบบไว้
 
 ### ชุดทดสอบสังเคราะห์ (1,200 URLs)
 | Metric    | Score  |

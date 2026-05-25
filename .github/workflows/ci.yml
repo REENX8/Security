@@ -47,6 +47,45 @@ jobs:
           curl -sf http://127.0.0.1:8000/metrics | grep -q phish_checks_total
         working-directory: backend
 
+  ml-gate:
+    name: ML primary-metric gate (Thai holdout recall ≥ 0.85)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+          cache: pip
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -e .
+          pip install -r ml_pipeline/requirements.txt
+
+      - name: Retrain on committed seed corpus (no live feeds)
+        run: |
+          python -m ml_pipeline.build_whitelist
+          python -m ml_pipeline.collect_dataset --no-feeds
+          python -m ml_pipeline.train
+
+      - name: Enforce Thai-targeting recall ≥ THAI_RECALL_MIN_THRESHOLD
+        run: python -m ml_pipeline.evaluate --enforce-threshold
+
+      - name: Upload evaluation artifacts
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: evaluation-reports
+          path: |
+            reports/evaluation_summary.json
+            reports/thai_holdout_metrics.json
+            reports/missed_thai_urls.csv
+            reports/missed_generic_urls.csv
+          if-no-files-found: ignore
+
   dashboard-build:
     name: Dashboard build (Vite)
     runs-on: ubuntu-latest

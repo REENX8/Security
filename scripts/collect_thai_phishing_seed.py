@@ -51,148 +51,260 @@ WHITELIST_CSV = os.path.join(ROOT, "data", "thai_gov_domains.csv")
 # ---------------------------------------------------------------------------
 SOURCE_CURATED = "curated"
 
+# Cap any single ``target_brand`` to this many examples so the holdout
+# evaluation does not over-fit to the most-typed brands (obec, rd, ...).
+PER_BRAND_CAP = 4
+
 CURATED_PHISH: list[tuple[str, str]] = [
     # url, target_brand
 
-    # --- Pao Tang / state wallet / digital welfare ---
-    ("https://paotang-th.com/login", "paotang"),
-    ("https://paotang.app/login", "paotang"),
-    ("https://pao-tang.co/verify", "paotang"),
-    ("https://paotang-verify.xyz/account", "paotang"),
-    ("https://pao-tang-online.com/auth", "paotang"),
-    ("https://welfare-paotang.online/secure", "paotang"),
-
-    # --- ThaID (national digital ID) ---
+    # === Cabinet / portal / digital ID ===
+    ("https://thaigov.net/auth", "thaigov"),
+    ("https://thai-government-update-secure.online/", "thaigov"),
+    ("https://login-thaigov-online.cc/account/update.php?id=1234567890abcd", "thaigov"),
+    ("https://thаigov.online/login", "thaigov"),                # Cyrillic а
     ("https://thaid-login.com/verify", "thaid"),
     ("https://thaid-app.net/auth/login", "thaid"),
     ("https://thaid-verify.cc/account", "thaid"),
     ("https://thaid.support/reset-password", "thaid"),
+    ("https://paotang-th.com/login", "paotang"),
+    ("https://paotang-verify.xyz/account", "paotang"),
+    ("https://welfare-paotang.online/secure", "paotang"),
+    ("https://pao-tang.co/verify", "paotang"),
 
-    # --- Revenue Department (rd.go.th) — tax refund scams ---
+    # === Revenue / Customs / Excise / Comptroller-General ===
     ("https://rd-refund.com/login", "rd"),
-    ("https://rd-thai-refund.online/verify", "rd"),
     ("https://www.rd.go.th.refund-tax.com/secure", "rd"),
-    ("https://taxrefund-rd.shop/account-update", "rd"),
     ("http://rd-go-th.refund-secure.online/login", "rd"),
-
-    # --- Customs / DBD impersonations ---
-    ("https://dbd-thai.com/verify-account", "dbd"),
+    ("https://xn--rd-yia.com/refund", "rd"),                    # Punycode
     ("https://customs-th.online/clearance", "customs"),
     ("https://thai-customs.cc/secure", "customs"),
+    ("https://customs-go-th.shop/clearance-fee", "customs"),
+    ("https://excise-th.cc/pay", "excise"),
+    ("https://excise-go-th.online/duty-payment", "excise"),
+    ("https://cgd-go-th.online/verify", "cgd"),
+    ("https://cgd-thai.cc/payroll", "cgd"),
+    ("https://amlo-thai.online/verify-account", "amlo"),
 
-    # --- Bank of Thailand / SET / SEC impersonations (investment scams) ---
+    # === DBD / Trade Department / Intellectual Property ===
+    ("https://dbd-thai.com/verify-account", "dbd"),
+    ("https://dbd-go-th.cc/business-registration", "dbd"),
+    ("https://ditp-thai.online/login", "ditp"),
+    ("https://ipthailand-th.cc/trademark-verify", "ipthailand"),
+
+    # === Central bank / SET / SEC / Insurance regulator ===
     ("https://bot-thai-invest.com/login", "bot"),
-    ("https://setbroker.online/verify", "set"),
-    ("https://sec-thai.xyz/auth", "sec"),
     ("https://bot-or-th.cc/secure", "bot"),
+    ("https://setbroker.online/verify", "set"),
+    ("https://set-or-th.cc/portfolio", "set"),
+    ("https://sec-thai.xyz/auth", "sec"),
+    ("https://sec-or-th.shop/verify-investor", "sec"),
+    ("https://oic-thai.cc/insurance-claim", "oic"),
+    ("https://dpa-claim.online/secure", "dpa"),
 
-    # --- Krung Thai Bank (ktb / krungthai) ---
-    ("https://ktb-online.cc/login", "ktb"),
+    # === Major commercial banks (KBank / SCB / BBL / Krungthai / Krungsri / TTB / UOB) ===
+    ("https://kasikornbank-th.com/verify", "kbank"),
+    ("https://kbank-online.xyz/auth", "kbank"),
+    ("https://kаsikornbank.com/login", "kbank"),                # Cyrillic а
+    ("https://kbank-2025.shop/secure", "kbank"),
+    ("https://scb-easy-app.com/login", "scb"),
+    ("http://scb-co-th.update-secure.online/", "scb"),
+    ("https://scb-eаsy.cc/auth", "scb"),                        # Cyrillic а
+    ("https://www.scb.co.th@phish.online/auth", "scb"),
+    ("https://bbl-bangkokbank.shop/login", "bbl"),
+    ("http://bangkokbank.com.account-update.cc/auth", "bbl"),
+    ("https://bbl-secure.online/transfer", "bbl"),
     ("https://krungthai-secure.com/verify", "krungthai"),
     ("https://krungthai-net.online/auth", "krungthai"),
-    ("https://ktb-bank-update.shop/account", "ktb"),
     ("http://krungthai.com.verify-secure.online/login", "krungthai"),
+    ("https://krungthаi.com/secure", "krungthai"),              # Cyrillic а
+    ("https://ktb-online.cc/login", "ktb"),
+    ("https://ktb-bank-update.shop/account", "ktb"),
+    ("https://krungsri-secure.cc/login", "krungsri"),
+    ("https://krungsri-online.shop/verify", "krungsri"),
+    ("https://ttb-online.cc/login", "ttb"),
+    ("https://ttb-secure.shop/auth", "ttb"),
+    ("https://uob-secure.cc/verify", "uob"),
 
-    # --- SCB / Kasikorn / Bangkok Bank ---
-    ("https://scb-easy-app.com/login", "scb"),
-    ("https://scb-th-verify.cc/secure", "scb"),
-    ("https://kbank-online.xyz/auth", "kbank"),
-    ("https://kasikornbank-th.com/verify", "kbank"),
-    ("https://bbl-bangkokbank.shop/login", "bbl"),
-    ("http://scb-co-th.update-secure.online/", "scb"),
-    ("http://bangkokbank.com.account-update.cc/auth", "bbl"),
-
-    # --- Government Savings Bank / BAAC / GHB ---
+    # === State banks (GSB / BAAC / GHB / EXIM / SME) ===
     ("https://gsb-online.cc/login", "gsb"),
+    ("https://gsb-secure.shop/account", "gsb"),
     ("https://baac-th.com/verify", "baac"),
+    ("https://baac-online.cc/farmer-loan", "baac"),
     ("https://ghbank-secure.online/login", "ghb"),
+    ("https://ghb-online.cc/mortgage", "ghb"),
+    ("https://exim-thai.cc/trade-finance", "exim"),
+    ("https://smebank-th.online/loan", "smebank"),
+    ("https://ibank-thai.cc/login", "ibank"),
 
-    # --- Thailand Post / parcel scams ---
-    ("https://thailandpost-track.com/redelivery", "thailandpost"),
-    ("https://thpost-fee.online/payment", "thailandpost"),
-    ("https://thai-post-package.cc/track", "thailandpost"),
-    ("https://parcel-thailandpost.shop/login", "thailandpost"),
-    ("http://thailandpost.co.th.parcel-clearance.online/", "thailandpost"),
-
-    # --- Telecom (NT / AIS / True / DTAC) ---
-    ("https://nt-online.cc/verify", "nt"),
-    ("https://ais-rewards.online/claim", "ais"),
-    ("https://truepoint-redeem.xyz/login", "true"),
-    ("https://dtac-reward.shop/secure", "dtac"),
-
-    # --- Ministry of Education / OBEC / MUA — phish targeting students ---
-    ("https://obec-scholarship.cc/login", "obec"),
+    # === Ministries (broad coverage) ===
     ("https://moe-th.online/auth", "moe"),
-    ("https://mua-thai.xyz/verify", "mua"),
-    ("https://obec.go.th.scholarship-portal.online/", "obec"),
+    ("https://moe.go.th.update-portal.cc/secure", "moe"),
+    ("https://moe-th-student-login-verify.xyz/", "moe"),
+    ("https://mfa-thai.online/visa", "mfa"),
+    ("https://mfa-go-th.cc/passport-renewal", "mfa"),
+    ("https://moi-th.shop/secure", "moi"),
+    ("https://moi-go-th.online/citizen-portal", "moi"),
+    ("https://mof-thai.cc/treasury", "mof"),
+    ("https://moph-th.cc/secure", "moph"),
+    ("https://moph-vaccine.online/register", "moph"),
+    ("https://mol-thai.cc/welfare", "mol"),
+    ("https://mol-go-th.shop/labour-claim", "mol"),
+    ("https://mot-thai.cc/transport-permit", "mot"),
+    ("https://moac-thai.online/farmer-aid", "moac"),
+    ("https://mnre-thai.cc/forestry-permit", "mnre"),
+    ("https://mots-thai.cc/tourist-license", "mots"),
+    ("https://mod-thai.cc/recruit", "mod"),
+    ("https://moj-thai.cc/legal-aid", "moj"),
+    ("https://m-culture-thai.cc/grant", "culture"),
+    ("https://industry-thai.online/factory-permit", "industry"),
+    ("https://energy-thai.cc/subsidy", "energy"),
+    ("https://m-society-thai.online/welfare-claim", "society"),
 
-    # --- Provincial / DOPA national-ID impersonation ---
+    # === MHESI / Higher education agencies ===
+    ("https://mhesi-th.online/scholarship", "mhesi"),
+    ("https://mua-thai.xyz/verify", "mua"),
+    ("https://mua-go-th.cc/student-loan", "mua"),
+
+    # === OBEC / vocational / school portals (covered moe above, keep obec separate) ===
+    ("https://obec-scholarship.cc/login", "obec"),
+    ("https://obec.go.th.scholarship-portal.online/", "obec"),
+    ("https://obec.com/login", "obec"),                         # TLD swap
+    ("https://оbec.com/verify", "obec"),                        # Cyrillic о
+    ("https://ovec-thai.cc/student-grant", "ovec"),
+    ("https://opec-thai.online/private-school", "opec"),
+
+    # === Public universities (Chulalongkorn / Mahidol / KU / Thammasat / others) ===
+    ("https://chulalongkorn.com/secure", "chula"),
+    ("https://chula-ac-th-mail-login.online/", "chula"),
+    ("https://chulа.com/login", "chula"),                       # Cyrillic а
+    ("https://xn--chula-jjb.com/verify", "chula"),              # Punycode
+    ("https://mahidol-th.com/student-portal", "mahidol"),
+    ("https://mu-online.cc/login", "mahidol"),
+    ("https://ku-online.com/student-login", "ku"),
+    ("https://kasetsart-th.online/admission", "ku"),
+    ("https://tu-online.com/login", "tu"),
+    ("https://thammasat-th.cc/student-portal", "tu"),
+    ("https://kku-online.com/login", "kku"),
+    ("https://khonkaen-uni-th.cc/admission", "kku"),
+    ("https://psu-online.com/portal", "psu"),
+    ("https://cmu-online.com/login", "cmu"),
+    ("https://chiangmai-uni-th.cc/student", "cmu"),
+    ("https://kmutt-ac-th-portal-secure.shop/", "kmutt"),
+    ("https://kmutt-online.cc/login", "kmutt"),
+    ("https://kmitl-th.com/student-login", "kmitl"),
+    ("https://swu-online.com/student", "swu"),
+    ("https://ramkhamhaeng-th.com/portal", "ru"),
+    ("https://nida-thai.cc/login", "nida"),
+    ("https://mfu-online.cc/portal", "mfu"),
+
+    # === Provincial / Bangkok / DOPA / local admin ===
     ("https://dopa-verify.online/account", "dopa"),
     ("https://thai-id-card.cc/renew", "dopa"),
-    ("https://moi-th.shop/secure", "moi"),
+    ("https://dopa-go-th.shop/card-renewal", "dopa"),
+    ("https://bma-online.cc/citizen", "bangkok"),
+    ("https://bangkok-services.online/permit", "bangkok"),
+    ("https://dla-thai.cc/local-permit", "dla"),
 
-    # --- Social Security Office (SSO) — benefits phish ---
+    # === Royal Thai Police / Immigration / Cybercrime ===
+    ("https://rtp-online.cc/verify", "police"),
+    ("https://thaipolice-verify.shop/account", "police"),
+    ("https://imm-th.online/visa-extension", "immigration"),
+    ("https://immigration-verify.cc/secure", "immigration"),
+    ("https://tcsd-thai.cc/cyber-report", "tcsd"),
+
+    # === Welfare / Social Security / NHSO ===
     ("https://sso-benefits.online/claim", "sso"),
     ("https://sso-th.cc/login", "sso"),
     ("https://www.sso.go.th.welfare-claim.online/", "sso"),
-
-    # --- Energy / utility brand spoofs ---
-    ("https://mea-online.cc/bill", "mea"),
-    ("https://pea-thai.shop/payment", "pea"),
-    ("https://mwa-online.xyz/account", "mwa"),
-
-    # --- Health / NHSO welfare ---
+    ("https://sso-go-th.shop/unemployment", "sso"),
     ("https://nhso-claim.online/login", "nhso"),
-    ("https://moph-th.cc/secure", "moph"),
+    ("https://nhso-vaccine.cc/register", "nhso"),
+    ("https://fda-thai.cc/license", "fda"),
+    ("https://ddc-vaccine.online/register", "ddc"),
+    ("https://ddc-thai.cc/disease-report", "ddc"),
 
-    # --- IP-host & at-trick attacks against Thai brands ---
+    # === State enterprises (utilities, post, transport, telecom) ===
+    ("https://mea-online.cc/bill", "mea"),
+    ("https://mea-thai.shop/payment", "mea"),
+    ("https://pea-thai.shop/payment", "pea"),
+    ("https://pea-bill.cc/online", "pea"),
+    ("https://mwa-online.xyz/account", "mwa"),
+    ("https://mwa-bill.online/pay", "mwa"),
+    ("https://pwa-bill.online/pay", "pwa"),
+    ("https://egat-online.cc/contractor", "egat"),
+    ("https://egat-thai.shop/auction", "egat"),
+    ("https://thailandpost-track.com/redelivery", "thailandpost"),
+    ("https://thpost-fee.online/payment", "thailandpost"),
+    ("https://thai-post-package.cc/track", "thailandpost"),
+    ("http://thailandpost.co.th.parcel-clearance.online/", "thailandpost"),
+    ("https://nt-online.cc/verify", "nt"),
+    ("https://nt-mobile.cc/recharge", "nt"),
+    ("https://railway-thai.cc/refund", "railway"),
+    ("https://airportthai-claim.online/lost-baggage", "airportthai"),
+
+    # === Telecom (private carriers) ===
+    ("https://ais-rewards.online/claim", "ais"),
+    ("https://ais-mobile.cc/topup", "ais"),
+    ("https://truepoint-redeem.xyz/login", "true"),
+    ("https://true-online.cc/secure", "true"),
+    ("https://dtac-reward.shop/secure", "dtac"),
+    ("https://dtac-mobile.cc/topup", "dtac"),
+
+    # === Logistics / parcel scams (Kerry / Flash / JT) ===
+    ("https://kerry-th.cc/redelivery", "kerry"),
+    ("https://kerryexpress-redelivery.online/fee", "kerry"),
+    ("https://flash-th.cc/redelivery", "flash"),
+    ("https://flashexpress-fee.online/payment", "flash"),
+    ("https://jt-th.cc/track", "jt"),
+    ("https://jtexpress-fee.online/clearance", "jt"),
+
+    # === E-commerce coupon / promo scams ===
+    ("https://lazada-coupon.cc/redeem", "lazada"),
+    ("https://lazada-secure.online/login", "lazada"),
+    ("https://shopee-promo.cc/redeem", "shopee"),
+    ("https://shopee-coin.online/claim", "shopee"),
+
+    # === Tourism / sports / culture ===
+    ("https://tat-thai.cc/registration", "tat"),
+    ("https://sat-thai.online/athlete-grant", "sat"),
+
+    # === Generic IP-host / @-trick attacks against Thai brands ===
     ("http://203.0.113.45/obec/login", "obec"),
     ("http://198.51.100.7/rd-refund/", "rd"),
     ("https://obec.go.th@evil.xyz/login", "obec"),
-    ("https://www.scb.co.th@phish.online/auth", "scb"),
     ("http://thaigov.go.th@malicious.shop/", "thaigov"),
-
-    # --- IDN / homoglyph variants (Cyrillic) ---
-    ("https://chulа.com/login", "chula"),               # Cyrillic а
-    ("https://оbec.com/verify", "obec"),                # Cyrillic о
-    ("https://krungthаi.com/secure", "krungthai"),      # Cyrillic а
-    ("https://kаsikornbank.com/login", "kbank"),        # Cyrillic а
-    ("https://scb-eаsy.cc/auth", "scb"),                # Cyrillic а
-    ("https://thаigov.online/login", "thaigov"),        # Cyrillic а
-
-    # --- Punycode (xn--) IDN ---
-    ("https://xn--obec-9bc.com/login", "obec"),
-    ("https://xn--chula-jjb.com/verify", "chula"),
-    ("https://xn--rd-yia.com/refund", "rd"),
-
-    # --- Brand-stuffed / hyphenated typosquats ---
-    ("https://thai-government-update-secure.online/", "thaigov"),
-    ("https://obec-school-portal-login-secure.cc/", "obec"),
-    ("https://moe-th-student-login-verify.xyz/", "moe"),
-    ("https://chula-ac-th-mail-login.online/", "chula"),
-    ("https://kmutt-ac-th-portal-secure.shop/", "kmutt"),
-    ("https://rd-go-th-tax-refund-2025.cc/login", "rd"),
-
-    # --- Subdomain spoofs (Thai brand pretending in subdomain) ---
     ("https://obec.go.th.evil-server.xyz/login", "obec"),
-    ("https://moe.go.th.update-portal.cc/secure", "moe"),
     ("https://kbank.co.th.account-verify.online/login", "kbank"),
 
-    # --- TLD-swap (exact brand label on wrong TLD) ---
-    ("https://obec.com/login", "obec"),
-    ("https://obec.org/verify", "obec"),
-    ("https://chulalongkorn.com/secure", "chula"),
-    ("https://thaigov.net/auth", "thaigov"),
-    ("https://moe.org/login", "moe"),
-    ("https://rd.com/refund", "rd"),
-    ("https://kasikornbank.online/login", "kbank"),
-    ("https://kbank.shop/verify", "kbank"),
-
-    # --- Long URL / suspicious-path patterns observed in real campaigns ---
+    # === Brand-stuffed / hyphenated typosquats (mixed brands) ===
+    ("https://obec-school-portal-login-secure.cc/", "obec"),
+    ("https://rd-go-th-tax-refund-2025.cc/login", "rd"),
     ("https://secure-update-account-th.shop/?ref=obec.go.th", "obec"),
-    ("https://login-thaigov-online.cc/account/update.php?id=1234567890abcd", "thaigov"),
     ("https://account-verify-rd-go-th.online/login.html", "rd"),
 ]
+
+
+def _cap_per_brand(rows: list[tuple[str, str]], cap: int) -> list[tuple[str, str]]:
+    """Trim ``rows`` so no single brand appears more than ``cap`` times.
+
+    Order is preserved -- the first ``cap`` URLs for each brand survive,
+    so list-position is how we curate which examples represent each brand.
+    """
+    seen: dict[str, int] = {}
+    out: list[tuple[str, str]] = []
+    dropped: list[tuple[str, str]] = []
+    for url, brand in rows:
+        if seen.get(brand, 0) >= cap:
+            dropped.append((url, brand))
+            continue
+        seen[brand] = seen.get(brand, 0) + 1
+        out.append((url, brand))
+    if dropped:
+        over = {b: c for b, c in seen.items() if c == cap}
+        print(f"[seed] capped {len(dropped)} URLs across {len(over)} brands "
+              f"at {cap} examples each")
+    return out
 
 
 # ---------------------------------------------------------------------------
@@ -313,23 +425,33 @@ def _merge(
     live: Iterable[tuple[str, str, str]],
     today: str,
 ) -> dict[str, dict]:
-    out = dict(existing)
-    added = 0
+    """Rebuild the corpus from ``curated + live``.
+
+    ``existing`` is consulted only to preserve ``collected_at`` for URLs
+    that survive the rebuild -- so re-running on a different day does not
+    churn the audit trail. URLs that drop out of the curated list (e.g.
+    when a brand's cap is lowered) are dropped from the CSV.
+    """
+    out: dict[str, dict] = {}
     for url, target in curated:
-        if url not in out:
-            out[url] = {
-                "url": url, "label": "1", "source": SOURCE_CURATED,
-                "target_brand": target, "collected_at": today,
-            }
-            added += 1
+        prior = existing.get(url, {})
+        out[url] = {
+            "url": url, "label": "1", "source": SOURCE_CURATED,
+            "target_brand": target,
+            "collected_at": prior.get("collected_at") or today,
+        }
     for url, source, target in live:
-        if url not in out:
-            out[url] = {
-                "url": url, "label": "1", "source": source,
-                "target_brand": target, "collected_at": today,
-            }
-            added += 1
-    print(f"[seed] +{added} new rows")
+        if url in out:
+            continue  # curated entry already wins
+        prior = existing.get(url, {})
+        out[url] = {
+            "url": url, "label": "1", "source": source,
+            "target_brand": target,
+            "collected_at": prior.get("collected_at") or today,
+        }
+    print(f"[seed] {len(out)} total rows "
+          f"({sum(1 for r in out.values() if r['source'] == SOURCE_CURATED)} curated"
+          f" + {sum(1 for r in out.values() if r['source'] != SOURCE_CURATED)} live)")
     return out
 
 
@@ -345,14 +467,35 @@ def main() -> None:
     args = parser.parse_args()
 
     today = dt.date.today().isoformat()
+    # Always rebuild from CURATED_PHISH so editing the source list takes effect
+    # immediately. Existing rows are kept only for their collected_at value if
+    # the URL is still in the curated list (so re-running on a different day
+    # does not churn the audit trail).
     existing = _existing(args.out)
     print(f"[seed] loaded {len(existing)} existing rows from {args.out}")
 
     brands = _load_whitelist_brands()
     print(f"[seed] {len(brands)} brand keywords derived from whitelist")
 
+    # Cap curated list per-brand BEFORE merging so a single brand cannot
+    # dominate the holdout evaluation.
+    capped_curated = _cap_per_brand(CURATED_PHISH, PER_BRAND_CAP)
+
     live = [] if args.no_fetch else _fetch_live(brands)
-    merged = _merge(existing, CURATED_PHISH, live, today)
+    # Cap live additions too (per-brand across the full corpus, accounting for
+    # the curated allocation that already filled some brands' budgets).
+    if live:
+        budget = {b: sum(1 for _, b2 in capped_curated if b2 == b) for _, _, b in live}
+        live_capped: list[tuple[str, str, str]] = []
+        for url, source, brand in live:
+            used = budget.get(brand, 0)
+            if used >= PER_BRAND_CAP:
+                continue
+            budget[brand] = used + 1
+            live_capped.append((url, source, brand))
+        live = live_capped
+
+    merged = _merge(existing, capped_curated, live, today)
 
     os.makedirs(os.path.dirname(args.out), exist_ok=True)
     with open(args.out, "w", newline="", encoding="utf-8") as fh:

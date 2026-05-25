@@ -43,6 +43,7 @@ from ml_pipeline.config import (
     SCALER_PATH,
     THAI_HOLDOUT_CSV,
     THAI_HOLDOUT_METRICS_JSON,
+    THAI_RECALL_MIN_THRESHOLD,
     ensure_dirs,
 )
 from ml_pipeline.config import DATASET_CSV, RANDOM_SEED
@@ -222,9 +223,19 @@ def main() -> None:
 
 
 def _eval_holdout_csv(
-    csv_path: str, metrics_path: str, label: str, model, scaler
+    csv_path: str,
+    metrics_path: str,
+    label: str,
+    model,
+    scaler,
+    missed_csv_path: str | None = None,
 ) -> dict:
-    """Shared logic for evaluating any all-phishing holdout CSV."""
+    """Shared logic for evaluating any all-phishing holdout CSV.
+
+    When ``missed_csv_path`` is given, every URL whose score fell below the
+    suspicious threshold (0.30) is written to that CSV with diagnostic
+    columns -- enabling per-URL post-mortem instead of just a count.
+    """
     frame = build_feature_frame(csv_path)
     X = frame[ORDERED_FEATURES].astype(float)
     X_s = scaler.transform(X.to_numpy())
@@ -252,11 +263,39 @@ def _eval_holdout_csv(
     print(f"  Mean score            : {float(y_proba.mean()):.4f}")
     print(f"  Median score          : {float(pd.Series(y_proba).median()):.4f}")
 
-    missed = frame.assign(score=y_proba)[y_proba < 0.30]
-    if len(missed):
-        print(f"  Examples MISSED ({min(5, len(missed))} of {len(missed)}):")
-        for _, row in missed.head(5).iterrows():
+    missed_frame = frame.assign(score=y_proba)[y_proba < 0.30].sort_values("score")
+    if len(missed_frame):
+        print(f"  Examples MISSED ({min(5, len(missed_frame))} of {len(missed_frame)}):")
+        for _, row in missed_frame.head(5).iterrows():
             print(f"    - {row['url']}  (score={row['score']:.2f})")
+
+    # Build a structured miss list with diagnostic context. Keep the
+    # column set narrow so the CSV stays grep-able for debugging.
+    miss_records = [
+        {
+            "url": r["url"],
+            "score": round(float(r["score"]), 4),
+            "closest_domain": r.get("closest_domain") or "",
+            "min_edit_distance": int(r.get("min_edit_distance", 999)),
+            "is_typosquat": int(r.get("is_typosquat", 0)),
+            "has_punycode": int(r.get("has_punycode", 0)),
+            "has_mixed_script": int(r.get("has_mixed_script", 0)),
+            "tld_type": r.get("tld_type") or "",
+        }
+        for _, r in missed_frame.iterrows()
+    ]
+    if missed_csv_path:
+        if miss_records:
+            import csv as _csv
+            with open(missed_csv_path, "w", newline="", encoding="utf-8") as fh:
+                writer = _csv.DictWriter(fh, fieldnames=list(miss_records[0].keys()))
+                writer.writeheader()
+                writer.writerows(miss_records)
+            print(f"  Saved miss list -> {missed_csv_path}")
+        elif os.path.exists(missed_csv_path):
+            # Remove a stale miss file when this run has no misses, so the
+            # repo state matches "0 misses" instead of last-run leftovers.
+            os.remove(missed_csv_path)
 
     metrics = {
         "sample_size": n,
@@ -266,7 +305,8 @@ def _eval_holdout_csv(
         "recall_suspicious_ci_95": list(ci_susp),
         "mean_score": round(float(y_proba.mean()), 4),
         "median_score": round(float(pd.Series(y_proba).median()), 4),
-        "missed_count": int(len(missed)),
+        "missed_count": int(len(missed_frame)),
+        "missed_urls": miss_records,
     }
     with open(metrics_path, "w", encoding="utf-8") as fh:
         json.dump(metrics, fh, indent=2)
@@ -282,6 +322,7 @@ def evaluate_real_holdout(model, scaler) -> dict:
         "HOLDOUT EVAL ON UNSEEN REAL PHISHING URLS (OpenPhish/PhishTank/URLhaus)",
         model,
         scaler,
+        missed_csv_path=os.path.join(REPORTS_DIR, "missed_generic_urls.csv"),
     )
 
 
@@ -292,6 +333,7 @@ def evaluate_thai_holdout(model, scaler) -> dict:
         "HOLDOUT EVAL ON THAI-TARGETING PHISHING URLS",
         model,
         scaler,
+        missed_csv_path=os.path.join(REPORTS_DIR, "missed_thai_urls.csv"),
     )
 
 
@@ -416,5 +458,52 @@ def write_evaluation_summary(
     )
 
 
+def _enforce_primary_threshold(min_threshold: float) -> None:
+    """Read evaluation_summary.json and exit non-zero if the primary metric
+    (Thai-targeting holdout recall) is below ``min_threshold``.
+
+    Intended for CI: a recall regression that drops the model below the
+    target should fail the build, not pass silently. Reads the file rather
+    than re-running evaluation so a single ``python -m ml_pipeline.evaluate
+    --enforce-threshold`` run does both jobs.
+    """
+    import sys
+    if not os.path.exists(EVALUATION_SUMMARY_JSON):
+        print(f"[ci-gate] FAIL: {EVALUATION_SUMMARY_JSON} missing; "
+              "did evaluation actually run?")
+        sys.exit(2)
+    with open(EVALUATION_SUMMARY_JSON, encoding="utf-8") as fh:
+        summary = json.load(fh)
+    primary = summary.get("primary_value")
+    metric = summary.get("primary_metric")
+    n = summary.get("primary_sample_size", 0)
+    if primary is None:
+        print(f"[ci-gate] FAIL: primary metric '{metric}' is null "
+              "(no Thai-targeting holdout — seed corpus probably empty)")
+        sys.exit(3)
+    if primary < min_threshold:
+        print(f"[ci-gate] FAIL: {metric} = {primary:.4f} on n={n} "
+              f"< required {min_threshold:.4f}")
+        print(f"           See {EVALUATION_SUMMARY_JSON} and "
+              f"{os.path.join(REPORTS_DIR, 'missed_thai_urls.csv')} "
+              "for the URLs that triggered the regression.")
+        sys.exit(1)
+    print(f"[ci-gate] OK:   {metric} = {primary:.4f} on n={n} "
+          f">= required {min_threshold:.4f}")
+
+
 if __name__ == "__main__":
+    import argparse
+    parser = argparse.ArgumentParser(description="Evaluate the phishing detector")
+    parser.add_argument(
+        "--enforce-threshold", action="store_true",
+        help=(
+            "After evaluation, exit non-zero if the primary metric "
+            "(Thai-targeting holdout recall) is below "
+            "THAI_RECALL_MIN_THRESHOLD (default 0.85). For CI."
+        ),
+    )
+    args = parser.parse_args()
     main()
+    if args.enforce_threshold:
+        _enforce_primary_threshold(THAI_RECALL_MIN_THRESHOLD)
