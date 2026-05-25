@@ -6,7 +6,6 @@
   "description": "Real-time detection of phishing URLs impersonating Thai government (.go.th) and education (.ac.th) websites.",
   "author": "Thai Phishing Detector contributors",
   "homepage_url": "https://github.com/reenx8/security",
-  "default_locale": "en",
   "minimum_chrome_version": "108",
 
   "permissions": [
