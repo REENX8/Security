@@ -65,6 +65,22 @@ _HOMOGLYPHS = {
     "o": "0", "l": "1", "i": "1", "e": "3", "a": "@", "s": "5",
 }
 
+# Latin -> Unicode confusable swaps for the IDN homoglyph archetype.
+# These mirror the confusables FoldedMap in phish_features.homoglyph so the
+# new feature actually fires on the generated examples.
+_IDN_SWAPS: dict[str, str] = {
+    "a": "а",  # Cyrillic а
+    "e": "е",  # Cyrillic е
+    "o": "о",  # Cyrillic о
+    "p": "р",  # Cyrillic р
+    "c": "с",  # Cyrillic с
+    "x": "х",  # Cyrillic х
+    "i": "і",  # Cyrillic і
+    "h": "һ",
+    "y": "у",
+    "s": "ѕ",
+}
+
 
 class SyntheticGenerator:
     def __init__(self, whitelist_domains: list[str], seed: int = 42) -> None:
@@ -198,8 +214,9 @@ class SyntheticGenerator:
         label = self._domain_label(domain)
         archetype = self.rng.choices(
             ["typosquat", "tld_swap", "subdomain_spoof", "ip_host",
-             "at_trick", "brand_stuffed", "https_ip_host", "redirect_chain"],
-            weights=[28, 13, 13, 11, 11, 13, 5, 6],
+             "at_trick", "brand_stuffed", "https_ip_host", "redirect_chain",
+             "idn_homoglyph", "punycode_spoof"],
+            weights=[25, 12, 12, 10, 10, 12, 5, 6, 4, 4],
         )[0]
         scheme = "https" if self.rng.random() < 0.55 else "http"
         path = self.rng.choice(_PHISH_PATHS)
@@ -226,6 +243,34 @@ class SyntheticGenerator:
             # attacker.xyz/redirect?to=legitimate.go.th — redirect with query param
             attacker = self._rand_str(self.rng.randint(5, 10))
             host = f"{attacker}.{self.rng.choice(_BAD_TLDS)}"
+        elif archetype == "idn_homoglyph":
+            # Swap one Latin letter in the brand label for a Cyrillic look-alike.
+            # The resulting host displays identically to the legitimate brand
+            # but does not match it in raw-ASCII edit distance.
+            candidates = [i for i, ch in enumerate(label) if ch in _IDN_SWAPS]
+            if candidates:
+                idx = self.rng.choice(candidates)
+                spoofed = list(label)
+                spoofed[idx] = _IDN_SWAPS[label[idx]]
+                host = "".join(spoofed) + "." + self.rng.choice(_BAD_TLDS)
+            else:
+                # Fall back to a plain typosquat for labels with no swap-able chars.
+                host = self._mutate_label(label) + "." + self.rng.choice(_BAD_TLDS)
+        elif archetype == "punycode_spoof":
+            # Encode an IDN homoglyph version of the label as Punycode so the
+            # raw host begins with xn--. Falls back gracefully if encoding fails.
+            candidates = [i for i, ch in enumerate(label) if ch in _IDN_SWAPS]
+            unicode_label = label
+            if candidates:
+                idx = self.rng.choice(candidates)
+                tmp = list(label)
+                tmp[idx] = _IDN_SWAPS[label[idx]]
+                unicode_label = "".join(tmp)
+            try:
+                encoded = unicode_label.encode("idna").decode("ascii")
+            except Exception:  # noqa: BLE001
+                encoded = "xn--" + label + "-zzz"
+            host = encoded + "." + self.rng.choice(_BAD_TLDS)
         else:  # brand_stuffed
             words = self.rng.sample(_BRAND_WORDS, k=self.rng.randint(2, 4))
             host = "-".join([label] + words) + "." + self.rng.choice(_BAD_TLDS)

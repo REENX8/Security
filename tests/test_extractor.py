@@ -68,6 +68,12 @@ def test_ip_host_skips_whitelist(extractor):
     assert feat["min_edit_distance"] == 999
 
 
+def test_extract_dict_has_idn_features(extractor):
+    feat = extractor.extract_dict("https://www.obec.go.th")
+    for name in ("has_punycode", "has_mixed_script", "homoglyph_distance"):
+        assert name in feat, f"missing v1.2 feature: {name}"
+
+
 def test_extract_batch_matches_individual(extractor):
     urls = [
         "https://www.obec.go.th",

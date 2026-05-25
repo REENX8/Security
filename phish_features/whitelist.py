@@ -12,6 +12,8 @@ import json
 import os
 from dataclasses import dataclass, field
 
+from .homoglyph import decode_idn, fold_confusables
+
 # Prefer the fast C-backed library; fall back to a pure-Python implementation
 # so the package never hard-fails on install issues.
 try:  # pragma: no cover - exercised by environment
@@ -197,6 +199,27 @@ class Whitelist:
         best_dom: str | None = None
         for label, dom in zip(self._labels, self._domains):
             d = _lev_distance(target, label)
+            if d < best_dist:
+                best_dist, best_dom = d, dom
+                if d == 0:
+                    break
+        return (best_dist, best_dom)
+
+    def closest_normalized(self, host: str) -> tuple[int, str | None]:
+        """Closest brand-label distance AFTER Punycode decode + confusable fold.
+
+        Catches IDN homograph attacks (``chulа.com`` with Cyrillic ``а``,
+        ``xn--chla-zxa.com``) that ``closest()`` misses because the raw
+        label compares against the whitelist in ASCII space.
+        """
+        decoded = decode_idn(host)
+        normalized_label = fold_confusables(brand_label(decoded))
+        if not normalized_label or not self._labels:
+            return (999, None)
+        best_dist = 999
+        best_dom: str | None = None
+        for label, dom in zip(self._labels, self._domains):
+            d = _lev_distance(normalized_label, label)
             if d < best_dist:
                 best_dist, best_dom = d, dom
                 if d == 0:

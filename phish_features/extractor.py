@@ -11,6 +11,7 @@ from __future__ import annotations
 from urllib.parse import urlparse
 
 from .domain import whois_features
+from .homoglyph import has_mixed_script, has_punycode
 from .lexical import extract_lexical, normalize_url
 from .schema import (
     IMPUTED_DEFAULTS,
@@ -78,8 +79,33 @@ class FeatureExtractor:
             feat["min_edit_distance"] = 999
             feat["closest_domain"] = None
             feat["is_typosquat"] = 0
+            feat["homoglyph_distance"] = 999
+            feat["has_punycode"] = 0
+            feat["has_mixed_script"] = 0
         else:
             feat.update(self.whitelist.whitelist_features(host))
+            # IDN / homoglyph features: re-run the closest lookup against
+            # the Unicode-decoded + confusable-folded label and keep the
+            # smaller of the two distances. This catches xn-- spoofs and
+            # Cyrillic look-alikes that the raw ASCII compare misses.
+            norm_dist, norm_dom = self.whitelist.closest_normalized(host)
+            raw_dist = int(feat["min_edit_distance"])
+            feat["homoglyph_distance"] = min(raw_dist, int(norm_dist))
+            feat["has_punycode"] = int(has_punycode(host))
+            feat["has_mixed_script"] = int(has_mixed_script(host))
+            # Promote a homoglyph match to typosquat when the normalized
+            # form is closer than the raw form -- otherwise an attacker
+            # only has to swap one letter for a Cyrillic look-alike to
+            # bypass typosquat detection entirely.
+            if (
+                not feat["is_typosquat"]
+                and norm_dist < raw_dist
+                and norm_dist <= 3
+                and norm_dom is not None
+            ):
+                feat["is_typosquat"] = 1
+                feat["closest_domain"] = norm_dom
+                feat["min_edit_distance"] = int(norm_dist)
 
         # --- WHOIS ---
         if network_overrides and "domain_age_days" in network_overrides:
