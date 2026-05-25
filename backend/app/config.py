@@ -4,7 +4,7 @@ from __future__ import annotations
 
 from pathlib import Path
 
-from pydantic import Field
+from pydantic import Field, field_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 # Repo root = <root>/backend/app/config.py -> parents[2].
@@ -21,9 +21,23 @@ class Settings(BaseSettings):
 
     # --- database ---
     # asyncpg for PostgreSQL; aiosqlite also works for a zero-setup demo.
+    # Managed providers (Render, Heroku, Railway) hand out a DSN that
+    # starts with "postgres://" or "postgresql://" -- the async engine
+    # needs an explicit "+asyncpg" driver hint. We patch it once in the
+    # validator below so call sites can stay generic.
     database_url: str = Field(
         default="postgresql+asyncpg://phish:phish@localhost:5432/phishdb"
     )
+
+    @field_validator("database_url", mode="before")
+    @classmethod
+    def _normalize_database_url(cls, v: str) -> str:
+        if isinstance(v, str):
+            if v.startswith("postgres://"):
+                return "postgresql+asyncpg://" + v[len("postgres://"):]
+            if v.startswith("postgresql://") and "+asyncpg" not in v:
+                return "postgresql+asyncpg://" + v[len("postgresql://"):]
+        return v
 
     # --- model artifacts ---
     model_dir: str = Field(default=str(ROOT / "models"))

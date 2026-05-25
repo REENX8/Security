@@ -18,7 +18,11 @@ RUN pip install --no-cache-dir -e . \
 # --- application code ---
 COPY backend ./backend
 
-# Models are mounted read-only at runtime: ./models -> /app/models
+# Models are committed to git and baked into the image so the container
+# runs anywhere (Render, Fly, k8s) without an external volume mount.
+# docker-compose still works because /app/models is the same path.
+COPY models ./models
+
 WORKDIR /app/backend
 EXPOSE 8000
 
