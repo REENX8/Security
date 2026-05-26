@@ -119,4 +119,6 @@ def extract_lexical(url: str) -> dict:
         ),
         "max_digit_run": max((len(r) for r in digit_runs), default=0),
         "has_query_string": int(bool(parsed.query)),
+        # v1.3 features (path-impersonation surface; tld decided by extractor)
+        "path_length": len(parsed.path or ""),
     }

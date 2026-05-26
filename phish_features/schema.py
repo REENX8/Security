@@ -13,9 +13,17 @@ and retrain the model. The backend refuses to serve a model whose
 from __future__ import annotations
 
 # Bump on ANY change to ORDERED_FEATURES / encodings / defaults.
-# v1.2.0 adds IDN / homoglyph features to close the Thai-targeting gap
-# (Cyrillic look-alikes, Punycode spoofs, mixed-script labels).
-FEATURE_SCHEMA_VERSION = "1.2.0"
+#
+# History:
+#   v1.0.0 -- initial 20-feature set (lexical + WHOIS + TLS + whitelist).
+#   v1.1.0 -- 5 path / port / digit-run lexical features.
+#   v1.2.0 -- IDN + homoglyph + Punycode features (Cyrillic look-alikes).
+#   v1.3.0 -- path-impersonation features. Close the gap on phishing kits
+#             that reuse benign-looking hosts but stuff brand / credential
+#             keywords into the URL path (~40% of OpenPhish misses had this
+#             pattern), and on URLs sitting on the long tail of cheap
+#             abused TLDs the ML had learnt only through indirect signals.
+FEATURE_SCHEMA_VERSION = "1.3.0"
 
 # The exact, ordered list of numeric features fed to the model.
 # Index position IS the contract -- never reorder, only append + bump version.
@@ -58,6 +66,13 @@ ORDERED_FEATURES: list[str] = [
     "has_mixed_script",     # 1 if a label mixes Unicode scripts (e.g. Latin+Cyrillic)
     "homoglyph_distance",   # min_edit_distance AFTER confusable fold;
                             # collapses below min_edit_distance for spoofs.
+    # --- v1.3 path-impersonation features ---
+    "has_login_keyword",    # 1 if URL path/query contains a credential-collection keyword
+    "has_suspicious_tld",   # 1 if eTLD is in a curated cheap/abused list
+    "path_brand_hit",       # 1 if a trusted brand label appears in the URL path
+                            #   while the host's brand label does not
+                            #   (e.g. ``random.cc/bot.go.th/login``)
+    "path_length",          # total characters in URL path (>120 is rare on legit sites)
 ]
 
 N_FEATURES = len(ORDERED_FEATURES)
@@ -100,6 +115,36 @@ KNOWN_THAI_REGISTRARS: tuple[str, ...] = (
     "godaddy",
     "cloudflare",
 )
+
+# --- v1.3 lookup tables --------------------------------------------------
+# Credential-collection / pressure keywords that show up in the URL path or
+# query string of the overwhelming majority of phishing kits. Order doesn't
+# matter; the lookup is a frozenset for O(1) checks.
+LOGIN_KEYWORDS: frozenset[str] = frozenset({
+    "login", "signin", "sign-in", "log-in", "logon",
+    "verify", "verification", "validate", "validation",
+    "account", "accounts", "myaccount",
+    "secure", "security", "session", "auth", "authenticate",
+    "update", "updated", "confirm", "confirmation",
+    "password", "passwd", "credential", "credentials",
+    "wallet", "recover", "recovery", "reset", "unlock",
+    "support", "billing", "invoice", "refund",
+    "webscr", "ebay", "service", "client", "customer",
+    "twofactor", "otp", "kyc",
+})
+
+# Cheap / commonly abused TLDs. OpenPhish + URLhaus 2024-2025 over-index
+# heavily on these compared to .com base rates. A 1/0 flag is enough --
+# the model decides the weight.
+SUSPICIOUS_TLDS: frozenset[str] = frozenset({
+    "xyz", "top", "icu", "buzz", "click", "click", "loan",
+    "online", "site", "store", "shop", "vip", "live", "work",
+    "fit", "lol", "rest", "cfd", "sbs", "bond", "monster",
+    "cc", "tk", "ml", "ga", "cf", "gq",
+    "club", "support", "win", "biz", "info",
+    "you", "cv", "uno", "country", "stream", "review", "party",
+    "racing", "download", "fyi", "page", "host", "space",
+})
 
 
 def vector_from_dict(feat: dict) -> list[float]:

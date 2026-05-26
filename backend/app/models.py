@@ -102,3 +102,89 @@ class Feedback(Base):
         default=lambda: dt.datetime.now(dt.timezone.utc),
         index=True,
     )
+
+
+# ---------------------------------------------------------------------------
+# Brand watchlist + webhook notifications  (v1.0 new module)
+#
+# Operators register the brands they care about ("krungthai", "obec", ...).
+# When a new phishing URL is detected whose ``closest_domain`` brand label
+# matches a watched brand, the system POSTs an alert to every webhook the
+# operator has registered. This is the differentiator from feedback (which
+# is post-hoc): watchlist is proactive.
+# ---------------------------------------------------------------------------
+
+
+class BrandWatch(Base):
+    __tablename__ = "brand_watch"
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
+    brand: Mapped[str] = mapped_column(
+        String(64), nullable=False, unique=True, index=True
+    )
+    description: Mapped[str] = mapped_column(String(256), default="")
+    webhook_url: Mapped[str | None] = mapped_column(String(512), nullable=True)
+    enabled: Mapped[bool] = mapped_column(Boolean, default=True)
+    created_at: Mapped[dt.datetime] = mapped_column(
+        DateTime(timezone=True),
+        default=lambda: dt.datetime.now(dt.timezone.utc),
+        index=True,
+    )
+    # Stats updated by the watcher:
+    last_hit_at: Mapped[dt.datetime | None] = mapped_column(
+        DateTime(timezone=True), nullable=True
+    )
+    hit_count: Mapped[int] = mapped_column(Integer, default=0)
+
+
+class WebhookDelivery(Base):
+    """One row per webhook attempt -- success or failure."""
+
+    __tablename__ = "webhook_delivery"
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
+    brand: Mapped[str] = mapped_column(String(64), nullable=False, index=True)
+    url_checked: Mapped[str] = mapped_column(String(2048), nullable=False)
+    webhook_url: Mapped[str] = mapped_column(String(512), nullable=False)
+    status_code: Mapped[int | None] = mapped_column(Integer, nullable=True)
+    error: Mapped[str | None] = mapped_column(String(512), nullable=True)
+    attempts: Mapped[int] = mapped_column(Integer, default=1)
+    created_at: Mapped[dt.datetime] = mapped_column(
+        DateTime(timezone=True),
+        default=lambda: dt.datetime.now(dt.timezone.utc),
+        index=True,
+    )
+
+
+# ---------------------------------------------------------------------------
+# Phishing campaign clustering -- groups URLs that look like the same kit.
+# A campaign fingerprint is the (closest_domain, suspicious_tld) tuple plus
+# a normalised path shape. Stored separately so we can list campaigns and
+# show their reach without scanning every UrlCheck row.
+# ---------------------------------------------------------------------------
+
+
+class Campaign(Base):
+    __tablename__ = "campaigns"
+
+    id: Mapped[uuid.UUID] = mapped_column(
+        Uuid(as_uuid=True), primary_key=True, default=uuid.uuid4
+    )
+    fingerprint: Mapped[str] = mapped_column(
+        String(256), nullable=False, unique=True, index=True
+    )
+    closest_domain: Mapped[str | None] = mapped_column(
+        String(255), nullable=True
+    )
+    tld_signature: Mapped[str] = mapped_column(String(32), default="")
+    path_shape: Mapped[str] = mapped_column(String(128), default="")
+    url_count: Mapped[int] = mapped_column(Integer, default=0)
+    first_seen: Mapped[dt.datetime] = mapped_column(
+        DateTime(timezone=True),
+        default=lambda: dt.datetime.now(dt.timezone.utc),
+    )
+    last_seen: Mapped[dt.datetime] = mapped_column(
+        DateTime(timezone=True),
+        default=lambda: dt.datetime.now(dt.timezone.utc),
+        index=True,
+    )

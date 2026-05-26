@@ -29,9 +29,11 @@ class CheckRequest(BaseModel):
 class CheckResponse(BaseModel):
     url: str
     score: float = Field(..., ge=0.0, le=1.0)
+    ml_score: float | None = Field(default=None, ge=0.0, le=1.0)
     label: Literal["safe", "suspicious", "phishing"]
     reason: str
     features: dict[str, Any]
+    rules: dict[str, Any] | None = None
     closest_domain: str | None = None
     edit_distance: int | None = None
     checked_at: str

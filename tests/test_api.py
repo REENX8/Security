@@ -17,7 +17,7 @@ def test_health_reports_model_ready(client):
     body = resp.json()
     assert body["model_ready"] is True
     assert body["db_ok"] is True
-    assert body["schema_version"] == "1.2.0"
+    assert body["schema_version"] == "1.3.0"
     assert isinstance(body["model_metrics"], dict)
 
 
