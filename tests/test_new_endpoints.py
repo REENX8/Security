@@ -161,6 +161,49 @@ def test_domain_history_returns_timeline(client, headers):
 # ---------- check response: new fields ------------------------------------
 
 
+# ---------- /api/v1/impact (public) ---------------------------------------
+
+
+def test_impact_is_public(client):
+    resp = client.get("/api/v1/impact?window_days=7")
+    assert resp.status_code == 200
+    body = resp.json()
+    assert body["schema_"] == "phish.impact.v1"
+    assert "phishing_blocked" in body
+    assert "sustainability_pillars" in body
+    assert "social" in body["sustainability_pillars"]
+    assert body["estimated_thb_loss_prevented"] >= 0
+
+
+# ---------- /api/v1/learn (public) ----------------------------------------
+
+
+def test_learn_lists_all_cards(client):
+    resp = client.get("/api/v1/learn")
+    assert resp.status_code == 200
+    body = resp.json()
+    assert body["count"] >= 4
+    assert all("body_th" in c for c in body["cards"])
+
+
+def test_learn_filters_by_audience(client):
+    resp = client.get("/api/v1/learn?audience=elderly")
+    assert resp.status_code == 200
+    cards = resp.json()["cards"]
+    assert all(c["audience"] == "elderly" for c in cards)
+
+
+def test_learn_get_one_card(client):
+    resp = client.get("/api/v1/learn/basics-001")
+    assert resp.status_code == 200
+    assert resp.json()["id"] == "basics-001"
+
+
+def test_learn_404_on_unknown_card(client):
+    resp = client.get("/api/v1/learn/no-such-card")
+    assert resp.status_code == 404
+
+
 def test_check_response_includes_ml_score_and_rules(client, headers):
     resp = client.post(
         "/api/v1/check",
