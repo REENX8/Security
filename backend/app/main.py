@@ -2,10 +2,11 @@
 
 from __future__ import annotations
 
+import asyncio
 import datetime as _dt
 import logging
 import time
-from contextlib import asynccontextmanager
+from contextlib import asynccontextmanager, suppress
 
 from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
@@ -25,7 +26,8 @@ from app.errors import register_error_handlers
 from app.metrics import CACHE_SIZE, MODEL_READY, render_metrics
 from app.middleware import RequestContextMiddleware
 from app.ml.loader import ModelLoadError, load_scorer
-from app.models import DbWhitelistEntry, UrlCheck
+from app.feed_ingestion import FeedPoller
+from app.models import DbWhitelistEntry, ExternalFeedSource, ExternalFeedSourceType, UrlCheck
 from app.rate_limit import limiter
 from app.routers import campaigns as campaigns_router
 from app.routers import check, history, stats
@@ -79,6 +81,36 @@ async def _seed_whitelist_from_json() -> None:
             logger.info("whitelist seeded %d entries from JSON", len(new_rows))
 
 
+async def _seed_external_feed_sources() -> None:
+    """Insert default OpenPhish and PhishTank source rows if not present (idempotent)."""
+    defaults = [
+        {
+            "name": "openphish",
+            "source_type": ExternalFeedSourceType.openphish,
+            "feed_url": settings.openphish_feed_url,
+            "poll_interval_minutes": settings.external_feed_poll_interval,
+        },
+        {
+            "name": "phishtank",
+            "source_type": ExternalFeedSourceType.phishtank,
+            "feed_url": "https://data.phishtank.com/data/{api_key}/online-valid.json",
+            "api_key": settings.phishtank_api_key or None,
+            "poll_interval_minutes": settings.external_feed_poll_interval,
+        },
+    ]
+    async with SessionLocal() as session:
+        for d in defaults:
+            existing = (
+                await session.execute(
+                    select(ExternalFeedSource).where(ExternalFeedSource.name == d["name"])
+                )
+            ).scalar_one_or_none()
+            if existing is None:
+                session.add(ExternalFeedSource(**d))
+        await session.commit()
+    logger.info("external feed sources seeded")
+
+
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     app.state.started_at = _dt.datetime.now(_dt.timezone.utc)
@@ -120,7 +152,21 @@ async def lifespan(app: FastAPI):
         app.state.scorer = None
         MODEL_READY.set(0)
         logger.warning("model NOT loaded: %s -- /check will return 503", exc)
+
+    app.state.feed_task = None
+    if settings.external_feeds_enabled and app.state.db_ready:
+        try:
+            await _seed_external_feed_sources()
+            poller = FeedPoller(app.state)
+            app.state.feed_task = asyncio.create_task(poller.run_forever())
+        except Exception as exc:  # noqa: BLE001
+            logger.warning("feed poller failed to start: %s", exc)
+
     yield
+    if app.state.feed_task:
+        app.state.feed_task.cancel()
+        with suppress(asyncio.CancelledError):
+            await app.state.feed_task
     logger.info("shutting down")
 
 
