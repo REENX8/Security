@@ -34,21 +34,55 @@ def _brand_of(closest_domain: str | None) -> str | None:
     return closest_domain.split(".", 1)[0].lower()
 
 
+def _is_line_notify(url: str) -> bool:
+    return "notify-api.line.me" in (url or "").lower()
+
+
+def _line_payload(payload: dict) -> bytes:
+    """Format a LINE Notify message (form-urlencoded)."""
+    from urllib.parse import urlencode
+    msg = (
+        f"⚠️ Phishing alert\n"
+        f"แบรนด์: {payload.get('brand')}\n"
+        f"URL: {payload.get('url')}\n"
+        f"คะแนน: {payload.get('score')}\n"
+        f"{payload.get('reason', '')}"
+    )
+    return urlencode({"message": msg}).encode("utf-8")
+
+
 def _post_sync(url: str, payload: dict) -> tuple[int | None, str | None]:
     """Synchronous POST suitable for ``run_in_threadpool``.
 
-    Uses the stdlib so we don't pull in extra deps; the volume is tiny.
-    Returns ``(status_code | None, error | None)``.
+    Automatically formats the body for LINE Notify (form-urlencoded text
+    message) when the webhook host matches ``notify-api.line.me``; falls
+    back to plain JSON for everything else (Slack, Discord, SOAR, custom).
     """
-    body = json.dumps(payload).encode("utf-8")
-    req = urllib.request.Request(
-        url,
-        data=body,
-        method="POST",
-        headers={
+    line_mode = _is_line_notify(url)
+    if line_mode:
+        body = _line_payload(payload)
+        headers = {
+            "Content-Type": "application/x-www-form-urlencoded",
+            "User-Agent": USER_AGENT,
+        }
+        # LINE Notify uses a Bearer token; the webhook_url field carries
+        # `https://notify-api.line.me/api/notify?token=<TOKEN>` so callers
+        # can store the token in the URL itself for portability. We also
+        # support the more idiomatic form where the token is appended via
+        # `#token=...` -- strip it and use as a Bearer header.
+        if "#token=" in url:
+            base, token = url.split("#token=", 1)
+            url = base
+            headers["Authorization"] = f"Bearer {token}"
+    else:
+        body = json.dumps(payload).encode("utf-8")
+        headers = {
             "Content-Type": "application/json",
             "User-Agent": USER_AGENT,
-        },
+        }
+
+    req = urllib.request.Request(
+        url, data=body, method="POST", headers=headers,
     )
     try:
         with urllib.request.urlopen(req, timeout=DELIVERY_TIMEOUT_S) as resp:

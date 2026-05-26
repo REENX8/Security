@@ -33,6 +33,8 @@ from app.routers import admin as admin_router
 from app.routers import domain as domain_router
 from app.routers import feed as feed_router
 from app.routers import feedback as feedback_router
+from app.routers import impact as impact_router
+from app.routers import learn as learn_router
 from app.routers import watchlist as watchlist_router
 
 logging.basicConfig(
@@ -169,6 +171,8 @@ app.include_router(feedback_router.router, prefix="/api/v1", tags=["feedback"])
 app.include_router(watchlist_router.router, prefix="/api/v1", tags=["watchlist"])
 app.include_router(campaigns_router.router, prefix="/api/v1", tags=["campaigns"])
 app.include_router(domain_router.router, prefix="/api/v1", tags=["domain"])
+app.include_router(impact_router.router, prefix="/api/v1", tags=["impact"])
+app.include_router(learn_router.router, prefix="/api/v1", tags=["learn"])
 if settings.enable_public_feed:
     app.include_router(feed_router.router, prefix="/api/v1", tags=["feed"])
 
@@ -252,6 +256,9 @@ async def root() -> dict:
             "GET  /api/v1/feed.json",
             "GET  /api/v1/feed.csv",
             "GET  /api/v1/feed.stix",
+            "GET  /api/v1/impact",
+            "GET  /api/v1/learn",
+            "GET  /api/v1/learn/{card_id}",
             "GET  /health",
             "GET  /version",
             "GET  /metrics",
