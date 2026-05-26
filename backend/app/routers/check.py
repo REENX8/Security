@@ -8,12 +8,14 @@ from starlette.concurrency import run_in_threadpool
 
 from app.campaigns import record_campaign
 from app.config import settings
+from app.content_check import content_score_adjustment
 from app.crud import insert_check
 from app.database import get_session
 from app.deps import get_scorer, verify_api_key
 from app.errors import AppError
 from app.metrics import CACHE_SIZE, CHECK_LATENCY, CHECKS_TOTAL
 from app.notifier import maybe_alert
+from app.unshorten import unshorten_url
 from app.schemas import (
     BatchCheckRequest,
     BatchCheckResponse,
@@ -31,6 +33,10 @@ async def _score_and_persist(
     scorer = get_scorer(request)
     cache = getattr(request.app.state, "cache", None)
 
+    # Expand known short-link URLs (bit.ly, t.co, etc.) before scoring
+    if settings.enable_url_unshortening:
+        url = await unshorten_url(url, timeout=settings.unshorten_timeout)
+
     if cache is not None:
         cached = cache.get(url)
         if cached is not None:
@@ -39,6 +45,21 @@ async def _score_and_persist(
 
     with CHECK_LATENCY.time():
         result = await run_in_threadpool(scorer.score, url)
+
+    # Content-based fallback for gray-zone URLs (opt-in, never blocks verdict)
+    if (
+        settings.gray_zone_content_check
+        and settings.threshold_suspicious < result["score"] < settings.threshold_phishing
+    ):
+        closest = result.get("closest_domain") or ""
+        brand_labels = frozenset({closest.split(".")[0]}) if closest else frozenset()
+        adj = await content_score_adjustment(
+            url, brand_labels, timeout=settings.content_check_timeout
+        )
+        if adj != 0.0:
+            from app.ml.scorer import label_from_score
+            new_score = max(0.0, min(1.0, result["score"] + adj))
+            result = {**result, "score": new_score, "label": label_from_score(new_score)}
     # Persist history + cluster the campaign + maybe fire a webhook --
     # ALL of these are observability work. A failure in any one of them
     # must never block the verdict from reaching the user. Scoring is the

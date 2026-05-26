@@ -5,7 +5,7 @@
 [![Schema](https://img.shields.io/badge/feature%20schema-v1.4.0-informational)](phish_features/schema.py)
 [![Thai recall](https://img.shields.io/badge/Thai%20holdout%20recall-100%25%20(66%2F66)-success)](reports/evaluation_summary.json)
 [![Generic recall](https://img.shields.io/badge/Generic%20recall-98.9%25%20(89%2F90)-success)](reports/evaluation_summary.json)
-[![Tests](https://img.shields.io/badge/tests-177%20passing-success)](tests/)
+[![Tests](https://img.shields.io/badge/tests-206%20passing-success)](tests/)
 
 **ผู้พัฒนา:** [REENX8](https://github.com/REENX8) (asdawesdzd22@gmail.com)
 
@@ -84,6 +84,14 @@ Generic phishing recall **98.9% (89/90)** บน holdout จาก OpenPhish/Phi
 
 **Real-time External Feed Ingestion** — poll OpenPhish + PhishTank อัตโนมัติทุก N นาที (เปิดด้วย `EXTERNAL_FEEDS_ENABLED=true`) เพิ่ม URL ใหม่เข้า database พร้อม deduplication ดูสถานะที่ `GET /api/v1/feed/sources`
 
+**URL Unshortener** — ขยาย short link (bit.ly, t.co, cutt.ly, lin.ee ฯลฯ) อัตโนมัติก่อนส่ง feature extraction ด้วย async HEAD request จับ phishing ที่ซ่อนหลัง short link ได้ (เปิดด้วย `ENABLE_URL_UNSHORTENING=true` ซึ่งเป็นค่า default)
+
+**LINE Messaging API Bot** — ผู้ใช้ส่ง URL ใน LINE chat → bot ตอบกลับด้วยผลตรวจ + เหตุผลเป็นภาษาไทย (เปิดด้วย `LINE_CHANNEL_TOKEN` + `LINE_CHANNEL_SECRET`) webhook รับที่ `/api/v1/line/webhook`
+
+**Content-based Fallback** — สำหรับ URL ในโซนเทา (0.3–0.7) ดึง HTML ของหน้าเว็บมาตรวจสัญญาณการปลอมแบรนด์เพิ่มเติม (ชื่อแบรนด์ใน title, password field) โดยไม่ใช้ headless browser (เปิดด้วย `GRAY_ZONE_CONTENT_CHECK=true`)
+
+**Feedback-driven Auto-retrain** — เก็บ false positive/negative ที่ user ยืนยันผ่าน Citizen Portal แล้ว trigger retrain โมเดลอัตโนมัติทุก N ชั่วโมง (เปิดด้วย `FEEDBACK_RETRAIN_ENABLED=true`) รันด้วยมือได้ที่ `python -m ml_pipeline.feedback_retrain`
+
 **Rules Engine โปร่งใส** — declarative rules layer ทับบน ML — แต่ละ verdict บอกได้ว่ามี **rule ID ใดบ้างที่ทำงาน** พร้อมข้อความอธิบายภาษาไทย ใช้ override ผลของ ML ได้ในกรณีฉุกเฉินโดยไม่ต้องเทรนใหม่
 
 **Brand Watchlist + Webhook** — operators ลงทะเบียนแบรนด์ที่ต้องเฝ้าระวัง + URL webhook (Slack/Line/SOAR) ระบบจะส่ง alert ทันทีที่ตรวจเจอ URL ฟิชชิงที่ปลอมแบรนด์นั้น (พร้อม retry และ delivery log)
@@ -98,7 +106,7 @@ Generic phishing recall **98.9% (89/90)** บน holdout จาก OpenPhish/Phi
 
 **Production-grade observability** — `/health`, `/version`, `/metrics` (Prometheus), structured JSON logs (`LOG_FORMAT=json`), `X-Request-ID` propagation, security response headers ทุก response
 
-**177 automated tests** — feature extraction, rules engine, campaign clustering, scorer, middleware, ทุก API endpoint, golden URLs, Thai seed corpus + holdout split, feed ingestion
+**206 automated tests** — feature extraction, rules engine, campaign clustering, scorer, middleware, ทุก API endpoint, golden URLs, Thai seed corpus + holdout split, feed ingestion, URL unshortener, content check, LINE bot, feedback retrain
 
 ---
 
@@ -209,7 +217,7 @@ Security/
 ├── LICENSE NOTICE CHANGELOG.md
 ├── SECURITY.md CONTRIBUTING.md
 ├── VERSION                           #  single source of truth (1.0.0)
-└── tests/                            #  177 tests
+└── tests/                            #  206 tests
 ```
 
 ---
@@ -515,7 +523,7 @@ Dashboard: `VITE_API_URL`, `VITE_API_KEY`
 ## Tests
 
 ```bash
-make test                     # 177 tests, ~15 วินาที
+make test                     # 206 tests, ~15 วินาที
 ```
 
 | Suite                  | ครอบคลุม |
@@ -533,6 +541,10 @@ make test                     # 177 tests, ~15 วินาที
 | **🆕 `test_campaigns.py`** | fingerprint + path shape normalisation |
 | **🆕 `test_new_endpoints.py`** | watchlist, feed (JSON/CSV/STIX), campaigns, domain history, middleware, request-id |
 | **🆕 `test_feed_ingestion.py`** | external feed poll (OpenPhish/PhishTank), deduplication, error isolation, batch limit |
+| **🆕 `test_unshorten.py`** | shortener detection, redirect following, error fallback |
+| **🆕 `test_content_check.py`** | SSRF protection, brand-in-title detection, password field, fetch error fallback |
+| **🆕 `test_line_bot.py`** | LINE signature verification, Thai reply builder (phishing/suspicious/safe) |
+| **🆕 `test_feedback_retrain.py`** | CSV export, minimum-rows gate, dry-run, retrain trigger, failure propagation |
 
 GitHub Actions รัน test suite + dashboard build + Docker build + extension package + ML primary-metric gate ทุก push
 

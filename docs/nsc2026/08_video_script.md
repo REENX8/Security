@@ -17,7 +17,7 @@
 | 5. Demo: Citizen Report Portal | 2:30 – 3:00 (30s) | ผู้สูงอายุพิมพ์ URL → เห็นผล → แจ้ง |
 | 6. เทคนิค: ML + Rules Engine | 3:00 – 4:00 (60s) | feature 33 + IDN defense + transparent rules |
 | 7. Demo: Brand Watchlist + LINE | 4:00 – 4:45 (45s) | ลงทะเบียน → ทำให้เกิด phishing → LINE แจ้ง |
-| 8. ความแม่นยำ + ทดสอบ | 4:45 – 5:15 (30s) | 100% recall (66/66), 177 tests, CI gate |
+| 8. ความแม่นยำ + ทดสอบ | 4:45 – 5:15 (30s) | 100% recall (66/66), 206 tests, CI gate |
 | 9. Sustainable Innovation | 5:15 – 6:15 (60s) | 4 pillars + impact metrics |
 | 10. Roadmap + ชุมชน | 6:15 – 6:45 (30s) | open source, public feed, LINE bot ต่อไป |
 | 11. ปิดท้าย + Call to action | 6:45 – 7:00 (15s) | URL · GitHub · QR |
@@ -113,7 +113,7 @@
 > "เราวัดความแม่นยำบน Thai-targeting holdout 66 URL ที่โมเดลไม่เคยเห็น
 > ระหว่าง training — ได้ recall 100% (66/66) และ generic phishing holdout
 > 98.9% (89/90) ระบบมี CI gate ขั้นต่ำ 0.85 ทุก commit ต้องผ่าน
-> automated tests 177 cases ทั้งหมดผ่าน"
+> automated tests 206 cases ทั้งหมดผ่าน"
 
 ### ฉากที่ 9 (5:15 – 6:15) — Sustainable Innovation
 

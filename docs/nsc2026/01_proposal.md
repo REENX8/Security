@@ -100,7 +100,7 @@ Phishing Detection · Cybersecurity · Thai Government
 1. **ความแม่นยำ:** Recall ≥ 95% บน Thai-targeting holdout (✅ ทำได้ 100% บน 66 URL แล้ว)
 2. **ความครอบคลุม:** รองรับเว็บราชการ/การศึกษา/ธนาคาร 500+ โดเมน (✅ ใส่ใน whitelist แล้ว)
 3. **ความใช้งานได้จริง:** ส่วนขยายเบราว์เซอร์ติดตั้งได้ใน Chrome/Edge/Firefox (✅)
-4. **ความยั่งยืน:** เปิด source, มีเอกสารครบ, มี CI/test 177 cases (✅)
+4. **ความยั่งยืน:** เปิด source, มีเอกสารครบ, มี CI/test 206 cases (✅)
 5. **ผลกระทบทางสังคม:** มีหน้า portal ให้ประชาชนแจ้งเว็บปลอมไม่ต้อง login (✅)
 
 ### ขอบเขต (Scope)
@@ -236,7 +236,7 @@ backend/app/
 
 | สัปดาห์ | กิจกรรม |
 |---------|---------|
-| 1–2 | Code review + เพิ่ม test coverage ให้ครบ 90% (ปัจจุบัน 177 tests) |
+| 1–2 | Code review + เพิ่ม test coverage ให้ครบ 90% (ปัจจุบัน 206 tests) |
 | 3–4 | ขยาย Thai-targeting seed corpus จาก 215 → 300 URLs จากแหล่ง ThaiCERT advisory |
 | 5–6 | เพิ่ม Line bot ที่ให้คนทั่วไปพิมพ์ URL ตรวจในกลุ่ม LINE ได้ |
 | 7–8 | เพิ่ม dashboard widget แสดง social-impact metrics แบบ public (เปิด iframe ใส่เว็บอื่นได้) |
