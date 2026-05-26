@@ -12,6 +12,22 @@ or mirror it explicitly.
 
 ---
 
+## [1.2.0] — 2026-05-26
+
+### Added
+
+- **URL Unshortener** — `backend/app/unshorten.py` ขยาย short link (bit.ly, t.co, cutt.ly, lin.ee, t.me ฯลฯ 18 providers) ด้วย async HEAD request ก่อนส่ง feature extraction; เปิดด้วย `ENABLE_URL_UNSHORTENING=true` (default on)
+- **LINE Messaging API Bot** — `backend/app/routers/line_bot.py` webhook ที่ `/api/v1/line/webhook`; ตรวจ URL ที่ผู้ใช้ส่งใน LINE chat → ตอบกลับเป็นภาษาไทยพร้อม verdict + เหตุผล; รองรับ HMAC-SHA256 signature validation; เปิดด้วย `LINE_CHANNEL_TOKEN` + `LINE_CHANNEL_SECRET`
+- **Content-based Fallback** — `backend/app/content_check.py` ดึง HTML ของหน้าเว็บสำหรับ URL ในโซนเทา (score 0.3–0.7) และตรวจ brand-in-title, password field; SSRF protection ด้วยการ reject private IP; เปิดด้วย `GRAY_ZONE_CONTENT_CHECK=true`
+- **Feedback-driven Auto-retrain** — `ml_pipeline/feedback_retrain.py` export confirmed feedback จาก DB → trigger `ml_pipeline.train` อัตโนมัติ; รันด้วยมือด้วย `python -m ml_pipeline.feedback_retrain [--dry-run]`; เปิด background task ด้วย `FEEDBACK_RETRAIN_ENABLED=true`
+- Settings ใหม่: `ENABLE_URL_UNSHORTENING`, `UNSHORTEN_TIMEOUT`, `GRAY_ZONE_CONTENT_CHECK`, `CONTENT_CHECK_TIMEOUT`, `LINE_CHANNEL_TOKEN`, `LINE_CHANNEL_SECRET`, `FEEDBACK_RETRAIN_ENABLED`, `FEEDBACK_RETRAIN_INTERVAL_HOURS`
+
+### Changed
+
+- Test suite: 177 → **206 tests** (+29: unshorten, content_check, line_bot, feedback_retrain)
+
+---
+
 ## [1.1.0] — 2026-05-26
 
 ### Added

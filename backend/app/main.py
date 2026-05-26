@@ -37,6 +37,7 @@ from app.routers import feed as feed_router
 from app.routers import feedback as feedback_router
 from app.routers import impact as impact_router
 from app.routers import learn as learn_router
+from app.routers import line_bot as line_bot_router
 from app.routers import watchlist as watchlist_router
 
 logging.basicConfig(
@@ -162,11 +163,27 @@ async def lifespan(app: FastAPI):
         except Exception as exc:  # noqa: BLE001
             logger.warning("feed poller failed to start: %s", exc)
 
+    app.state.feedback_task = None
+    if settings.feedback_retrain_enabled and app.state.db_ready:
+        async def _feedback_retrain_loop() -> None:
+            from ml_pipeline.feedback_retrain import run as _run_retrain
+            while True:
+                await asyncio.sleep(settings.feedback_retrain_interval_hours * 3600)
+                try:
+                    await asyncio.get_event_loop().run_in_executor(None, _run_retrain)
+                except Exception as exc:  # noqa: BLE001
+                    logger.warning("feedback retrain failed: %s", exc)
+        app.state.feedback_task = asyncio.create_task(_feedback_retrain_loop())
+
     yield
     if app.state.feed_task:
         app.state.feed_task.cancel()
         with suppress(asyncio.CancelledError):
             await app.state.feed_task
+    if app.state.feedback_task:
+        app.state.feedback_task.cancel()
+        with suppress(asyncio.CancelledError):
+            await app.state.feedback_task
     logger.info("shutting down")
 
 
@@ -221,6 +238,8 @@ app.include_router(impact_router.router, prefix="/api/v1", tags=["impact"])
 app.include_router(learn_router.router, prefix="/api/v1", tags=["learn"])
 if settings.enable_public_feed:
     app.include_router(feed_router.router, prefix="/api/v1", tags=["feed"])
+if settings.line_channel_token or settings.line_channel_secret:
+    app.include_router(line_bot_router.router, prefix="/api/v1", tags=["line"])
 
 
 @app.get("/health", tags=["meta"])

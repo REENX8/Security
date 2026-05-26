@@ -84,6 +84,22 @@ class Settings(BaseSettings):
     phishtank_api_key: str = Field(default="")
     openphish_feed_url: str = Field(default="https://openphish.com/feed.txt")
 
+    # --- URL unshortening ---
+    enable_url_unshortening: bool = Field(default=True)
+    unshorten_timeout: float = Field(default=5.0)
+
+    # --- content-based gray-zone check ---
+    gray_zone_content_check: bool = Field(default=False)
+    content_check_timeout: float = Field(default=5.0)
+
+    # --- LINE Messaging API bot ---
+    line_channel_token: str = Field(default="")
+    line_channel_secret: str = Field(default="")
+
+    # --- feedback-driven auto-retrain ---
+    feedback_retrain_enabled: bool = Field(default=False)
+    feedback_retrain_interval_hours: int = Field(default=336)  # 14 days
+
     @property
     def model_path(self) -> str:
         return str(Path(self.model_dir) / "ensemble.pkl")

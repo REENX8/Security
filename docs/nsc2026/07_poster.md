@@ -68,7 +68,7 @@ URL ปลอม         ความเสียหาย
 │   Generic holdout: 98.9% (89/90 URL)    │
 │                                          │
 │       CI gate ≥ 0.85 → PASS              │
-│       177 automated tests → PASS         │
+│       206 automated tests → PASS         │
 └──────────────────────────────────────────┘
 ```
 

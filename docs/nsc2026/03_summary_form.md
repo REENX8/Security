@@ -49,7 +49,7 @@ STIX 2.1 (no auth) + **Citizen Report Portal** ไม่ต้อง login
   ที่ threshold ≥ 0.7
 * **Generic phishing holdout (90 URL):** recall **98.9% (89/90)**
 * **CI gate ≥ 0.85** — automated, fail build ถ้า regress
-* **177 automated tests** ผ่านทั้งหมด
+* **206 automated tests** ผ่านทั้งหมด
 
 ### ประโยชน์ (Sustainable Innovation)
 
