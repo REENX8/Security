@@ -25,9 +25,15 @@
 5. **Heuristic Rules Engine** เลเยอร์ของกฎอ่านง่าย ทำงานเสริม ML —
    ทุก verdict บอกได้ว่ามีกฎใดบ้างที่ทำงาน เพิ่มความโปร่งใสและตรวจสอบได้
 
+ระบบยังรองรับ **4 ความสามารถเสริม (v1.2.0):**
+- **URL Unshortening** — แกะ short link (bit.ly, t.co, lin.ee ฯลฯ) อัตโนมัติก่อนส่ง feature extraction
+- **LINE Messaging API Bot** — webhook `/api/v1/line/webhook` รับ URL จากแชท LINE ตอบกลับภาษาไทยพร้อม verdict
+- **Content-based Fallback** — ดึง HTML ตรวจสัญญาณฟิชชิงเพิ่มเติมสำหรับ URL ที่อยู่ในโซนเทา (score 0.3–0.7)
+- **Feedback-driven Auto-retrain** — export confirmed feedback จาก DB แล้ว trigger retrain อัตโนมัติ
+
 **คำสำคัญ (Keywords):** ฟิชชิง · machine learning · ความปลอดภัยไซเบอร์ ·
 หน่วยงานราชการไทย · IDN homograph · STIX · sustainable innovation ·
-Phishing Detection · Cybersecurity · Thai Government
+LINE Messaging API · Phishing Detection · Cybersecurity · Thai Government
 
 ---
 
@@ -185,7 +191,7 @@ Phishing Detection · Cybersecurity · Thai Government
   `closest_domain`, `edit_distance`, `checked_at`
 
 #### Functional Specification (เลือกที่สำคัญ)
-* `POST /api/v1/check` — ตรวจ URL เดียว latency p95 < 250 ms
+* `POST /api/v1/check` — ตรวจ URL เดียว latency p95 < 250 ms (รองรับ URL unshortening อัตโนมัติ)
 * `POST /api/v1/check/batch` — สูงสุด 50 URLs/request
 * `GET /api/v1/feed.{json,csv,stix}` — public feed (no auth)
 * `GET /api/v1/impact` — social-impact metrics (no auth)
@@ -194,6 +200,7 @@ Phishing Detection · Cybersecurity · Thai Government
 * `POST /api/v1/watchlist` — ลงทะเบียนแบรนด์เฝ้าระวัง (auth)
 * `GET /api/v1/campaigns` — campaign cluster list (auth)
 * `GET /api/v1/domain/{host}/history` — reputation timeline (auth)
+* `POST /api/v1/line/webhook` — LINE Messaging API webhook (HMAC-SHA256 verified)
 
 #### โครงสร้างซอฟต์แวร์ (Design)
 ```
@@ -208,11 +215,17 @@ phish_features/   ← shared package, ML pipeline และ backend ใช้ร
 backend/app/
 ├── main.py + middleware.py     ← request-id, security headers, JSON log
 ├── ml/scorer.py                ← model + rules → final verdict
-├── routers/                    ← 10 routers (check, stats, history, admin, feedback,
-│                                  watchlist, campaigns, domain, feed, impact, learn)
+├── unshorten.py                ← async URL unshortener (18 providers, HEAD-only)
+├── content_check.py            ← HTML content fallback for gray-zone URLs + SSRF protection
+├── routers/                    ← 11 routers (check, stats, history, admin, feedback,
+│                                  watchlist, campaigns, domain, feed, impact, learn, line_bot)
 ├── campaigns.py + notifier.py  ← clustering + webhook (LINE-compatible)
-└── models.py                   ← 5 ORM tables (UrlCheck, Whitelist, Feedback,
-                                   BrandWatch, WebhookDelivery, Campaign)
+└── models.py                   ← 7 ORM tables (UrlCheck, Whitelist, Feedback,
+                                   BrandWatch, WebhookDelivery, Campaign,
+                                   ExternalFeedSource, FeedIngestionRecord)
+
+ml_pipeline/
+└── feedback_retrain.py         ← export confirmed feedback → trigger auto-retrain
 ```
 
 ### 6.5 ขอบเขตและข้อจำกัดของโปรแกรม
@@ -224,11 +237,14 @@ backend/app/
 * Path-brand bait kits
 * Cheap-TLD low-effort kits
 
+**จับได้เพิ่มเติม (v1.2.0):**
+* URL shorteners — แกะ redirect chain ก่อน score (ENABLE_URL_UNSHORTENING=true)
+* เว็บโซนเทาที่มี password field หรือ brand-in-title — ตรวจ HTML เพิ่ม (GRAY_ZONE_CONTENT_CHECK=true)
+
 **จับไม่ได้ (out of scope):**
-* URL shorteners (เห็นแค่ link สั้น)
-* เว็บถูกแฮ็กแล้วเอามาทำฟิชชิง (host ดี content ปลอม)
 * Spear-phishing เนื้อหาอีเมล
 * การโทรหลอก call-center
+* Malware ในไฟล์ที่ดาวน์โหลด
 
 ---
 
@@ -236,12 +252,12 @@ backend/app/
 
 | สัปดาห์ | กิจกรรม |
 |---------|---------|
-| 1–2 | Code review + เพิ่ม test coverage ให้ครบ 90% (ปัจจุบัน 206 tests) |
+| 1–2 | Code review + เพิ่ม test coverage ให้ครบ 90% (ปัจจุบัน 206 tests) ✅ |
 | 3–4 | ขยาย Thai-targeting seed corpus จาก 215 → 300 URLs จากแหล่ง ThaiCERT advisory |
-| 5–6 | เพิ่ม Line bot ที่ให้คนทั่วไปพิมพ์ URL ตรวจในกลุ่ม LINE ได้ |
+| 5–6 | LINE Messaging API Bot + URL Unshortening + Content-based Fallback + Feedback Auto-retrain ✅ |
 | 7–8 | เพิ่ม dashboard widget แสดง social-impact metrics แบบ public (เปิด iframe ใส่เว็บอื่นได้) |
-| 9–10 | ทดสอบกับ pilot user (โรงเรียน 2 แห่ง, หน่วยงานราชการ 1 แห่ง) เก็บ feedback |
-| 11 | ปรับปรุงโมเดลตาม feedback + retrain |
+| 9–10 | ทดสอบกับ pilot user (โรงเรียน 2 แห่ง, หน่วยงานราชการ 1 แห่ง) เก็บ feedback จริง |
+| 11 | ปรับปรุงโมเดลตาม pilot feedback + retrain ด้วย feedback_retrain pipeline |
 | 12 | เตรียมเอกสาร, video, poster สำหรับรอบนำเสนอ |
 
 > **หมายเหตุ:** โครงการนี้พัฒนาต่อยอดจาก codebase ที่นักเรียนได้ทำมาก่อนล่วงหน้า

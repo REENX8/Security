@@ -89,6 +89,12 @@ URL ปลอม         ความเสียหาย
 
 ✦ Rules Engine:   declarative rules โปร่งใส
                   ทุก verdict แสดง rule_id ที่ทำงาน
+
+✦ URL Unshorten:  แกะ bit.ly / lin.ee / t.co ก่อน score
+                  ป้องกัน short-link evasion
+
+✦ LINE Bot:       ส่ง URL ตรวจใน LINE chat → ตอบภาษาไทย
+                  Content Fallback: ตรวจ HTML โซนเทา
 ```
 
 ---
@@ -117,7 +123,8 @@ URL ปลอม         ความเสียหาย
 👵 ผู้สูงอายุ            🏛️ หน่วยงานราชการ        🔬 ชุมชน Security
 - ติด ext ครั้งเดียว     - ลงทะเบียน watchlist     - ดึง STIX feed
 - เห็นหน้าแดง=หยุด        - LINE Notify alert       - เอาเข้า SIEM
-- พิมพ์ใน /report ก็ได้   - ดู campaigns        - ส่ง feedback
+- พิมพ์ URL ใน LINE Bot   - ดู campaigns            - ส่ง feedback
+- พิมพ์ใน /report ก็ได้   - Feedback Auto-retrain   - open Apache 2.0
 ```
 
 ---

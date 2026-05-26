@@ -38,7 +38,7 @@ docker compose up -d --build
 # 4. ตรวจสอบว่าทำงานอยู่
 curl http://localhost:8000/health
 curl http://localhost:8000/version
-# {"backend":"1.1.0","phish_features":"1.1.0","schema":"1.4.0"}
+# {"backend":"1.2.0","phish_features":"1.2.0","schema":"1.4.0"}
 ```
 
 API พร้อมใช้งานที่ **http://localhost:8000** · ดู interactive API docs ที่ **/docs**
@@ -153,7 +153,45 @@ curl http://localhost:8000/api/v1/feed.json
 
 ---
 
-## 9. ปัญหาที่พบบ่อย (Troubleshooting)
+## 9. ตั้งค่า Optional Features (v1.2.0)
+
+ฟีเจอร์เหล่านี้ปิดอยู่โดย default (ยกเว้น URL Unshortening ที่เปิดอยู่) — เพิ่มใน `.env`:
+
+### URL Unshortening (เปิดโดย default)
+```bash
+ENABLE_URL_UNSHORTENING=true   # แกะ bit.ly, t.co, lin.ee ฯลฯ ก่อน score
+UNSHORTEN_TIMEOUT=5.0          # วินาที (default 5)
+```
+
+### LINE Messaging API Bot
+```bash
+LINE_CHANNEL_TOKEN=your_channel_access_token
+LINE_CHANNEL_SECRET=your_channel_secret
+```
+webhook URL ที่ต้องตั้งใน LINE Developers Console: `https://your-deployment/api/v1/line/webhook`
+
+> ต้องการ: LINE Developers account → สร้าง Messaging API channel → คัดลอก Channel Access Token และ Channel Secret
+
+### Content-based Fallback (gray-zone check)
+```bash
+GRAY_ZONE_CONTENT_CHECK=true   # ดึง HTML ตรวจ URL ที่ score 0.3–0.7
+CONTENT_CHECK_TIMEOUT=5.0      # วินาที (default 5)
+```
+
+### Feedback Auto-retrain
+```bash
+FEEDBACK_RETRAIN_ENABLED=true          # เปิด background retrain loop
+FEEDBACK_RETRAIN_INTERVAL_HOURS=336    # ทำซ้ำทุกกี่ชั่วโมง (default 336 = 14 วัน)
+```
+หรือรันด้วยมือ:
+```bash
+python -m ml_pipeline.feedback_retrain           # retrain จาก feedback จริง
+python -m ml_pipeline.feedback_retrain --dry-run # ดูว่าจะ export กี่แถวโดยไม่ retrain
+```
+
+---
+
+## 10. ปัญหาที่พบบ่อย (Troubleshooting)
 
 | อาการ | สาเหตุ / วิธีแก้ |
 |------|-------------------|
@@ -163,3 +201,6 @@ curl http://localhost:8000/api/v1/feed.json
 | `X-API-Key` ผิด | คัดลอกค่าจาก `.env` ของ backend ใส่ใน extension/dashboard options |
 | Dashboard fetch ติด CORS | เพิ่ม origin ของ dashboard ใน `CORS_ORIGINS` ของ backend |
 | `schema mismatch` error | ทรับ schema version ต่างจาก code — รัน `make train` ให้ retrain |
+| LINE bot ไม่ตอบ | ตรวจ `LINE_CHANNEL_TOKEN` และ `LINE_CHANNEL_SECRET` ใน `.env` — ต้องตรงกับ LINE Developers Console |
+| LINE bot ตอบ `signature invalid` | `LINE_CHANNEL_SECRET` ผิด หรือ body ถูก proxy แก้ไขก่อนถึง backend |
+| Content check ช้า | ลด `CONTENT_CHECK_TIMEOUT` หรือปิด `GRAY_ZONE_CONTENT_CHECK=false` |
