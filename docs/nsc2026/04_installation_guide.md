@@ -38,7 +38,7 @@ docker compose up -d --build
 # 4. ตรวจสอบว่าทำงานอยู่
 curl http://localhost:8000/health
 curl http://localhost:8000/version
-# {"backend":"1.0.0","phish_features":"1.1.0","schema":"1.3.0"}
+# {"backend":"1.1.0","phish_features":"1.1.0","schema":"1.4.0"}
 ```
 
 API พร้อมใช้งานที่ **http://localhost:8000** · ดู interactive API docs ที่ **/docs**

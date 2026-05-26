@@ -8,6 +8,9 @@ version = "1.0.0"
 description = "Shared feature-extraction contract for the Thai Phishing URL Detection system"
 readme = "README.md"
 requires-python = ">=3.10"
+authors = [
+  { name = "REENX8", email = "asdawesdzd22@gmail.com" },
+]
 dependencies = [
     "Levenshtein>=0.25",
     "python-whois>=0.9.4",

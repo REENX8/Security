@@ -12,9 +12,9 @@
 หน่วยงานราชการไทย (`.go.th`) สถาบันการศึกษา (`.ac.th`) และธนาคาร/รัฐวิสาหกิจ
 แบบ realtime ประกอบด้วย 5 ส่วนที่ทำงานร่วมกัน:
 
-1. **ML pipeline** ที่ฝึก ensemble RandomForest + XGBoost บนชุด feature 33 ตัว
-   (lexical, IDN/homoglyph, path-impersonation, WHOIS, TLS, whitelist) ได้ recall
-   **100% (53/53)** บน Thai-targeting holdout (ความเชื่อมั่น 95% [0.93, 1.00])
+1. **ML pipeline** ที่ฝึก ensemble RandomForest + XGBoost บนชุด feature 37 ตัว
+   (lexical, IDN/homoglyph, path-impersonation, WHOIS, TLS, whitelist, lexical patterns ใหม่)
+   ได้ recall **100% (66/66)** บน Thai-targeting holdout
 2. **FastAPI backend** ให้บริการ `/check`, public threat feed (JSON/CSV/STIX),
    brand watchlist + webhook (รองรับ LINE Notify), campaign clustering,
    domain reputation timeline, social-impact metrics และเนื้อหาให้ความรู้
@@ -59,7 +59,7 @@ Phishing Detection · Cybersecurity · Thai Government
 
 1. **วัตถุประสงค์หลัก:** สร้างระบบตรวจจับ URL ฟิชชิงเฉพาะทางที่จับการปลอม
    แบรนด์ราชการ/การศึกษา/ธนาคารไทย ได้ recall ≥ 95% บนชุดข้อมูลทดสอบที่
-   โมเดลไม่เคยเห็น (ปัจจุบันได้ **100%** บนชุด holdout 53 URL)
+   โมเดลไม่เคยเห็น (ปัจจุบันได้ **100%** บนชุด holdout 66 URL)
 2. **วัตถุประสงค์รอง:**
    * เปิดให้ประชาชนทั่วไปและหน่วยงานเข้าถึงได้ฟรี ผ่านส่วนขยายเบราว์เซอร์
      และ public threat feed (no-auth)
@@ -97,10 +97,10 @@ Phishing Detection · Cybersecurity · Thai Government
 
 ### เป้าหมาย (Goals)
 
-1. **ความแม่นยำ:** Recall ≥ 95% บน Thai-targeting holdout (✅ ทำได้ 100% แล้ว)
+1. **ความแม่นยำ:** Recall ≥ 95% บน Thai-targeting holdout (✅ ทำได้ 100% บน 66 URL แล้ว)
 2. **ความครอบคลุม:** รองรับเว็บราชการ/การศึกษา/ธนาคาร 500+ โดเมน (✅ ใส่ใน whitelist แล้ว)
 3. **ความใช้งานได้จริง:** ส่วนขยายเบราว์เซอร์ติดตั้งได้ใน Chrome/Edge/Firefox (✅)
-4. **ความยั่งยืน:** เปิด source, มีเอกสารครบ, มี CI/test 167 cases (✅)
+4. **ความยั่งยืน:** เปิด source, มีเอกสารครบ, มี CI/test 177 cases (✅)
 5. **ผลกระทบทางสังคม:** มีหน้า portal ให้ประชาชนแจ้งเว็บปลอมไม่ต้อง login (✅)
 
 ### ขอบเขต (Scope)
@@ -141,8 +141,8 @@ Phishing Detection · Cybersecurity · Thai Government
                               ┌────────▼─────────┐
                               │ ML Ensemble      │
                               │ RF + XGB         │
-                              │ schema v1.3.0    │
-                              │ 33 features      │
+                              │ schema v1.4.0    │
+                              │ 37 features      │
                               └──────────────────┘
 ```
 
@@ -151,7 +151,7 @@ Phishing Detection · Cybersecurity · Thai Government
 | ส่วน | เทคนิค / Algorithm |
 |------|--------------------|
 | ML model | RandomForest + XGBoost soft-voting ensemble + isotonic calibration |
-| Feature extraction | Lexical 16 ตัว + IDN/Homoglyph 3 ตัว + Path-impersonation 4 ตัว + WHOIS 4 ตัว + TLS 3 ตัว + Whitelist 2 ตัว + Meta 2 ตัว = **33 features** |
+| Feature extraction | Lexical 16 ตัว + IDN/Homoglyph 3 ตัว + Path-impersonation 4 ตัว + WHOIS 4 ตัว + TLS 3 ตัว + Whitelist 2 ตัว + Meta 2 ตัว + Lexical v1.4 4 ตัว = **37 features** |
 | IDN Defense | Punycode decode + Unicode confusable fold (TR36) + Levenshtein distance |
 | Typosquat | Brand-label edit distance ≤ 3 + TLD-swap detection |
 | Campaign clustering | Fingerprint = `brand|tld|path-shape` (digit → `#`, hex → `$hex`) |
@@ -181,7 +181,7 @@ Phishing Detection · Cybersecurity · Thai Government
 #### Input / Output
 * **Input:** URL string (HTTP/HTTPS, ≤ 2048 chars) — ส่งเข้า `/api/v1/check`
 * **Output:** JSON ที่มี `score` (0–1), `label` (safe/suspicious/phishing),
-  `reason` (อธิบายภาษาไทย), `features` (33 ตัว), `rules.hits[]` (กฎที่ทำงาน),
+  `reason` (อธิบายภาษาไทย), `features` (37 ตัว), `rules.hits[]` (กฎที่ทำงาน),
   `closest_domain`, `edit_distance`, `checked_at`
 
 #### Functional Specification (เลือกที่สำคัญ)
@@ -198,7 +198,7 @@ Phishing Detection · Cybersecurity · Thai Government
 #### โครงสร้างซอฟต์แวร์ (Design)
 ```
 phish_features/   ← shared package, ML pipeline และ backend ใช้ร่วมกัน
-├── schema.py     ← single source of truth ของ 33 features + LOGIN_KEYWORDS + SUSPICIOUS_TLDS
+├── schema.py     ← single source of truth ของ 37 features + LOGIN_KEYWORDS + SUSPICIOUS_TLDS
 ├── lexical.py    ← computed-from-string features (เร็ว, deterministic)
 ├── whitelist.py  ← typosquat + brand-label edit distance
 ├── homoglyph.py  ← IDN decode + confusable fold
@@ -236,8 +236,8 @@ backend/app/
 
 | สัปดาห์ | กิจกรรม |
 |---------|---------|
-| 1–2 | Code review + เพิ่ม test coverage ให้ครบ 90% (ปัจจุบัน 167 tests) |
-| 3–4 | ขยาย Thai-targeting seed corpus จาก 175 → 300 URLs จากแหล่ง ThaiCERT advisory |
+| 1–2 | Code review + เพิ่ม test coverage ให้ครบ 90% (ปัจจุบัน 177 tests) |
+| 3–4 | ขยาย Thai-targeting seed corpus จาก 215 → 300 URLs จากแหล่ง ThaiCERT advisory |
 | 5–6 | เพิ่ม Line bot ที่ให้คนทั่วไปพิมพ์ URL ตรวจในกลุ่ม LINE ได้ |
 | 7–8 | เพิ่ม dashboard widget แสดง social-impact metrics แบบ public (เปิด iframe ใส่เว็บอื่นได้) |
 | 9–10 | ทดสอบกับ pilot user (โรงเรียน 2 แห่ง, หน่วยงานราชการ 1 แห่ง) เก็บ feedback |
@@ -270,7 +270,7 @@ backend/app/
 
 ## 9. ประวัติและผลงานของผู้พัฒนา
 
-### หัวหน้าโครงการ: _________________________________
+### หัวหน้าโครงการ: REENX8 (asdawesdzd22@gmail.com)
 
 | รายการ | รายละเอียด |
 |--------|-----------|
