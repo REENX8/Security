@@ -33,7 +33,7 @@ REAL_HOLDOUT_FRACTION = 0.30
 RANDOM_SEED = 42
 
 # Dataset target size (balanced across the two classes).
-TARGET_ROWS = 6000
+TARGET_ROWS = 12000
 
 # Optional external phishing feeds (best-effort; pipeline works without them).
 PHISHTANK_URL = "https://data.phishtank.com/data/online-valid.json"

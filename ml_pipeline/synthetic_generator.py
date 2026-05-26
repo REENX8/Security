@@ -239,11 +239,11 @@ class SyntheticGenerator:
         archetype = self.rng.choices(
             ["typosquat", "tld_swap", "subdomain_spoof", "ip_host",
              "at_trick", "brand_stuffed", "https_ip_host", "redirect_chain",
-             "idn_homoglyph", "punycode_spoof", "path_brand_spoof"],
-            # path_brand_spoof gets 12% -- the v1.3 feature it exercises is
-            # the only one of the new four that needs its own archetype
-            # (login keyword + cheap tld fire on every other archetype).
-            weights=[22, 11, 11, 9, 9, 11, 5, 6, 4, 4, 12],
+             "idn_homoglyph", "punycode_spoof", "path_brand_spoof",
+             "long_random_subdomain", "double_dash_stuffed", "token_stuffed_path"],
+            # v1.4: 3 new archetypes teach the model num_login_keywords,
+            # host_token_count, and path_entropy signals.
+            weights=[19, 9, 9, 8, 8, 9, 4, 5, 4, 4, 10, 6, 5, 10],
         )[0]
         scheme = "https" if self.rng.random() < 0.55 else "http"
         path = self.rng.choice(_PHISH_PATHS)
@@ -304,6 +304,19 @@ class SyntheticGenerator:
             # the address bar. This is the dominant 2024-2025 OpenPhish kit.
             attacker = self._rand_str(self.rng.randint(6, 11))
             host = f"{attacker}.{self.rng.choice(_CHEAP_TLDS)}"
+        elif archetype == "long_random_subdomain":
+            # Bot-generated hex subdomain in front of the brand label:
+            # a1b2c3d4.brand.xyz  — exercises host_token_count + max_digit_run
+            rand_sub = "".join(
+                self.rng.choice("0123456789abcdef")
+                for _ in range(self.rng.randint(6, 12))
+            )
+            host = f"{rand_sub}.{label}.{self.rng.choice(_CHEAP_TLDS)}"
+        elif archetype == "double_dash_stuffed":
+            # brand--secure--verify--login.xyz pattern common in 2025 Thai phishing
+            # exercises host_token_count and num_hyphens
+            kws = self.rng.sample(_BRAND_WORDS, k=self.rng.randint(2, 4))
+            host = "--".join([label] + kws) + "." + self._pick_bad_tld()
         else:  # brand_stuffed
             words = self.rng.sample(_BRAND_WORDS, k=self.rng.randint(2, 4))
             host = "-".join([label] + words) + "." + self._pick_bad_tld()
@@ -313,6 +326,22 @@ class SyntheticGenerator:
         elif archetype == "path_brand_spoof":
             extra = self.rng.choice(_PHISH_PATHS)
             url = f"{scheme}://{host}/{label}/{extra}"
+        elif archetype == "long_random_subdomain":
+            url = f"{scheme}://{host}/{path}"
+            if self.rng.random() < 0.5:
+                url += f"?id={self._rand_str(self.rng.randint(8, 20))}"
+        elif archetype == "double_dash_stuffed":
+            url = f"{scheme}://{host}/{path}"
+        elif archetype == "token_stuffed_path":
+            # Benign-ish host; long credential-keyword-stuffed path
+            # exercises path_entropy + num_login_keywords + path_length
+            attacker = self._rand_str(self.rng.randint(5, 10))
+            host = f"{attacker}.{self.rng.choice(_CHEAP_TLDS)}"
+            segments = self.rng.sample(_PHISH_PATHS, k=self.rng.randint(3, 5))
+            hex_token = "".join(
+                self.rng.choice("0123456789abcdef") for _ in range(16)
+            )
+            url = f"{scheme}://{host}/{label}/" + "/".join(segments) + f"/{hex_token}"
         else:
             url = f"{scheme}://{host}/{path}"
             if self.rng.random() < 0.4:  # extra junk query string

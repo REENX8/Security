@@ -9,9 +9,10 @@ from __future__ import annotations
 import math
 import re
 from collections import Counter
-from urllib.parse import urlparse
+from urllib.parse import urlparse, unquote
 
 _DIGIT_RUN_RE = re.compile(r"\d+")
+_HOST_TOKEN_RE = re.compile(r"[^.\-]+")  # split hostname on dots and hyphens
 
 # IPv4 literal, optionally with a port.
 _IPV4_RE = re.compile(r"^(?:\d{1,3}\.){3}\d{1,3}(?::\d+)?$")
@@ -90,6 +91,22 @@ def count_subdomains(host: str) -> int:
     return max(extra, 0)
 
 
+def _count_login_keywords(path: str, query: str) -> int:
+    """Count how many LOGIN_KEYWORDS appear in the URL path + query string."""
+    from phish_features.schema import LOGIN_KEYWORDS
+    text = (path + " " + query).lower()
+    # tokenise on non-alphanumeric boundaries
+    tokens = set(re.split(r"[^a-z0-9]+", text))
+    return sum(1 for kw in LOGIN_KEYWORDS if kw in tokens)
+
+
+def _count_query_params(query: str) -> int:
+    """Return number of key=value pairs in the query string."""
+    if not query:
+        return 0
+    return query.count("&") + 1
+
+
 def extract_lexical(url: str) -> dict:
     """Return the lexical feature block for ``url``."""
     norm = normalize_url(url)
@@ -121,4 +138,9 @@ def extract_lexical(url: str) -> dict:
         "has_query_string": int(bool(parsed.query)),
         # v1.3 features (path-impersonation surface; tld decided by extractor)
         "path_length": len(parsed.path or ""),
+        # v1.4 richer lexical features
+        "num_login_keywords": _count_login_keywords(parsed.path or "", parsed.query or ""),
+        "query_param_count": _count_query_params(parsed.query or ""),
+        "path_entropy": round(shannon_entropy(unquote(parsed.path or "")), 6),
+        "host_token_count": len(_HOST_TOKEN_RE.findall(host)),
     }
