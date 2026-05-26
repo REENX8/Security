@@ -17,10 +17,22 @@ from __future__ import annotations
 import random
 import string
 
-# Suspicious TLDs frequently abused by phishing campaigns.
+# Suspicious TLDs frequently abused by phishing campaigns. Half the list is
+# expanded with the cheap-TLD set the v1.3 schema scores via has_suspicious_tld
+# so the model sees positive correlation with the flag during training.
 _BAD_TLDS = [
     "com", "net", "org", "info", "xyz", "online", "site", "top",
     "club", "live", "vip", "cc", "icu", "buzz", "shop", "app",
+    "cfd", "sbs", "bond", "monster", "fit", "work", "stream",
+    "click", "fyi", "page", "you", "cv", "uno",
+]
+
+# 70% chance an attacker pulls from this curated short list -- biases the
+# generator toward the tail SUSPICIOUS_TLDS so the model learns the signal.
+_CHEAP_TLDS = [
+    "xyz", "top", "icu", "cfd", "sbs", "bond", "cc", "click",
+    "online", "site", "shop", "vip", "live", "work", "fit",
+    "you", "cv",
 ]
 
 # Paths an attacker uses to pressure a victim into entering credentials.
@@ -30,11 +42,17 @@ _PHISH_PATHS = [
     "wp-login.php", "webscr", "validation", "session/expired", "e-service/login",
 ]
 
-# Benign paths seen on real government / university sites.
+# Benign paths seen on real government / university sites. A meaningful
+# minority of these contain "login" / "secure" / "account" so the model
+# does not equate the v1.3 has_login_keyword flag with phishing on its
+# own -- legitimate gov/edu portals frequently host /login pages.
 _GOOD_PATHS = [
     "", "index.php", "news", "about", "contact", "services",
     "th/home", "en/home", "downloads", "announcement", "e-service",
     "intranet", "academic/calendar", "students", "research",
+    "login", "auth/login", "secure/login", "myaccount",
+    "verify-citizen-id", "service/login", "portal/signin",
+    "auth/sso", "support/contact", "session/start",
 ]
 
 _BRAND_WORDS = ["secure", "login", "verify", "account", "service", "online",
@@ -91,13 +109,19 @@ class SyntheticGenerator:
     def _rand_str(self, n: int) -> str:
         return "".join(self.rng.choice(string.ascii_lowercase) for _ in range(n))
 
+    def _pick_bad_tld(self) -> str:
+        """Bias toward cheap/abused TLDs the v1.3 schema knows about."""
+        if self.rng.random() < 0.70:
+            return self.rng.choice(_CHEAP_TLDS)
+        return self.rng.choice(_BAD_TLDS)
+
     def _domain_label(self, domain: str) -> str:
         """First label of a registrable domain (e.g. ``obec`` of obec.go.th)."""
         return domain.split(".")[0]
 
     def _swap_tld(self, domain: str) -> str:
         label = self._domain_label(domain)
-        return f"{label}.{self.rng.choice(_BAD_TLDS)}"
+        return f"{label}.{self._pick_bad_tld()}"
 
     # ----- mutations (typosquatting) -----------------------------------
     def _mutate_label(self, label: str) -> str:
@@ -215,20 +239,23 @@ class SyntheticGenerator:
         archetype = self.rng.choices(
             ["typosquat", "tld_swap", "subdomain_spoof", "ip_host",
              "at_trick", "brand_stuffed", "https_ip_host", "redirect_chain",
-             "idn_homoglyph", "punycode_spoof"],
-            weights=[25, 12, 12, 10, 10, 12, 5, 6, 4, 4],
+             "idn_homoglyph", "punycode_spoof", "path_brand_spoof"],
+            # path_brand_spoof gets 12% -- the v1.3 feature it exercises is
+            # the only one of the new four that needs its own archetype
+            # (login keyword + cheap tld fire on every other archetype).
+            weights=[22, 11, 11, 9, 9, 11, 5, 6, 4, 4, 12],
         )[0]
         scheme = "https" if self.rng.random() < 0.55 else "http"
         path = self.rng.choice(_PHISH_PATHS)
 
         if archetype == "typosquat":
-            host = self._mutate_label(label) + "." + self.rng.choice(_BAD_TLDS)
+            host = self._mutate_label(label) + "." + self._pick_bad_tld()
         elif archetype == "tld_swap":
             # exact brand label, wrong TLD: obec.go.th -> obec.com
-            host = f"{label}.{self.rng.choice(_BAD_TLDS)}"
+            host = f"{label}.{self._pick_bad_tld()}"
         elif archetype == "subdomain_spoof":
             attacker = self._rand_str(self.rng.randint(5, 10))
-            host = f"{domain}.{attacker}.{self.rng.choice(_BAD_TLDS)}"
+            host = f"{domain}.{attacker}.{self._pick_bad_tld()}"
         elif archetype == "ip_host":
             host = ".".join(str(self.rng.randint(1, 254)) for _ in range(4))
             scheme = "http"
@@ -238,11 +265,11 @@ class SyntheticGenerator:
             scheme = "https"
         elif archetype == "at_trick":
             attacker = self._rand_str(self.rng.randint(5, 9))
-            host = f"{domain}@{attacker}.{self.rng.choice(_BAD_TLDS)}"
+            host = f"{domain}@{attacker}.{self._pick_bad_tld()}"
         elif archetype == "redirect_chain":
             # attacker.xyz/redirect?to=legitimate.go.th — redirect with query param
             attacker = self._rand_str(self.rng.randint(5, 10))
-            host = f"{attacker}.{self.rng.choice(_BAD_TLDS)}"
+            host = f"{attacker}.{self._pick_bad_tld()}"
         elif archetype == "idn_homoglyph":
             # Swap one Latin letter in the brand label for a Cyrillic look-alike.
             # The resulting host displays identically to the legitimate brand
@@ -252,10 +279,10 @@ class SyntheticGenerator:
                 idx = self.rng.choice(candidates)
                 spoofed = list(label)
                 spoofed[idx] = _IDN_SWAPS[label[idx]]
-                host = "".join(spoofed) + "." + self.rng.choice(_BAD_TLDS)
+                host = "".join(spoofed) + "." + self._pick_bad_tld()
             else:
                 # Fall back to a plain typosquat for labels with no swap-able chars.
-                host = self._mutate_label(label) + "." + self.rng.choice(_BAD_TLDS)
+                host = self._mutate_label(label) + "." + self._pick_bad_tld()
         elif archetype == "punycode_spoof":
             # Encode an IDN homoglyph version of the label as Punycode so the
             # raw host begins with xn--. Falls back gracefully if encoding fails.
@@ -270,13 +297,22 @@ class SyntheticGenerator:
                 encoded = unicode_label.encode("idna").decode("ascii")
             except Exception:  # noqa: BLE001
                 encoded = "xn--" + label + "-zzz"
-            host = encoded + "." + self.rng.choice(_BAD_TLDS)
+            host = encoded + "." + self._pick_bad_tld()
+        elif archetype == "path_brand_spoof":
+            # Random benign-looking host on a cheap TLD; the brand we want
+            # to impersonate lives in the URL path so the user sees it in
+            # the address bar. This is the dominant 2024-2025 OpenPhish kit.
+            attacker = self._rand_str(self.rng.randint(6, 11))
+            host = f"{attacker}.{self.rng.choice(_CHEAP_TLDS)}"
         else:  # brand_stuffed
             words = self.rng.sample(_BRAND_WORDS, k=self.rng.randint(2, 4))
-            host = "-".join([label] + words) + "." + self.rng.choice(_BAD_TLDS)
+            host = "-".join([label] + words) + "." + self._pick_bad_tld()
 
         if archetype == "redirect_chain":
             url = f"{scheme}://{host}/redirect?to={domain}"
+        elif archetype == "path_brand_spoof":
+            extra = self.rng.choice(_PHISH_PATHS)
+            url = f"{scheme}://{host}/{label}/{extra}"
         else:
             url = f"{scheme}://{host}/{path}"
             if self.rng.random() < 0.4:  # extra junk query string

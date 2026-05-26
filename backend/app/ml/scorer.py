@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import datetime as dt
 
-from phish_features import FeatureExtractor, ORDERED_FEATURES
+from phish_features import FeatureExtractor, ORDERED_FEATURES, RulesEngine
 
 from app.config import settings
 
@@ -88,21 +88,42 @@ def _build_reason(feat: dict, label: str, is_whitelisted: bool) -> str:
 
 
 class Scorer:
-    """Encapsulates the model, scaler and feature extractor."""
+    """Encapsulates the model, scaler, extractor, and the rules engine."""
 
-    def __init__(self, model, scaler, extractor: FeatureExtractor,
-                 features_meta: dict) -> None:
+    def __init__(
+        self,
+        model,
+        scaler,
+        extractor: FeatureExtractor,
+        features_meta: dict,
+        rules_engine: RulesEngine | None = None,
+    ) -> None:
         self.model = model
         self.scaler = scaler
         self.extractor = extractor
         self.features_meta = features_meta
+        self.rules_engine = rules_engine or RulesEngine()
 
     def score(self, url: str) -> dict:
         feat = self.extractor.extract_dict(url)
         vector = [float(feat[name]) for name in ORDERED_FEATURES]
         proba = self.model.predict_proba(self.scaler.transform([vector]))[0][1]
-        score = round(float(proba), 4)
-        label = label_from_score(score)
+        base_score = float(proba)
+
+        # --- rules engine: layered on top of the ML score ---
+        rules_out = self.rules_engine.evaluate(url, feat)
+        adjusted = base_score + rules_out.score_delta
+        adjusted = max(0.0, min(1.0, adjusted))
+        score = round(adjusted, 4)
+
+        if rules_out.pinned_label == "phishing":
+            label = "phishing"
+            score = max(score, settings.threshold_phishing)
+        elif rules_out.pinned_label == "safe":
+            label = "safe"
+            score = min(score, settings.threshold_suspicious - 0.01)
+        else:
+            label = label_from_score(score)
 
         is_whitelisted = (
             feat.get("min_edit_distance") == 0
@@ -110,14 +131,22 @@ class Scorer:
             and not feat.get("has_ip")
         )
 
-        reason = _build_reason(feat, label, is_whitelisted)
+        # If rules produced human-readable hits, prefer those over the
+        # generic ML explanation. They are more specific and audit-friendly.
+        rules_messages = [h.message for h in rules_out.hits if h.message]
+        if rules_messages and label != "safe":
+            reason = " · ".join(rules_messages[:3])
+        else:
+            reason = _build_reason(feat, label, is_whitelisted)
 
         return {
             "url": url,
-            "score": score,
+            "score": round(score, 4),
+            "ml_score": round(base_score, 4),
             "label": label,
             "reason": reason,
             "features": feat,
+            "rules": rules_out.to_dict(),
             "closest_domain": feat.get("closest_domain"),
             "edit_distance": (
                 None if feat.get("min_edit_distance", 999) >= 999

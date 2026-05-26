@@ -13,11 +13,19 @@ from .homoglyph import (
     normalize_for_lookup,
 )
 from .lexical import get_host, normalize_url, shannon_entropy
+from .rules import (
+    DEFAULT_RULES,
+    RuleHit,
+    RulesEngine,
+    RulesResult,
+)
 from .schema import (
     FEATURE_SCHEMA_VERSION,
     IMPUTED_DEFAULTS,
+    LOGIN_KEYWORDS,
     N_FEATURES,
     ORDERED_FEATURES,
+    SUSPICIOUS_TLDS,
     TLD_TYPE_MAP,
     vector_from_dict,
 )
@@ -28,14 +36,20 @@ from .whitelist import (
     registrable_domain,
 )
 
-__version__ = "1.0.0"
+__version__ = "1.1.0"
 
 __all__ = [
+    "DEFAULT_RULES",
     "FeatureExtractor",
     "FEATURE_SCHEMA_VERSION",
     "IMPUTED_DEFAULTS",
+    "LOGIN_KEYWORDS",
     "N_FEATURES",
     "ORDERED_FEATURES",
+    "RuleHit",
+    "RulesEngine",
+    "RulesResult",
+    "SUSPICIOUS_TLDS",
     "TLD_TYPE_MAP",
     "TYPOSQUAT_MAX_DISTANCE",
     "Whitelist",
