@@ -1,5 +1,5 @@
 .PHONY: help install test lint format run train evaluate \
-        dashboard extension docker clean
+        dashboard extension docker clean nsc-bundle
 
 PY        ?= python
 PIP       ?= $(PY) -m pip
@@ -53,3 +53,12 @@ docker:  ## Build the backend Docker image.
 clean:  ## Remove caches, coverage, build artifacts.
 	rm -rf .pytest_cache __pycache__ */__pycache__ */*/__pycache__ \
 	       *.egg-info build dist dashboard/dist
+
+nsc-bundle:  ## Build the NSC 2026 submission ZIP (code + docs + models).
+	@mkdir -p dist
+	@rm -f dist/nsc2026-submission.zip
+	git ls-files \
+	  | grep -Ev '^(dashboard/(node_modules|dist)/|\.env)' \
+	  | zip -@ dist/nsc2026-submission.zip > /dev/null
+	@echo "→ dist/nsc2026-submission.zip"
+	@unzip -l dist/nsc2026-submission.zip | tail -5
