@@ -6,7 +6,7 @@ import datetime as dt
 import enum
 import uuid
 
-from sqlalchemy import JSON, Boolean, DateTime, Enum, Float, Integer, String, Uuid
+from sqlalchemy import JSON, Boolean, DateTime, Enum, Float, ForeignKey, Integer, String, UniqueConstraint, Uuid
 from sqlalchemy.dialects.postgresql import JSONB
 from sqlalchemy.orm import Mapped, mapped_column
 
@@ -184,6 +184,61 @@ class Campaign(Base):
         default=lambda: dt.datetime.now(dt.timezone.utc),
     )
     last_seen: Mapped[dt.datetime] = mapped_column(
+        DateTime(timezone=True),
+        default=lambda: dt.datetime.now(dt.timezone.utc),
+        index=True,
+    )
+
+
+# ---------------------------------------------------------------------------
+# External threat feed ingestion (v1.1 new module)
+#
+# Operators can enable polling of OpenPhish and PhishTank. Each source has
+# its own poll schedule. FeedIngestionRecord deduplicates URLs per source so
+# the same URL is not re-scored on every poll.
+# ---------------------------------------------------------------------------
+
+
+class ExternalFeedSourceType(str, enum.Enum):
+    openphish = "openphish"
+    phishtank = "phishtank"
+
+
+class ExternalFeedSource(Base):
+    __tablename__ = "external_feed_sources"
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
+    name: Mapped[str] = mapped_column(String(64), nullable=False, unique=True, index=True)
+    source_type: Mapped[ExternalFeedSourceType] = mapped_column(
+        Enum(ExternalFeedSourceType, name="external_feed_source_type_enum"), nullable=False
+    )
+    feed_url: Mapped[str] = mapped_column(String(512), nullable=False)
+    api_key: Mapped[str | None] = mapped_column(String(256), nullable=True)
+    poll_interval_minutes: Mapped[int] = mapped_column(Integer, default=60)
+    enabled: Mapped[bool] = mapped_column(Boolean, default=True)
+    last_polled_at: Mapped[dt.datetime | None] = mapped_column(
+        DateTime(timezone=True), nullable=True
+    )
+    last_error: Mapped[str | None] = mapped_column(String(512), nullable=True)
+    total_urls_ingested: Mapped[int] = mapped_column(Integer, default=0)
+    created_at: Mapped[dt.datetime] = mapped_column(
+        DateTime(timezone=True),
+        default=lambda: dt.datetime.now(dt.timezone.utc),
+    )
+
+
+class FeedIngestionRecord(Base):
+    """Deduplication log — one row per (url, source) that has been processed."""
+
+    __tablename__ = "feed_ingestion_records"
+    __table_args__ = (UniqueConstraint("url_hash", "source_id"),)
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
+    url_hash: Mapped[str] = mapped_column(String(64), nullable=False, index=True)
+    source_id: Mapped[int] = mapped_column(
+        Integer, ForeignKey("external_feed_sources.id"), nullable=False, index=True
+    )
+    ingested_at: Mapped[dt.datetime] = mapped_column(
         DateTime(timezone=True),
         default=lambda: dt.datetime.now(dt.timezone.utc),
         index=True,

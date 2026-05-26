@@ -77,6 +77,13 @@ class Settings(BaseSettings):
     # --- campaign clustering ---
     enable_campaign_tracking: bool = Field(default=True)
 
+    # --- external threat feed ingestion ---
+    external_feeds_enabled: bool = Field(default=False)
+    external_feed_poll_interval: int = Field(default=60)   # minutes between polls
+    external_feed_batch_size: int = Field(default=100)     # max URLs per source per poll
+    phishtank_api_key: str = Field(default="")
+    openphish_feed_url: str = Field(default="https://openphish.com/feed.txt")
+
     @property
     def model_path(self) -> str:
         return str(Path(self.model_dir) / "ensemble.pkl")

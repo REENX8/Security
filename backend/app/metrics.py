@@ -36,6 +36,18 @@ CACHE_SIZE = Gauge(
     "Number of URLs currently in the dedupe cache",
     registry=REGISTRY,
 )
+FEED_URLS_INGESTED = Counter(
+    "phish_feed_urls_ingested_total",
+    "Total URLs ingested from external threat feeds",
+    labelnames=("source",),
+    registry=REGISTRY,
+)
+FEED_POLL_ERRORS = Counter(
+    "phish_feed_poll_errors_total",
+    "Number of failed external feed poll attempts",
+    labelnames=("source",),
+    registry=REGISTRY,
+)
 
 
 def render_metrics() -> tuple[bytes, str]:

@@ -19,14 +19,16 @@ import datetime as dt
 import io
 import uuid
 
-from fastapi import APIRouter, Query
+import asyncio
+
+from fastapi import APIRouter, Depends, HTTPException, Query, Request
 from fastapi.responses import JSONResponse, StreamingResponse
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
-from fastapi import Depends
 
-from app.database import get_session
-from app.models import Label, UrlCheck
+from app.database import SessionLocal, get_session
+from app.deps import verify_api_key
+from app.models import ExternalFeedSource, Label, UrlCheck
 
 router = APIRouter()
 
@@ -163,3 +165,64 @@ async def feed_stix(
         },
     }
     return JSONResponse(content=body, headers={"Cache-Control": "public, max-age=60"})
+
+
+# ---------------------------------------------------------------------------
+# Admin: external feed source management (requires API key)
+# ---------------------------------------------------------------------------
+
+
+def _source_to_dict(src: ExternalFeedSource) -> dict:
+    return {
+        "id": src.id,
+        "name": src.name,
+        "source_type": src.source_type.value,
+        "feed_url": src.feed_url,
+        "poll_interval_minutes": src.poll_interval_minutes,
+        "enabled": src.enabled,
+        "last_polled_at": src.last_polled_at.isoformat() if src.last_polled_at else None,
+        "last_error": src.last_error,
+        "total_urls_ingested": src.total_urls_ingested,
+        "created_at": src.created_at.isoformat(),
+    }
+
+
+@router.get(
+    "/feed/sources",
+    summary="List configured external threat feed sources (admin)",
+    dependencies=[Depends(verify_api_key)],
+)
+async def list_feed_sources(
+    session: AsyncSession = Depends(get_session),
+) -> JSONResponse:
+    sources = (
+        await session.execute(select(ExternalFeedSource).order_by(ExternalFeedSource.id))
+    ).scalars().all()
+    return JSONResponse(content={"sources": [_source_to_dict(s) for s in sources]})
+
+
+@router.post(
+    "/feed/sources/{source_id}/poll",
+    summary="Trigger an immediate manual poll for a source (admin)",
+    dependencies=[Depends(verify_api_key)],
+)
+async def trigger_feed_poll(
+    request: Request,
+    source_id: int,
+    session: AsyncSession = Depends(get_session),
+) -> JSONResponse:
+    source = (
+        await session.execute(
+            select(ExternalFeedSource).where(ExternalFeedSource.id == source_id)
+        )
+    ).scalar_one_or_none()
+    if source is None:
+        raise HTTPException(status_code=404, detail=f"feed source {source_id} not found")
+
+    from app.feed_ingestion import FeedPoller
+    poller = FeedPoller(request.app.state)
+    asyncio.create_task(poller._poll_source(source))
+    return JSONResponse(
+        content={"queued": True, "source": source.name},
+        status_code=202,
+    )
