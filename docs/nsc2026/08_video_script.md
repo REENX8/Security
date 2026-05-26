@@ -17,7 +17,7 @@
 | 5. Demo: Citizen Report Portal | 2:30 – 3:00 (30s) | ผู้สูงอายุพิมพ์ URL → เห็นผล → แจ้ง |
 | 6. เทคนิค: ML + Rules Engine | 3:00 – 4:00 (60s) | feature 33 + IDN defense + transparent rules |
 | 7. Demo: Brand Watchlist + LINE | 4:00 – 4:45 (45s) | ลงทะเบียน → ทำให้เกิด phishing → LINE แจ้ง |
-| 8. ความแม่นยำ + ทดสอบ | 4:45 – 5:15 (30s) | 100% recall, 167 tests, CI gate |
+| 8. ความแม่นยำ + ทดสอบ | 4:45 – 5:15 (30s) | 100% recall (66/66), 177 tests, CI gate |
 | 9. Sustainable Innovation | 5:15 – 6:15 (60s) | 4 pillars + impact metrics |
 | 10. Roadmap + ชุมชน | 6:15 – 6:45 (30s) | open source, public feed, LINE bot ต่อไป |
 | 11. ปิดท้าย + Call to action | 6:45 – 7:00 (15s) | URL · GitHub · QR |
@@ -54,7 +54,7 @@
 > *[ภาพ: architecture diagram ที่เคลื่อนไหวทีละชิ้น]*
 >
 > "เราออกแบบระบบนี้เป็นแพลตฟอร์มที่ทำงานร่วมกัน 5 ส่วน หนึ่ง ML pipeline
-> ที่ฝึกโมเดล RandomForest + XGBoost บน 33 features สอง backend ภาษา
+> ที่ฝึกโมเดล RandomForest + XGBoost บน 37 features สอง backend ภาษา
 > Python ที่มี API สำหรับตรวจ URL และส่งข้อมูลให้แอป สาม ส่วนขยายเบราว์เซอร์
 > Manifest V3 ที่ใช้ได้ในทุกเบราว์เซอร์หลัก สี่ dashboard React 11 หน้า
 > สำหรับ operator และห้าที่สำคัญที่สุด — citizen report portal ที่ใช้ได้
@@ -85,10 +85,10 @@
 > *[ภาพ: code snippet + feature list + rules engine output]*
 >
 > "เทคนิคที่ใช้มีสองชั้นทำงานร่วมกัน ชั้นแรกคือ ML — เราออกแบบ feature
-> เอง 33 ตัว ที่สำคัญที่สุดคือกลุ่ม IDN/Homoglyph ที่ decode Punycode
+> เอง 37 ตัว ที่สำคัญที่สุดคือกลุ่ม IDN/Homoglyph ที่ decode Punycode
 > และ fold Unicode confusables จับการปลอมตัวอักษรซีริลลิกได้ และ
-> feature ใหม่ใน v1.3.0 ที่เพิ่งออกแบบ — has_login_keyword,
-> has_suspicious_tld, path_brand_hit — จับ phishing kit แบบ
+> feature ใหม่ใน v1.4.0 ล่าสุด — num_login_keywords, query_param_count,
+> path_entropy, host_token_count — จับ phishing kit แบบ
 > 'random host + brand ใน path' ที่เป็น pattern หลักของปี 2024-2025
 >
 > ชั้นที่สองคือ Rules Engine — กฎที่เขียนเป็น Python ฟังก์ชัน แต่ละกฎมี
@@ -110,10 +110,10 @@
 
 > *[ภาพ: graph confusion matrix + roc curve + 100% recall headline]*
 >
-> "เราวัดความแม่นยำบน Thai-targeting holdout 53 URL ที่โมเดลไม่เคยเห็น
-> ระหว่าง training — ได้ recall 100% ที่ threshold ฟิชชิง confidence
-> interval 95% [0.93, 1.00] ระบบมี CI gate ขั้นต่ำ 0.85 ทุก commit ต้องผ่าน
-> automated tests 167 cases ทั้งหมดผ่าน"
+> "เราวัดความแม่นยำบน Thai-targeting holdout 66 URL ที่โมเดลไม่เคยเห็น
+> ระหว่าง training — ได้ recall 100% (66/66) และ generic phishing holdout
+> 98.9% (89/90) ระบบมี CI gate ขั้นต่ำ 0.85 ทุก commit ต้องผ่าน
+> automated tests 177 cases ทั้งหมดผ่าน"
 
 ### ฉากที่ 9 (5:15 – 6:15) — Sustainable Innovation
 

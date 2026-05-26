@@ -25,17 +25,17 @@ training เฉพาะของไทย
 ### สิ่งที่ทำ
 
 แพลตฟอร์ม **end-to-end** ที่จับ URL ฟิชชิงเลียนแบบแบรนด์ไทย ประกอบด้วย
-**5 ส่วนทำงานร่วมกัน:** (1) ML ensemble RF+XGB บน **33 features** v1.3.0
-รวม IDN/Homoglyph + Path-impersonation (2) FastAPI backend พร้อม
+**5 ส่วนทำงานร่วมกัน:** (1) ML ensemble RF+XGB บน **37 features** v1.4.0
+รวม IDN/Homoglyph + Path-impersonation + Lexical patterns ใหม่ (2) FastAPI backend พร้อม
 **Rules Engine โปร่งใส** (3) **Brand Watchlist + Webhook** (LINE/Slack)
 (4) **Campaign Clustering** จับ kit เดียวกัน (5) **Public Threat Feed**
 STIX 2.1 (no auth) + **Citizen Report Portal** ไม่ต้อง login
 
 ### จุดเด่น (Creativity + Technique)
 
-* **Schema v1.3.0**: เพิ่ม 4 features ใหม่ที่ออกแบบให้จับ phishing kit
-  ปัจจุบัน — `has_login_keyword`, `has_suspicious_tld`, `path_brand_hit`,
-  `path_length` — ทำให้ Thai recall ขึ้นจาก 98.1% → **100%**
+* **Schema v1.4.0**: เพิ่ม 4 features ใหม่ล่าสุดที่คำนวณจาก URL string ล้วน —
+  `num_login_keywords` (count), `query_param_count`, `path_entropy`,
+  `host_token_count` — ทำให้ Thai recall คงอยู่ที่ **100%** บน holdout 66 URL
 * **IDN/Homoglyph defense**: decode Punycode + fold Unicode confusables
   จับ `chulа.com` (Cyrillic) และ `xn--rd-yia.com` ได้
 * **Rules Engine**: ทุก verdict แสดง `rule_id` ที่ทำงาน — โปร่งใส, ตรวจสอบได้,
@@ -45,10 +45,11 @@ STIX 2.1 (no auth) + **Citizen Report Portal** ไม่ต้อง login
 
 ### ความแม่นยำ
 
-* **Thai-targeting holdout (53 URL ที่โมเดลไม่เคยเห็น):** recall **100% (53/53)**
-  ที่ threshold ≥ 0.7 (95% CI [0.93, 1.00])
+* **Thai-targeting holdout (66 URL ที่โมเดลไม่เคยเห็น):** recall **100% (66/66)**
+  ที่ threshold ≥ 0.7
+* **Generic phishing holdout (90 URL):** recall **98.9% (89/90)**
 * **CI gate ≥ 0.85** — automated, fail build ถ้า regress
-* **167 automated tests** ผ่านทั้งหมด
+* **177 automated tests** ผ่านทั้งหมด
 
 ### ประโยชน์ (Sustainable Innovation)
 
@@ -77,4 +78,4 @@ Docker · STIX 2.1
 
 ---
 
-**ติดต่อ:** ผู้พัฒนา ___________________ · email ___________________
+**ผู้พัฒนา:** REENX8 · **email:** asdawesdzd22@gmail.com · **GitHub:** https://github.com/reenx8/security

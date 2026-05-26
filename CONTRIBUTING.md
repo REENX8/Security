@@ -1,5 +1,7 @@
 # Contributing to Thai Phishing URL Detection
 
+**Maintainer:** [REENX8](https://github.com/REENX8) (asdawesdzd22@gmail.com)
+
 Thanks for your interest! This project protects Thai citizens against
 phishing of government and educational brands, and every contribution —
 from a single false-positive report to a new feature schema version —

@@ -12,6 +12,33 @@ or mirror it explicitly.
 
 ---
 
+## [1.1.0] — 2026-05-26
+
+### Added
+
+- **Feature schema v1.4.0** — 4 features ใหม่คำนวณจาก URL string ล้วน: `num_login_keywords` (count), `query_param_count`, `path_entropy`, `host_token_count` (index 33–36)
+- **Real-time external threat feed ingestion** — `FeedPoller` background service poll OpenPhish + PhishTank ทุก N นาที; deduplication ผ่าน `FeedIngestionRecord`; เปิดด้วย `EXTERNAL_FEEDS_ENABLED=true`
+- New models `ExternalFeedSource` และ `FeedIngestionRecord` ใน database schema
+- Admin endpoints `GET /api/v1/feed/sources` และ `POST /api/v1/feed/sources/{id}/poll`
+- Prometheus counters `phish_feed_urls_ingested_total` และ `phish_feed_poll_errors_total`
+- 3 synthetic phishing archetypes: `long_random_subdomain`, `double_dash_stuffed`, `token_stuffed_path`
+- Optuna hyperparameter search: `python -m ml_pipeline.train --tune`
+- Thai phishing seed corpus 175 → **215 URLs** (+40 ครอบคลุม 10 แบรนด์)
+- `httpx>=0.27` ใน backend/requirements.txt สำหรับ async HTTP
+
+### Changed
+
+- Training dataset 6,000 → **12,000 rows** (balanced)
+- Thai holdout recall: 100% บน **66 URLs** (เพิ่มจาก 53)
+- Generic phishing recall: **98.9% (89/90)** — metric ใหม่จาก real feed cache
+- Test suite: 162 → **177 tests** (10 ใหม่สำหรับ feed ingestion)
+
+### Fixed
+
+- `FeedPoller` ใช้ `asyncio.gather` + `return_exceptions=True` ป้องกัน 1 source ล้มเหลวทำให้ source อื่นหยุดทำงาน
+
+---
+
 ## [1.0.0] — 2026-05-25
 
 First public release. The system is **production-ready** for protecting
