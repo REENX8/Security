@@ -25,11 +25,17 @@ training เฉพาะของไทย
 ### สิ่งที่ทำ
 
 แพลตฟอร์ม **end-to-end** ที่จับ URL ฟิชชิงเลียนแบบแบรนด์ไทย ประกอบด้วย
-**5 ส่วนทำงานร่วมกัน:** (1) ML ensemble RF+XGB บน **37 features** v1.4.0
+**5 ส่วนหลัก:** (1) ML ensemble RF+XGB บน **37 features** v1.4.0
 รวม IDN/Homoglyph + Path-impersonation + Lexical patterns ใหม่ (2) FastAPI backend พร้อม
 **Rules Engine โปร่งใส** (3) **Brand Watchlist + Webhook** (LINE/Slack)
 (4) **Campaign Clustering** จับ kit เดียวกัน (5) **Public Threat Feed**
 STIX 2.1 (no auth) + **Citizen Report Portal** ไม่ต้อง login
+
+และ **4 ความสามารถเสริม (v1.2.0):**
+(6) **URL Unshortener** — แกะ short link 18 providers (bit.ly, t.co, lin.ee ฯลฯ) ก่อน score
+(7) **LINE Messaging API Bot** — webhook ตรวจ URL ที่ส่งมาในแชท LINE ตอบกลับภาษาไทยพร้อม verdict
+(8) **Content-based Fallback** — ดึง HTML ตรวจ password field / brand-in-title สำหรับ URL โซนเทา (score 0.3–0.7)
+(9) **Feedback Auto-retrain** — export confirmed feedback จาก DB → trigger retrain อัตโนมัติ
 
 ### จุดเด่น (Creativity + Technique)
 
@@ -42,6 +48,9 @@ STIX 2.1 (no auth) + **Citizen Report Portal** ไม่ต้อง login
   override ML ได้โดยไม่ต้อง retrain
 * **Public Threat Feed** STIX 2.1 + Citizen Report Portal — ไม่ต้อง API key
   ใครก็เอาไปใช้ต่อ ใครก็แจ้งเว็บปลอมได้
+* **LINE Messaging API Bot** — ส่ง URL ตรวจในแชท LINE ได้โดยตรง ตอบกลับภาษาไทย
+  รองรับ HMAC-SHA256 signature validation
+* **URL Unshortening** — แกะ bit.ly / lin.ee / t.co ก่อน score ป้องกัน evasion ผ่าน short link
 
 ### ความแม่นยำ
 
@@ -68,7 +77,7 @@ STIX 2.1 (no auth) + **Citizen Report Portal** ไม่ต้อง login
 
 scikit-learn 1.5 · XGBoost 2.1 · FastAPI 0.115 · SQLAlchemy 2.0 async ·
 PostgreSQL 16 · React 18 · Vite 5 · TailwindCSS · Chrome Manifest V3 ·
-Docker · STIX 2.1
+Docker · STIX 2.1 · LINE Messaging API · httpx 0.28 (async HTTP)
 
 ### ลิงก์โครงการ / source code
 

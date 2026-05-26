@@ -37,7 +37,7 @@
 |------|---------|----------------|
 | ความสมบูรณ์ | 20 | ใช้ template `01_proposal.md` ครบทุกหัวข้อ + ใส่ภาพประกอบ + ตาราง |
 | ความยากง่าย | 20 | เน้น ML ensemble + IDN/Homoglyph + Schema v1.4 + Rules Engine |
-| ความคิดสร้างสรรค์ | 20 | Citizen Portal + Public Feed + Brand Watchlist (LINE) + Campaign clustering + External Feed |
+| ความคิดสร้างสรรค์ | 20 | Citizen Portal + Public Feed + Brand Watchlist (LINE) + Campaign clustering + External Feed + LINE Bot + URL Unshortening + Content Fallback + Feedback Retrain |
 | ประโยชน์ใช้งาน | 25 | กลุ่มเป้าหมายชัด, /impact ที่ quantify ผล, ใช้กับผู้สูงอายุได้ |
 | ความน่าจะเสร็จ | 15 | ของจริง deploy ได้แล้ว (Docker, Render), 206 tests ผ่าน |
 
@@ -68,7 +68,7 @@
 | รายงาน + ติดตั้ง | 25 | ติดตั้งตามคู่มือได้ + รายงานครบ |
 | Look & Feel | 15 | UI ของ dashboard + extension |
 | Technique | 15 | depth ของ ML / rules engine |
-| Creativity | 20 | citizen portal + open feed + LINE webhook |
+| Creativity | 20 | citizen portal + open feed + LINE webhook + LINE Bot + URL Unshortening + Content Fallback + Feedback Auto-retrain |
 | Economic + Social Impact | 20 | กลุ่มเป้าหมายชัด + /impact quantify |
 | Presentation | 5 | พูดชัด ตอบคำถามได้ |
 
@@ -94,6 +94,8 @@
 | "ค่าใช้จ่ายในการรัน production?" | ใช้ Render free tier ได้ (~$0/เดือน demo), production scale 100k checks/วันใช้ ~$10-20/เดือน |
 | "ข้อมูลส่วนตัวของผู้ใช้ไป?" | URL ไป backend อย่างเดียว, ไม่มี cookies/credentials, dashboard URL จริงไม่เก็บ form data (ดู extension/PRIVACY.md) |
 | "ถ้า model มี bias ต่อโดเมนใหม่ของจริงที่เพิ่ง register?" | feature `domain_age_days` ใช้ + safety net `WHITELIST_EXACT` rule + feedback loop รับแจ้ง false positive |
+| "LINE Bot ต่างจาก Brand Watchlist อย่างไร?" | Brand Watchlist + LINE Notify = แจ้งเตือน **หน่วยงาน** เมื่อมีคนตรวจ URL ปลอมแบรนด์; LINE Messaging Bot = ให้ **ประชาชนทั่วไป** พิมพ์ URL ตรวจเองใน LINE chat |
+| "URL Unshortening ทำงานอย่างไร?" | ส่ง async HEAD request ไปที่ short link แล้วดูว่า redirect ไปที่ใด ถ้า short link ไม่รู้จักก็ข้ามและใช้ URL เดิม ป้องกัน evasion ผ่าน bit.ly |
 | "ทำไมไม่ใช้ pre-trained model (BERT, GPT)?" | URL detection ต้องการ inference เร็ว (<300ms ต่อ check) + deploy on cheap VPS, transformer ใช้ resource เยอะเกิน + lexical features ให้ผลดีกว่าใน domain นี้ |
 
 ---
