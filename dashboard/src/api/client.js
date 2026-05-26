@@ -98,3 +98,54 @@ export function submitFeedback(data) {
 export function getFeedbackExportUrl() {
   return `${(import.meta.env.VITE_API_URL || "http://localhost:8000").replace(/\/+$/, "")}/api/v1/feedback/export`;
 }
+
+// --- Brand watchlist ---
+
+export function getWatchlist() {
+  return request("/api/v1/watchlist");
+}
+
+export function addWatchlistEntry(data) {
+  return request("/api/v1/watchlist", {
+    method: "POST",
+    body: JSON.stringify(data),
+  });
+}
+
+export function deleteWatchlistEntry(brand) {
+  return request(`/api/v1/watchlist/${encodeURIComponent(brand)}`, {
+    method: "DELETE",
+  });
+}
+
+export function getWebhookDeliveries({ brand = "", limit = 50, offset = 0 } = {}) {
+  const params = new URLSearchParams({ limit, offset });
+  if (brand) params.set("brand", brand);
+  return request(`/api/v1/watchlist/deliveries?${params.toString()}`);
+}
+
+// --- Campaigns ---
+
+export function getCampaigns({ min_urls = 1, brand = "", limit = 50, offset = 0 } = {}) {
+  const params = new URLSearchParams({ min_urls, limit, offset });
+  if (brand) params.set("brand", brand);
+  return request(`/api/v1/campaigns?${params.toString()}`);
+}
+
+// --- Domain reputation ---
+
+export function getDomainHistory(host) {
+  return request(`/api/v1/domain/${encodeURIComponent(host)}/history`);
+}
+
+// --- Public threat feed (no API key required, but our wrapper sends one — harmless) ---
+
+export function getPublicFeed({ hours = 24, limit = 200 } = {}) {
+  const params = new URLSearchParams({ hours, limit });
+  return request(`/api/v1/feed.json?${params.toString()}`);
+}
+
+export function getPublicFeedUrl(format = "json") {
+  const base = (import.meta.env.VITE_API_URL || "http://localhost:8000").replace(/\/+$/, "");
+  return `${base}/api/v1/feed.${format}`;
+}

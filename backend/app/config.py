@@ -69,6 +69,13 @@ class Settings(BaseSettings):
 
     # --- server ---
     app_name: str = Field(default="Thai Phishing URL Detector")
+    log_format: str = Field(default="text")  # "text" or "json"
+
+    # --- public threat feed ---
+    enable_public_feed: bool = Field(default=True)
+
+    # --- campaign clustering ---
+    enable_campaign_tracking: bool = Field(default=True)
 
     @property
     def model_path(self) -> str:

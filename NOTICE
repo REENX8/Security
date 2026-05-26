@@ -1,0 +1,34 @@
+Thai Phishing URL Detection System
+Copyright 2026 Thai Phishing Detector contributors
+
+This product includes software developed as part of an open-source effort to
+protect Thai citizens from phishing attacks that impersonate government
+(.go.th) and educational (.ac.th) websites.
+
+----------------------------------------------------------------------
+Third-party components and their licenses
+----------------------------------------------------------------------
+
+This project depends on the following open-source libraries; see each
+project's repository for the canonical license text:
+
+  * FastAPI                 (MIT)
+  * Uvicorn                 (BSD-3-Clause)
+  * SQLAlchemy              (MIT)
+  * Pydantic                (MIT)
+  * scikit-learn            (BSD-3-Clause)
+  * XGBoost                 (Apache-2.0)
+  * python-Levenshtein      (GPL-2.0 — used only as a runtime dependency)
+  * python-whois            (MIT)
+  * prometheus-client       (Apache-2.0)
+  * slowapi                 (MIT)
+  * React                   (MIT)
+  * Vite                    (MIT)
+  * TailwindCSS             (MIT)
+  * Recharts                (MIT)
+  * TanStack Query          (MIT)
+
+The Thai government / education / state-bank whitelist
+(``data/thai_gov_domains.csv``) was compiled from publicly available
+sources including official ministry websites, ThaiCERT/ETDA advisories
+and Wikipedia. Each row carries an attribution to its source category.

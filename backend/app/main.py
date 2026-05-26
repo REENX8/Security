@@ -14,18 +14,26 @@ from slowapi.errors import RateLimitExceeded
 from slowapi.middleware import SlowAPIMiddleware
 from sqlalchemy import func, select
 
+from phish_features import FEATURE_SCHEMA_VERSION
+from phish_features import __version__ as features_version
+
 from app import __version__
 from app.cache import TTLCache
 from app.config import settings
 from app.database import SessionLocal, init_db
 from app.errors import register_error_handlers
 from app.metrics import CACHE_SIZE, MODEL_READY, render_metrics
+from app.middleware import RequestContextMiddleware
 from app.ml.loader import ModelLoadError, load_scorer
 from app.models import DbWhitelistEntry, UrlCheck
 from app.rate_limit import limiter
+from app.routers import campaigns as campaigns_router
 from app.routers import check, history, stats
 from app.routers import admin as admin_router
+from app.routers import domain as domain_router
+from app.routers import feed as feed_router
 from app.routers import feedback as feedback_router
+from app.routers import watchlist as watchlist_router
 
 logging.basicConfig(
     level=logging.INFO,
@@ -132,19 +140,9 @@ app.add_middleware(
     allow_credentials=False,
     allow_methods=["*"],
     allow_headers=["*"],
+    expose_headers=["X-Request-ID"],
 )
-
-
-@app.middleware("http")
-async def log_requests(request: Request, call_next):
-    start = time.perf_counter()
-    response = await call_next(request)
-    elapsed = (time.perf_counter() - start) * 1000
-    logger.info(
-        "%s %s -> %s (%.1f ms)",
-        request.method, request.url.path, response.status_code, elapsed,
-    )
-    return response
+app.add_middleware(RequestContextMiddleware, log_format=settings.log_format)
 
 
 # --- error handlers ---
@@ -168,6 +166,11 @@ app.include_router(stats.router, prefix="/api/v1", tags=["stats"])
 app.include_router(history.router, prefix="/api/v1", tags=["history"])
 app.include_router(admin_router.router, prefix="/api/v1", tags=["admin"])
 app.include_router(feedback_router.router, prefix="/api/v1", tags=["feedback"])
+app.include_router(watchlist_router.router, prefix="/api/v1", tags=["watchlist"])
+app.include_router(campaigns_router.router, prefix="/api/v1", tags=["campaigns"])
+app.include_router(domain_router.router, prefix="/api/v1", tags=["domain"])
+if settings.enable_public_feed:
+    app.include_router(feed_router.router, prefix="/api/v1", tags=["feed"])
 
 
 @app.get("/health", tags=["meta"])
@@ -212,24 +215,45 @@ async def metrics_endpoint() -> Response:
     return Response(content=body, media_type=content_type)
 
 
+@app.get("/version", tags=["meta"])
+async def version() -> dict:
+    """Triple of versions that together identify the running build."""
+    return {
+        "backend": __version__,
+        "phish_features": features_version,
+        "schema": FEATURE_SCHEMA_VERSION,
+    }
+
+
 @app.get("/", tags=["meta"])
 async def root() -> dict:
     return {
         "name": settings.app_name,
         "version": __version__,
+        "schema_version": FEATURE_SCHEMA_VERSION,
         "docs": "/docs",
         "endpoints": [
             "POST /api/v1/check",
             "POST /api/v1/check/batch",
-            "GET /api/v1/stats",
-            "GET /api/v1/history",
-            "GET /api/v1/admin/whitelist",
+            "GET  /api/v1/stats",
+            "GET  /api/v1/history",
+            "GET  /api/v1/admin/whitelist",
             "POST /api/v1/admin/whitelist",
             "DELETE /api/v1/admin/whitelist/{domain}",
             "POST /api/v1/feedback",
-            "GET /api/v1/feedback",
-            "GET /api/v1/feedback/export",
-            "GET /health",
-            "GET /metrics",
+            "GET  /api/v1/feedback",
+            "GET  /api/v1/feedback/export",
+            "GET  /api/v1/watchlist",
+            "POST /api/v1/watchlist",
+            "DELETE /api/v1/watchlist/{brand}",
+            "GET  /api/v1/watchlist/deliveries",
+            "GET  /api/v1/campaigns",
+            "GET  /api/v1/domain/{host}/history",
+            "GET  /api/v1/feed.json",
+            "GET  /api/v1/feed.csv",
+            "GET  /api/v1/feed.stix",
+            "GET  /health",
+            "GET  /version",
+            "GET  /metrics",
         ],
     }

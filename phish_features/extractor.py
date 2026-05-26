@@ -10,17 +10,70 @@ from __future__ import annotations
 
 from urllib.parse import urlparse
 
+import re
+
 from .domain import whois_features
 from .homoglyph import has_mixed_script, has_punycode
 from .lexical import extract_lexical, normalize_url
 from .schema import (
     IMPUTED_DEFAULTS,
+    LOGIN_KEYWORDS,
     ORDERED_FEATURES,
+    SUSPICIOUS_TLDS,
     TLD_TYPE_DEFAULT,
     TLD_TYPE_MAP,
 )
 from .tls import tls_features
-from .whitelist import Whitelist
+from .whitelist import Whitelist, brand_label
+
+# Tokenise URL path on any character that's not alphanumeric. This is what
+# decides whether ``login`` lives inside path segment ``/secure-login.php``.
+_PATH_TOKEN_RE = re.compile(r"[A-Za-z0-9]+")
+
+
+def _etld(host: str) -> str:
+    """Best-effort effective top-level domain (eTLD).
+
+    For multi-label suffixes we already know about (go.th etc.), return the
+    longer compound. Otherwise return the last label. We deliberately keep
+    this list short -- the goal is to feed the SUSPICIOUS_TLDS lookup, not
+    to compute a full Public Suffix List eTLD.
+    """
+    if not host:
+        return ""
+    h = host.lower()
+    for suffix in ("go.th", "ac.th", "or.th", "co.th", "in.th", "mi.th",
+                   "net.th", "com.au", "co.uk", "org.uk", "ac.uk"):
+        if h == suffix or h.endswith("." + suffix):
+            return suffix
+    return h.rsplit(".", 1)[-1] if "." in h else h
+
+
+def _path_brand_hit(url: str, host_brand: str, whitelist: Whitelist) -> int:
+    """1 if a whitelisted brand label appears in the URL path *and* the host's
+    brand label does NOT match it.
+
+    Phishing kits commonly use a random/benign host and stuff the brand into
+    the path: ``secure-update.cc/krungthai/login``. Legitimate sites almost
+    never do this (their brand is in the host, not the path).
+    """
+    try:
+        from urllib.parse import urlparse
+        path = urlparse(normalize_url(url)).path or ""
+    except Exception:  # noqa: BLE001
+        return 0
+    if not path or path == "/":
+        return 0
+    tokens = {t.lower() for t in _PATH_TOKEN_RE.findall(path) if len(t) >= 4}
+    if not tokens:
+        return 0
+    host_brand = (host_brand or "").lower()
+    for label in whitelist._labels:  # uses precomputed brand labels
+        if len(label) < 4:
+            continue
+        if label in tokens and label != host_brand:
+            return 1
+    return 0
 
 
 def classify_tld(host: str) -> tuple[str, int]:
@@ -74,6 +127,15 @@ class FeatureExtractor:
         feat["tld_type_enc"] = TLD_TYPE_MAP.get(tld_type, TLD_TYPE_DEFAULT)
         feat["is_thai_tld"] = is_thai
 
+        # --- v1.3 path / TLD impersonation features ---
+        path_tokens = {
+            t.lower()
+            for t in _PATH_TOKEN_RE.findall(url)
+            if t
+        }
+        feat["has_login_keyword"] = int(bool(path_tokens & LOGIN_KEYWORDS))
+        feat["has_suspicious_tld"] = int(_etld(host) in SUSPICIOUS_TLDS)
+
         # Typosquat distance is meaningless for raw-IP hosts.
         if feat["has_ip"] or not host:
             feat["min_edit_distance"] = 999
@@ -82,6 +144,7 @@ class FeatureExtractor:
             feat["homoglyph_distance"] = 999
             feat["has_punycode"] = 0
             feat["has_mixed_script"] = 0
+            feat["path_brand_hit"] = 0
         else:
             feat.update(self.whitelist.whitelist_features(host))
             # IDN / homoglyph features: re-run the closest lookup against
@@ -106,6 +169,10 @@ class FeatureExtractor:
                 feat["is_typosquat"] = 1
                 feat["closest_domain"] = norm_dom
                 feat["min_edit_distance"] = int(norm_dist)
+
+            feat["path_brand_hit"] = _path_brand_hit(
+                url, brand_label(host), self.whitelist
+            )
 
         # --- WHOIS ---
         if network_overrides and "domain_age_days" in network_overrides:

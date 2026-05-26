@@ -1,77 +1,129 @@
 # 🛡️ ระบบตรวจจับเว็บไซต์ฟิชชิงสำหรับหน่วยงานไทย
 
-ระบบนี้สร้างมาเพื่อตรวจว่า URL ที่ได้รับมานั้น "ของจริง" หรือ "ของปลอม" โดยเน้นที่เว็บไซต์ราชการ (`.go.th`) และสถาบันการศึกษา (`.ac.th`) ของไทยเป็นหลัก เพราะมักถูกใช้หลอกลวงประชาชนบ่อยที่สุด
+[![CI](https://github.com/reenx8/security/actions/workflows/ci.yml/badge.svg)](https://github.com/reenx8/security/actions/workflows/ci.yml)
+[![License: Apache 2.0](https://img.shields.io/badge/License-Apache_2.0-blue.svg)](LICENSE)
+[![Schema](https://img.shields.io/badge/feature%20schema-v1.3.0-informational)](phish_features/schema.py)
+[![Thai recall](https://img.shields.io/badge/Thai%20holdout%20recall-100%25%20(53%2F53)-success)](reports/evaluation_summary.json)
+[![Tests](https://img.shields.io/badge/tests-162%20passing-success)](tests/)
 
-ระบบประกอบด้วย 4 ส่วนที่ทำงานร่วมกัน — AI สำหรับฝึกโมเดล, API backend, ส่วนขยายเบราว์เซอร์ และแดชบอร์ดสำหรับดูข้อมูล
+ระบบ **end-to-end** สำหรับตรวจว่า URL หนึ่ง ๆ เป็นเว็บไซต์ฟิชชิงที่ปลอมหน่วยงานราชการ (`.go.th`) สถาบันการศึกษา (`.ac.th`) หรือธนาคาร/รัฐวิสาหกิจไทยหรือไม่ — ครอบคลุมตั้งแต่ ML pipeline, FastAPI backend, ส่วนขยายเบราว์เซอร์ Manifest V3, แดชบอร์ด React, public threat feed, brand watchlist + webhook, จัดกลุ่มแคมเปญฟิชชิง และ portal ให้ประชาชนแจ้งเว็บปลอมแบบไม่ต้อง login
 
 ```
-┌──────────────┐   ┌──────────────┐   ┌──────────────┐   ┌──────────────┐
-│  ML Pipeline │──▶│  FastAPI     │◀──│  Browser     │   │  React       │
-│  (ฝึกโมเดล) │   │  Backend     │   │  Extension   │   │  Dashboard   │
-│              │   │  + Postgres  │◀──│  (MV3)       │   │              │──┐
-└──────┬───────┘   └──────┬───────┘   └──────────────┘   └──────────────┘  │
-       │                  │                                                │
-       │           ┌──────▼───────┐                                        │
-       └──────────▶│ phish_features│◀───────────────────────────────────────┘
-                   │ (shared pkg) │   ใช้โค้ดดึง feature เดียวกันทั้งตอนฝึกและตอนใช้งานจริง
-                   └──────────────┘
+                       ┌────────────────────────────────────────┐
+                       │      Citizens / Operators / Bots       │
+                       └──┬──────────┬──────────┬──────────┬────┘
+                          │          │          │          │
+                  Browser ext   Dashboard   API client   Public feed
+                          │          │          │          │
+                          └──────────▼──────────▼──────────┘
+                                    │
+                          ┌─────────▼──────────┐
+                          │  FastAPI backend   │ ──► PostgreSQL
+                          │  /api/v1/*         │
+                          │  + rules engine    │
+                          │  + campaign cluster│
+                          │  + webhook notifier│
+                          └─────────┬──────────┘
+                                    │
+                          ┌─────────▼──────────┐
+                          │ phish_features pkg │  (single source of truth:
+                          │ • lexical 16       │   ML pipeline & backend
+                          │ • whois / tls      │   import the SAME code)
+                          │ • IDN / homoglyph  │
+                          │ • path / TLD       │
+                          │ • RulesEngine      │
+                          └─────────┬──────────┘
+                                    │
+                          ┌─────────▼──────────┐
+                          │ scikit-learn + XGB │
+                          │ ensemble (.pkl)    │  schema v1.3.0 · 33 features
+                          └────────────────────┘
 ```
 
 ---
 
-## จุดเด่น
+## สารบัญ
 
-**ความแม่นยำสูง** — โมเดลใช้ feature 26 ตัวร่วมกับ ensemble ของ RandomForest และ XGBoost จับ phishing URL ที่เลียนแบบเว็บรัฐ/การศึกษาไทยจาก holdout ได้ **98.1%** (52/53 ที่ threshold ≥ 0.7, 95% CI [0.90, 1.00]) บน Thai-targeting corpus ที่โมเดลไม่เคยเห็น และ generic real phishing recall อยู่ที่ **92.2%** (ดีขึ้นจาก 87.8% หลังขยาย seed)
+- [จุดเด่นในเวอร์ชัน 1.0](#จุดเด่นในเวอร์ชัน-10)
+- [ความแม่นยำของโมเดล](#ความแม่นยำของโมเดล)
+- [โครงสร้างโปรเจกต์](#โครงสร้างโปรเจกต์)
+- [Quickstart — เริ่มต้นใช้งาน](#quickstart--เริ่มต้นใช้งาน)
+- [ML Pipeline](#ml-pipeline)
+- [Backend API](#backend-api)
+- [Rules Engine (ใหม่ใน v1)](#rules-engine-ใหม่ใน-v1)
+- [Brand Watchlist + Webhook (ใหม่ใน v1)](#brand-watchlist--webhook-ใหม่ใน-v1)
+- [Campaign Clustering (ใหม่ใน v1)](#campaign-clustering-ใหม่ใน-v1)
+- [Public Threat Feed (ใหม่ใน v1)](#public-threat-feed-ใหม่ใน-v1)
+- [Domain Reputation Lookup (ใหม่ใน v1)](#domain-reputation-lookup-ใหม่ใน-v1)
+- [ส่วนขยายเบราว์เซอร์](#ส่วนขยายเบราว์เซอร์)
+- [Dashboard](#dashboard)
+- [Citizen Report Portal (ใหม่ใน v1)](#citizen-report-portal-ใหม่ใน-v1)
+- [Configuration](#configuration)
+- [Tests](#tests)
+- [ก่อน Deploy จริง](#ก่อน-deploy-จริง)
+- [Tech Stack](#tech-stack)
+- [License](#license)
 
-**จับการปลอมแปลงโดเมนได้** — ระบบวัดความใกล้เคียงระหว่างชื่อโดเมนกับโดเมนราชการ/การศึกษา/ธนาคารรัฐที่เชื่อถือได้ **500+ รายการ** ไม่ว่าจะเป็นการพิมพ์ผิดเล็กน้อย (`0bec.go.th`) เปลี่ยน TLD (`obec.com`) หรือใช้ตัวอักษรซีริลลิกหน้าตาเหมือนกัน (`chulа.com` ที่ а เป็น Cyrillic) ก็จับได้
+---
 
-**ไม่พังเมื่อเน็ตช้า** — การค้นหาข้อมูล WHOIS และ TLS มี timeout ป้องกัน ถ้าดึงข้อมูลไม่ได้ระบบจะใช้ค่า default แทน ไม่ block การตรวจสอบ
+## จุดเด่นในเวอร์ชัน 1.0
 
-**พร้อมใช้งานทันที** — โมเดลที่ฝึกแล้วถูก commit ไว้ใน repo แล้ว แค่ `docker compose up` ก็ได้ API ที่ใช้งานได้เลย
+**ความแม่นยำสูงและตรงเป้า** — โมเดลฝึกบน Thai-targeting seed corpus + synthetic anchored กับ 500+ Thai gov/edu/state-bank domains
+จับ phishing ที่เลียนแบบเว็บราชการ/การศึกษา/ธนาคารไทยจาก holdout ได้ **100% (53/53)** ที่ threshold ≥ 0.7 บน schema v1.3.0
+มี **CI gate ที่ recall ≥ 0.85** — ถ้าโมเดลใหม่ตกต่ำกว่าค่านี้ build จะ fail ทันที
 
-**100 automated tests** ครอบคลุมตั้งแต่ feature extraction, cache, ไปจนถึงทุก endpoint และ golden tests ที่ pin ผลลัพธ์สำหรับ URL ที่รู้อยู่แล้วว่าดีหรือแย่
+**Feature Schema v1.3.0 ใหม่** — เพิ่ม 4 features จับ phishing kit ปัจจุบัน:
+- `has_login_keyword` (login, signin, verify, account...)
+- `has_suspicious_tld` (.cc, .xyz, .icu, .top, .cfd ที่ถูกใช้ปลอมบ่อย)
+- `path_brand_hit` (แบรนด์ทางการอยู่ใน path แต่ไม่ใช่ host — รูปแบบฟิชชิงหลักของปี 2024-2025)
+- `path_length` (path ยาวผิดปกติ)
 
-**UX จริงจัง** — extension จะแสดงหน้าเตือนเต็มจอ (ไม่ใช่แค่ notification) เมื่อพบเว็บฟิชชิง พร้อมให้ผู้ใช้ขั้นสูง bypass ได้ถ้าต้องการ
+**Rules Engine โปร่งใส** — declarative rules layer ทับบน ML — แต่ละ verdict บอกได้ว่ามี **rule ID ใดบ้างที่ทำงาน** พร้อมข้อความอธิบายภาษาไทย ใช้ override ผลของ ML ได้ในกรณีฉุกเฉินโดยไม่ต้องเทรนใหม่
+
+**Brand Watchlist + Webhook** — operators ลงทะเบียนแบรนด์ที่ต้องเฝ้าระวัง + URL webhook (Slack/Line/SOAR) ระบบจะส่ง alert ทันทีที่ตรวจเจอ URL ฟิชชิงที่ปลอมแบรนด์นั้น (พร้อม retry และ delivery log)
+
+**Campaign Clustering อัตโนมัติ** — จัดกลุ่ม URL ฟิชชิงที่มาจาก kit เดียวกัน (โดยใช้ fingerprint = แบรนด์ + TLD + path skeleton) — ใช้บล็อกทั้งกลุ่มแทนทีละ URL
+
+**Public Threat Feed** — `/api/v1/feed.{json,csv,stix}` ฟีดสาธารณะ (ไม่ต้อง API key) แชร์ verdict ใน 24 ชั่วโมงล่าสุด — STIX 2.1 bundle สำหรับ TAXII consumers
+
+**Citizen Report Portal** — หน้าให้ประชาชนแจ้ง URL ฟิชชิงแบบ **ไม่ต้อง login** เห็นผลของระบบทันที + รายงานผลผิดพลาดได้
+
+**Browser extension ครบเครื่อง** — Chrome/Edge/Brave/Opera/Firefox 121+ Manifest V3 พร้อมหน้าเตือนเต็มจอ, popup feedback button, bypass-per-session, badge สี
+
+**Production-grade observability** — `/health`, `/version`, `/metrics` (Prometheus), structured JSON logs (`LOG_FORMAT=json`), `X-Request-ID` propagation, security response headers ทุก response
+
+**162 automated tests** — feature extraction, rules engine, campaign clustering, scorer, middleware, ทุก API endpoint, golden URLs, Thai seed corpus + holdout split
 
 ---
 
 ## ความแม่นยำของโมเดล
 
-ระบบนี้ทำมาเพื่อจับ phishing ที่เลียนแบบเว็บราชการ/การศึกษาไทย **metric หลัก**จึงเป็นค่า recall บนชุด Thai-targeting (ไม่ใช่ค่า recall บน phishing ทั่วโลกแบบสุ่ม)
+ระบบนี้ทำมาเพื่อจับ phishing ที่เลียนแบบเว็บราชการ/การศึกษา/ธนาคารไทย **metric หลัก**จึงเป็นค่า recall บนชุด Thai-targeting
 
-### 🎯 Primary metric — Thai-targeting phishing holdout (53 URLs, โมเดลไม่เคยเห็น)
-| เกณฑ์                              | ผลลัพธ์ |
-|------------------------------------|---------|
-| Recall ที่ threshold ≥ 0.7         | **98.11%** (52 / 53) |
-| Recall ที่ threshold ≥ 0.3         | **100%** (53 / 53) |
-| 95% CI (phishing threshold)        | [0.901, 0.997] |
-| คะแนนเฉลี่ย                        | 0.986 |
+### 🎯 Primary — Thai-targeting phishing holdout (53 URLs, schema v1.3.0)
+| เกณฑ์                              | v1.2.0 | **v1.3.0** |
+|------------------------------------|--------|------------|
+| Recall ที่ threshold ≥ 0.7         | 98.11% (52/53) | **100% (53/53)** |
+| Recall ที่ threshold ≥ 0.3         | 100% (53/53)   | **100% (53/53)** |
+| 95% CI (phishing threshold)        | [0.90, 1.00]   | **[0.93, 1.00]** |
+| คะแนนเฉลี่ย                        | 0.986          | **0.994** |
+| CV F1 (5-fold synthetic)           | 0.992 ± 0.002  | **0.998 ± 0.001** |
 
-ชุดทดสอบนี้คือ 30% ของ curated Thai-targeting phishing seed (`data/thai_phishing_seed.csv`, 175 รายการ ครอบคลุม 90+ brands) ที่ split ออกก่อนการฝึกและไม่ถูกใช้ในการเทรน
+ชุดทดสอบนี้คือ 30% ของ curated Thai-targeting phishing seed (`data/thai_phishing_seed.csv`, 175 รายการ) ที่ถูก hold out ก่อนการฝึก
 
-มี **CI gate** ที่ `THAI_RECALL_MIN_THRESHOLD = 0.85` — ถ้า primary metric ตกต่ำกว่าค่านี้ CI จะ fail ทันที (`python -m ml_pipeline.evaluate --enforce-threshold`)
+**CI gate** ที่ `THAI_RECALL_MIN_THRESHOLD = 0.85` — ถ้าตกต่ำกว่าค่านี้ CI fail (`python -m ml_pipeline.evaluate --enforce-threshold`)
 
-### Secondary — Generic real phishing holdout (90 URLs จาก OpenPhish, ไม่ใช่ Thai-targeting)
-| เกณฑ์                              | ผลลัพธ์ |
-|------------------------------------|---------|
-| Recall ที่ threshold ≥ 0.7         | **92.22%** (83 / 90) |
-| Recall ที่ threshold ≥ 0.3         | **95.56%** (86 / 90) |
-
-ตัวเลขนี้ใช้เป็น cross-check ว่าการปรับให้แม่นกับ Thai-targeting ไม่ทำให้ทั่วไปแย่ลงเกินไป
-
-### Alignment score
-`thai_recall − generic_recall = +0.0589` — โมเดลทำงานดีกว่าบนกลุ่มเป้าหมายที่ตั้งใจไว้ (Thai gov/edu) มากกว่ากลุ่มทั่วไป **+5.9 percentage points** ซึ่งเป็นพฤติกรรมที่ออกแบบไว้
-
-### ชุดทดสอบสังเคราะห์ (1,200 URLs)
+### Secondary — ทดสอบสังเคราะห์ (1,200 URLs)
 | Metric    | Score  |
 |-----------|--------|
-| F1-score  | 0.989  |
-| ROC-AUC   | 0.999  |
-| CV F1 (5-fold) | 0.992 ± 0.002 |
+| F1-score  | 0.999  |
+| ROC-AUC   | 1.000  |
+| Precision | 1.000  |
+| Recall    | 0.998  |
 
-ตัวเลขนี้สูงเป็นปกติเพราะ train/test มาจาก SyntheticGenerator ตัวเดียวกัน — ใช้เป็น sanity check ภายในเท่านั้น
+ตัวเลขนี้สูงเป็นปกติเพราะ train/test มาจาก SyntheticGenerator ตัวเดียวกัน — ใช้เป็น sanity check ภายใน
 
-กราฟ Confusion Matrix, ROC Curve, Feature Importance และ Thai-vs-Generic recall bar chart อยู่ใน [`reports/`](reports/)
+กราฟ Confusion Matrix, ROC Curve, Feature Importance อยู่ใน [`reports/`](reports/)
 
 ---
 
@@ -79,353 +131,426 @@
 
 ```
 Security/
-├── phish_features/        # ⭐ package กลางที่ทั้งฝึกและ serve ใช้ร่วมกัน
-│   ├── schema.py          #    รายชื่อ feature ทั้ง 21 ตัว + encoding + default
-│   ├── lexical.py         #    feature จากโครงสร้าง URL (ไม่ต้องต่อเน็ต)
-│   ├── whitelist.py       #    ตรวจ typosquat และวัด edit distance
-│   ├── domain.py          #    ดึงข้อมูล WHOIS (มี timeout)
-│   ├── tls.py             #    ตรวจ TLS certificate (มี timeout)
-│   └── extractor.py       #    ตัวรวม FeatureExtractor
+├── phish_features/           # ⭐ shared package (ทั้ง train และ serve ใช้ร่วมกัน)
+│   ├── schema.py             #    33 features + LOGIN_KEYWORDS + SUSPICIOUS_TLDS
+│   ├── lexical.py            #    feature จาก URL string
+│   ├── whitelist.py          #    typosquat + edit distance
+│   ├── homoglyph.py          #    IDN decode + confusable fold
+│   ├── domain.py / tls.py    #    WHOIS / TLS (timeout-guarded)
+│   ├── extractor.py          #    FeatureExtractor
+│   └── rules.py              #    🆕 Heuristic RulesEngine
 │
-├── ml_pipeline/           # สร้างชุดข้อมูลและฝึกโมเดล
-│   ├── build_whitelist.py
+├── ml_pipeline/              # สร้าง dataset + ฝึก + ประเมิน
 │   ├── synthetic_generator.py
 │   ├── collect_dataset.py
 │   ├── feature_engineering.py
 │   ├── train.py
 │   └── evaluate.py
 │
-├── backend/               # FastAPI service
+├── backend/                  # FastAPI
 │   ├── app/
-│   │   ├── main.py        #    app, lifespan, middleware
-│   │   ├── routers/       #    /check, /stats, /history, /admin, /feedback
-│   │   ├── ml/            #    โหลดโมเดล, extractor adapter, scorer
-│   │   └── models.py crud.py database.py schemas.py ...
+│   │   ├── main.py
+│   │   ├── middleware.py     #    🆕 X-Request-ID + security headers + JSON log
+│   │   ├── campaigns.py      #    🆕 fingerprint clustering
+│   │   ├── notifier.py       #    🆕 webhook delivery
+│   │   ├── routers/
+│   │   │   ├── check.py
+│   │   │   ├── stats.py history.py admin.py feedback.py
+│   │   │   ├── watchlist.py  #    🆕 brand watch CRUD + deliveries
+│   │   │   ├── campaigns.py  #    🆕 campaign listing
+│   │   │   ├── domain.py     #    🆕 reputation timeline
+│   │   │   └── feed.py       #    🆕 public threat feed (JSON/CSV/STIX)
+│   │   └── ml/
 │   └── Dockerfile
 │
-├── extension/             # Chrome extension (Manifest V3)
-│   ├── manifest.json background.js popup.* options.* ...
+├── extension/                # Chrome MV3 + popup + warning interstitial
 │
-├── dashboard/             # React 18 + Vite + Tailwind + Recharts
-│   └── src/{pages,components,api}
+├── dashboard/                # React 18 + Vite + Tailwind + Recharts
+│   └── src/pages/
+│       ├── Overview.jsx Bulk.jsx History.jsx Stats.jsx
+│       ├── Admin.jsx Feedback.jsx
+│       ├── Watchlist.jsx     #    🆕
+│       ├── Campaigns.jsx     #    🆕
+│       ├── Feed.jsx          #    🆕 (Threat Feed viewer)
+│       ├── DomainLookup.jsx  #    🆕
+│       └── Report.jsx        #    🆕 (Citizen reporting portal)
 │
-├── data/                          # whitelist + Thai phishing seed corpus
-│   ├── thai_gov_domains.csv       #   500+ Thai gov/edu/state-bank domains
-│   └── thai_phishing_seed.csv     #   curated Thai-targeting phishing URLs
-├── models/                # โมเดลที่ฝึกแล้ว (commit ไว้ใน repo)
-├── reports/               # กราฟและ metrics ผลการประเมิน (รวม thai_vs_generic_recall.png)
+├── data/
+│   ├── thai_gov_domains.csv          #  500+ trusted Thai domains
+│   ├── thai_phishing_seed.csv        #  175 curated Thai-targeting phishing URLs
+│   └── thai_phish_holdout.csv        #  53-URL holdout (auto-generated)
+├── models/
+│   ├── ensemble.pkl scaler.pkl features.json (committed, ready-to-serve)
+│   └── whitelist.json
+├── reports/                          #  evaluation PNGs + metrics JSON
 ├── scripts/
-│   ├── seed_demo.py                       # เติมข้อมูลตัวอย่างให้ API
-│   ├── expand_whitelist.py                # ขยาย whitelist จาก curated list + Wikipedia
-│   └── collect_thai_phishing_seed.py      # สร้าง Thai-targeting phishing corpus
+│   ├── seed_demo.py
+│   ├── expand_whitelist.py
+│   ├── collect_thai_phishing_seed.py
+│   └── build_extension.py
+├── Makefile                          #  🆕 make install test lint run train ...
 ├── docker-compose.yml
-└── .env.example
+├── render.yaml                       #  Render Blueprint (one-click deploy)
+├── LICENSE NOTICE CHANGELOG.md       #  🆕 release artifacts
+├── SECURITY.md CONTRIBUTING.md
+├── VERSION                           #  🆕 single source of truth (1.0.0)
+└── tests/                            #  162 tests
 ```
 
 ---
 
-## เริ่มต้นใช้งาน
+## Quickstart — เริ่มต้นใช้งาน
 
-### วิธีที่ 1 — Docker (แนะนำ)
-
-```bash
-cp .env.example .env          # แล้วแก้ API_KEY
-docker compose up -d --build  # เปิด PostgreSQL + API
-
-curl http://localhost:8000/health
-# {"status":"ok","model_ready":true,...}
-
-# เติมข้อมูลตัวอย่างให้แดชบอร์ดมีอะไรแสดง
-python scripts/seed_demo.py http://localhost:8000 "$(grep API_KEY .env | cut -d= -f2)"
-```
-
-API จะอยู่ที่ **http://localhost:8000** และดู API docs แบบ interactive ได้ที่ `/docs`
-
-### วิธีที่ 2 — Python โดยตรง (ไม่ต้องใช้ Docker, ใช้ SQLite)
+### วิธีที่ 1 — Docker Compose (แนะนำ)
 
 ```bash
-python -m venv .venv && source .venv/bin/activate
-pip install -e .                          # ติดตั้ง phish_features
-pip install -r backend/requirements.txt
+cp .env.example .env          # แก้ API_KEY (สำคัญ)
+docker compose up -d --build  # PostgreSQL + API
 
-cd backend
-DATABASE_URL="sqlite+aiosqlite:///./phish.db" \
-API_KEY="dev-local-key-change-me" \
-uvicorn app.main:app --reload
+curl http://localhost:8000/version
+# {"backend":"1.0.0","phish_features":"1.1.0","schema":"1.3.0"}
+
+curl -H "X-API-Key: $(grep API_KEY .env | cut -d= -f2)" \
+     -X POST http://localhost:8000/api/v1/check \
+     -H "Content-Type: application/json" \
+     -d '{"url":"https://secure-update.cc/krungthai/login"}'
 ```
+
+API อยู่ที่ **http://localhost:8000**, API docs ที่ **/docs**
+
+### วิธีที่ 2 — Python อย่างเดียว (SQLite, ไม่ต้อง Docker)
+
+```bash
+make install
+make run                      # → http://localhost:8000
+```
+
+### วิธีที่ 3 — Render Blueprint (cloud, one-click)
+
+[![Deploy to Render](https://render.com/images/deploy-to-render-button.svg)](https://render.com/deploy)
+
+`render.yaml` สร้าง backend + Postgres (cross-region resilient) ในคลิกเดียว
 
 ---
 
 ## ML Pipeline
 
-ฝึกโมเดลใหม่ทั้งหมด (ทำได้แบบ offline ได้เกือบทั้งหมด):
-
 ```bash
-pip install -e . && pip install -r ml_pipeline/requirements.txt
-
-# ขั้นเตรียมข้อมูล (script ทั้งสองทำงาน offline ได้ถ้าใส่ --no-fetch)
-python scripts/expand_whitelist.py             # -> data/thai_gov_domains.csv (500+ โดเมน)
-python scripts/collect_thai_phishing_seed.py   # -> data/thai_phishing_seed.csv
-
-# ขั้นฝึกและประเมิน
-python -m ml_pipeline.build_whitelist      # -> models/whitelist.json
-python -m ml_pipeline.collect_dataset      # -> data/dataset.csv (ใส่ --no-feeds ถ้าไม่ต้องการดึง feed)
-python -m ml_pipeline.train                # -> models/ensemble.pkl, scaler.pkl, features.json
-python -m ml_pipeline.evaluate             # -> reports/*.png, metrics.json, evaluation_summary.json
+make train               # build_whitelist → collect_dataset (offline) → train
+make evaluate            # → reports/*.png, metrics.json, evaluation_summary.json
+make evaluate-gate       # ⚠️  ออกด้วย exit-code != 0 ถ้า Thai recall < 0.85
 ```
 
-`expand_whitelist.py` รวม curated list ของหน่วยงานราชการ/มหาวิทยาลัย/รัฐวิสาหกิจไทย ~400 รายการ และเสริมจาก Wikipedia แบบ best-effort
-
-`collect_thai_phishing_seed.py` มี URL phishing ที่เลียน Thai gov/edu/ธนาคาร ~95 รายการ ที่ตามรอยจาก ThaiCERT advisory และ public feeds — เป็น ground truth สำหรับ Thai-targeting holdout metric
-
-### Feature ทั้ง 26 ตัว (schema v1.2.0)
+### Feature ทั้ง 33 ตัว (schema v1.3.0)
 
 | กลุ่ม     | Feature |
 |-----------|---------|
 | Lexical (v1) | url_length, num_dots, num_hyphens, num_at, num_slash, num_digits, has_ip, entropy, has_https, num_subdomains |
 | Lexical (v1.1) | path_depth, domain_label_max_len, has_port, max_digit_run, has_query_string |
 | Domain    | domain_age_days, is_thai_tld, tld_type, is_known_registrar |
-| Whitelist | min_edit_distance, is_typosquat (เทียบกับ **500+ โดเมนไทย** ใน `data/thai_gov_domains.csv`) |
-| **IDN/Homoglyph (v1.2)** | **has_punycode** (`xn--...`), **has_mixed_script** (Latin+Cyrillic เป็นต้น), **homoglyph_distance** (edit distance หลัง normalize confusables) |
+| Whitelist | min_edit_distance, is_typosquat |
 | TLS       | has_valid_cert, cert_age_days, is_self_signed |
-| Meta      | whois_ok, tls_ok (ดึงข้อมูลสำเร็จไหม) |
-
-`whois_ok` / `tls_ok` มีไว้เพื่อให้โมเดลรู้ว่า "ดึงข้อมูลไม่ได้" ≠ "เป็นฟิชชิง" เพราะสองอย่างนี้ปรากฏในทั้งชุดปลอดภัยและชุดฟิชชิงพอๆ กัน (~22% ของทั้งสองฝั่ง)
-
-Feature v1.2 (IDN/Homoglyph) จับการโจมตีที่แทนตัวอักษรด้วยตัวที่หน้าตาเหมือนกันจากภาษาอื่น (เช่น Cyrillic `а`, `о`, `е` แทน ASCII) — `homoglyph_distance` คำนวณ Levenshtein หลัง fold ตัวอักษรเหล่านี้กลับเป็น ASCII แล้ว ทำให้ `chulа.com` (а เป็น Cyrillic) ถูกตรวจเป็นการเลียน `chula.ac.th` ที่ distance 0
+| Meta      | whois_ok, tls_ok |
+| **IDN/Homoglyph (v1.2)** | **has_punycode, has_mixed_script, homoglyph_distance** |
+| **🆕 Path-impersonation (v1.3)** | **has_login_keyword, has_suspicious_tld, path_brand_hit, path_length** |
 
 ---
 
 ## Backend API
 
-Base URL `http://localhost:8000` · ทุก route ใต้ `/api/v1/*` ต้องส่ง header `X-API-Key` · จำกัด 100 req/min ต่อ key
+ทุก route ใต้ `/api/v1/*` ต้องส่ง header `X-API-Key` ยกเว้น `/feedback` (POST), `/feed.*` (public) และ `/health`, `/version`, `/metrics`
 
-### `POST /api/v1/check` — ตรวจ URL เดียว
+### Core
+
+| Method + Path | คำอธิบาย |
+|---------------|----------|
+| `POST /api/v1/check` | ตรวจ URL เดียว — return score, label, reason, **rules.hits[]**, features |
+| `POST /api/v1/check/batch` | สูงสุด 50 URLs ต่อ request |
+| `GET  /api/v1/stats` | aggregate metrics สำหรับ dashboard |
+| `GET  /api/v1/history` | paginated history พร้อม filter (label, search, date_from/to) |
+
+### Whitelist & Feedback
+
+| Method + Path | คำอธิบาย |
+|---------------|----------|
+| `GET / POST / DELETE /api/v1/admin/whitelist[/{domain}]` | จัดการ whitelist (hot-reload) |
+| `POST /api/v1/feedback` | รายงานผลผิด (ไม่ต้อง API key) |
+| `GET  /api/v1/feedback`, `/api/v1/feedback/export` | ดู + export CSV |
+
+### 🆕 ของใหม่ใน v1
+
+| Method + Path | คำอธิบาย |
+|---------------|----------|
+| `GET / POST / DELETE /api/v1/watchlist[/{brand}]` | brand watch + webhook |
+| `GET  /api/v1/watchlist/deliveries` | ดู delivery log ของ webhook (success/error) |
+| `GET  /api/v1/campaigns` | campaign clusters (filter ด้วย brand, min_urls) |
+| `GET  /api/v1/domain/{host}/history` | reputation timeline ของ host |
+| `GET  /api/v1/feed.json` | public phishing feed (no auth) |
+| `GET  /api/v1/feed.csv`  | spreadsheet-friendly |
+| `GET  /api/v1/feed.stix` | STIX 2.1 bundle (indicators only) |
+
+### Observability
+
+| Method + Path | คำอธิบาย |
+|---------------|----------|
+| `GET /health` | model_ready, db_ok, uptime, schema_version, cache size |
+| `GET /version` | `{"backend": ..., "phish_features": ..., "schema": ...}` |
+| `GET /metrics` | Prometheus (checks_total, latency histogram, model_ready gauge, cache size) |
+
+**Response headers** ทุก response: `X-Request-ID`, `X-Content-Type-Options: nosniff`, `X-Frame-Options: DENY`, `Referrer-Policy: strict-origin-when-cross-origin`, `Permissions-Policy: interest-cohort=()`
+
+**Error responses** มี shape เดียวกัน: `{"error": "...", "code": "..."}` — `422 VALIDATION_ERROR`, `401 INVALID_API_KEY`, `413 BATCH_TOO_LARGE`, `429 RATE_LIMITED`, `503 MODEL_NOT_LOADED`
+
+---
+
+## Rules Engine (ใหม่ใน v1)
+
+โมดูล [`phish_features/rules.py`](phish_features/rules.py) เป็นชั้น **declarative rules** ทับบน ML ทุก `/check` response จะมี field `rules.hits[]` แสดงว่า rule ไหนทำงานบ้าง
+
+ตัวอย่าง response:
 
 ```jsonc
-// request
-{ "url": "https://obec.com/login" }
-
-// response
 {
-  "url": "https://obec.com/login",
+  "url": "https://secure-update.cc/krungthai/login",
   "score": 0.99,
-  "label": "phishing",            // safe | suspicious | phishing
-  "reason": "โดเมนคล้ายกับเว็บไซต์ทางการ obec.go.th มาก ...",
-  "features": { ... },
-  "closest_domain": "obec.go.th",
-  "edit_distance": 0,
-  "checked_at": "2026-05-22T12:00:00+00:00",
-  "cached": false
+  "ml_score": 0.97,
+  "label": "phishing",
+  "reason": "ชื่อแบรนด์ทางการ (krungthai.com) ปรากฏใน path... · โดเมนคล้ายกับ krungthai.com และ URL ขอข้อมูล login...",
+  "rules": {
+    "score_delta": 0.7,
+    "pinned_label": "phishing",
+    "hits": [
+      {"rule_id": "TYPOSQUAT_CRED",  "delta": 0.40, "pin_label": "phishing", "message": "..."},
+      {"rule_id": "PATH_BRAND_BAIT", "delta": 0.30, "pin_label": "phishing", "message": "..."}
+    ]
+  }
 }
 ```
 
-เกณฑ์การตัดสิน: `score < 0.3` → **safe**, `0.3–0.7` → **suspicious**, `≥ 0.7` → **phishing**
+### Built-in rules
 
-URL เดิมที่ถูกตรวจในช่วง `CACHE_TTL` วินาที (default 60) จะได้ผลจาก cache เลย ไม่คำนวณซ้ำ (response จะมี `"cached": true`)
+| Rule ID | เงื่อนไข | Pin label |
+|---------|----------|-----------|
+| `WHITELIST_EXACT` | host ตรง whitelist (ไม่ใช่ typosquat / homograph) | **safe** (safety net) |
+| `AT_TRICK` | URL มี `://...@...` ซ่อนปลายทาง | **phishing** |
+| `IDN_HOMOGRAPH` | Punycode + homoglyph_distance ≤ 2 | **phishing** |
+| `TYPOSQUAT_CRED` | typosquat + login keyword | **phishing** |
+| `PATH_BRAND_BAIT` | brand ใน path + cheap TLD | **phishing** |
+| `IP_CRED` | IP host + login keyword | **phishing** |
+| `CHEAP_TLD_PLAIN` | cheap TLD + ไม่มี HTTPS | (boost ไม่ pin) |
 
-### `POST /api/v1/check/batch` — ตรวจหลาย URL พร้อมกัน (สูงสุด 50)
+เพิ่ม rule ใหม่ได้ทันที — เป็นแค่ฟังก์ชัน `(url, features) → RuleHit | None`
 
-```jsonc
-{ "urls": ["https://www.obec.go.th", "http://obec.com/verify", ...] }
+---
+
+## Brand Watchlist + Webhook (ใหม่ใน v1)
+
+```bash
+# ลงทะเบียนแบรนด์
+curl -X POST http://localhost:8000/api/v1/watchlist \
+  -H "X-API-Key: $KEY" \
+  -d '{"brand":"krungthai","webhook_url":"https://hooks.slack.com/services/..."}'
+
+# ดูประวัติ delivery
+curl http://localhost:8000/api/v1/watchlist/deliveries -H "X-API-Key: $KEY"
 ```
 
-### `GET /api/v1/stats`
-ยอดรวม, อัตราฟิชชิง, โดเมนที่ถูกปลอมมากที่สุด, กราฟ 7 วันย้อนหลัง และกิจกรรมแต่ละชั่วโมง
+เมื่อ `/check` เจอ URL ฟิชชิงที่ `closest_domain` มี brand label ตรงกับที่ลงไว้
+ระบบจะ POST payload แบบนี้ไปยัง webhook ทันที (พร้อม retry 1 ครั้ง):
 
-### `GET /api/v1/history`
-ประวัติการตรวจสอบแบบ paginate กรองได้ด้วย `label`, `search`, `date_from`, `date_to`
+```json
+{
+  "schema": "phish.alert.v1",
+  "brand": "krungthai",
+  "url": "https://krungthai-secure.online/login",
+  "label": "phishing",
+  "score": 0.98,
+  "closest_domain": "krungthai.com",
+  "reason": "...",
+  "fired_at": "2026-05-26T..."
+}
+```
 
-### `GET /api/v1/admin/whitelist` / `POST` / `DELETE /{domain}`
-จัดการ whitelist โดเมนที่เชื่อถือได้ผ่าน API (ต้องการ API key) — การเพิ่ม/ลบมีผลทันทีโดยไม่ต้อง restart
+ทุก delivery (สำเร็จ/error) เก็บใน `webhook_delivery` ดูได้จาก API หรือ dashboard
 
-### `POST /api/v1/feedback`
-รายงานผลที่ระบบตัดสินผิด (false positive / false negative) — ไม่ต้องการ API key เพื่อให้ผู้ใช้ทั่วไปรายงานได้ง่าย
+---
 
-### `GET /api/v1/feedback` / `GET /api/v1/feedback/export`
-ดูรายการ feedback และ export เป็น CSV (ต้องการ API key)
+## Campaign Clustering (ใหม่ใน v1)
 
-### อื่นๆ
-- `GET /health` — สถานะโมเดล, database, uptime, cache size
-- `GET /metrics` — Prometheus format (checks per label, latency histogram, model-ready gauge)
-- `GET /docs` — OpenAPI interactive UI
+```bash
+curl http://localhost:8000/api/v1/campaigns?min_urls=2 -H "X-API-Key: $KEY"
+```
 
-**Error responses** มีรูปแบบเดียวกันเสมอ: `{"error": "...", "code": "..."}` —
-`422 VALIDATION_ERROR`, `401 INVALID_API_KEY`, `413 BATCH_TOO_LARGE`, `429 RATE_LIMITED`, `503 MODEL_NOT_LOADED`
+ทุก URL ที่ `label ∈ {phishing, suspicious}` จะถูกสร้าง **fingerprint** = `<brand>|<tld>|<path-shape>`
+URL ที่ fingerprint ตรงกันถือเป็น campaign เดียวกัน (มาจาก kit เดียวกัน)
+ตัวอย่าง:
+
+| brand | tld | path_shape | url_count |
+|-------|-----|------------|-----------|
+| krungthai.com | cc | krungthai/login | 47 |
+| obec.go.th    | online | secure/login/$hex | 23 |
+
+ดูใน dashboard ที่หน้า **แคมเปญฟิชชิง** ได้
+
+---
+
+## Public Threat Feed (ใหม่ใน v1)
+
+```bash
+# JSON
+curl https://your-deployment/api/v1/feed.json?hours=24
+# CSV (Excel-ready)
+curl https://your-deployment/api/v1/feed.csv?hours=24
+# STIX 2.1 bundle (TAXII-compatible indicators)
+curl https://your-deployment/api/v1/feed.stix?hours=72
+```
+
+**ไม่ต้อง API key** — เป็น public good สำหรับชุมชน Cache ที่ 60 วินาทีเพื่อให้ poll ได้บ่อย ปิดได้ด้วย `ENABLE_PUBLIC_FEED=false`
+
+---
+
+## Domain Reputation Lookup (ใหม่ใน v1)
+
+```bash
+curl http://localhost:8000/api/v1/domain/www.obec.go.th/history -H "X-API-Key: $KEY"
+```
+
+Response:
+```jsonc
+{
+  "host": "www.obec.go.th",
+  "total_checks": 142,
+  "mean_score": 0.04,
+  "max_score": 0.11,
+  "label_breakdown": {"safe": 142, "suspicious": 0, "phishing": 0},
+  "timeline": [{"date": "2026-05-26", "checks": 7, "avg_score": 0.03, ...}],
+  "recent_urls": [...]
+}
+```
+
+ใช้ดูได้ว่า host หนึ่งเคยถูก flag ไหม, score มีแนวโน้มอย่างไร — ใช้ตรวจสอบ false positive ได้ดี
 
 ---
 
 ## ส่วนขยายเบราว์เซอร์
 
-รองรับ Chrome, Edge, Brave, Opera และ Firefox 121+ (Manifest V3)
+รองรับ Chrome, Edge, Brave, Opera, Firefox 121+ (Manifest V3)
 
-### ติดตั้งแบบ Developer Mode
+```bash
+make extension                # → dist/thai-phishing-detector-v{ver}.zip
+```
 
-1. รัน `python scripts/build_extension.py` จะได้ไฟล์ `dist/thai-phishing-detector-v{VERSION}.zip`
-2. แตกไฟล์ zip ไว้ที่ใดที่หนึ่งแบบถาวร
-3. เปิด `chrome://extensions` → เปิด **Developer mode** → **Load unpacked** → เลือกโฟลเดอร์ที่แตกไว้
-   สำหรับ Firefox: `about:debugging` → **Load Temporary Add-on…** → `manifest.json`
-4. เข้าไปที่ **Options** ตั้งค่า API endpoint และ API key (ค่าเริ่มต้น: `http://localhost:8000`, `dev-local-key-change-me`)
+ดูรายละเอียดการติดตั้ง, Chrome Web Store submission checklist, troubleshooting ที่ [`extension/README.md`](extension/README.md) — Privacy policy: [`extension/PRIVACY.md`](extension/PRIVACY.md)
 
-ดูรายละเอียดการติดตั้งแต่ละเบราว์เซอร์, checklist สำหรับ Chrome Web Store และ troubleshooting ได้ที่ [`extension/README.md`](extension/README.md)
-
-### การทำงาน
-
-ทุกครั้งที่เปิดหน้าเว็บใหม่ ส่วนขยายจะตรวจ URL นั้นแบบ real-time:
-
-- badge บน icon: **✓ เขียว** = ปลอดภัย · **? เหลือง** = น่าสงสัย · **! แดง** = ฟิชชิง
-- ถ้าพบฟิชชิงและเปิดโหมด Block ไว้ จะ**แสดงหน้าเตือนเต็มจอ**ก่อนเข้าเว็บ พร้อมปุ่ม "ยืนยันว่าจะเข้าต่อ" สำหรับผู้ที่รู้ตัวเองว่ากำลังทำอะไรอยู่
-- popup แสดงคะแนน, ผลการตัดสิน, เหตุผล และโดเมนราชการที่ถูกปลอมแปลง
-- timeout 3 วินาที → ถ้าตรวจไม่เสร็จจะขึ้น "ตรวจสอบไม่ได้" แทน ไม่ block การท่องเว็บ
+**Behavior**: ทุกการ navigate จะส่ง URL ไป backend (timeout 3 วินาที) แล้ว
+- 🟢 badge เขียว = safe · 🟡 เหลือง = suspicious · 🔴 แดง = phishing
+- ถ้าเป็น phishing + เปิดโหมด Block → **หน้าเตือนเต็มจอ** พร้อมปุ่ม bypass per-session
+- popup มีปุ่ม "รายงานผลผิด" ส่งกลับมายัง `/api/v1/feedback`
 
 ---
 
 ## Dashboard
 
 ```bash
-cd dashboard
-cp .env.example .env          # ตั้ง VITE_API_URL + VITE_API_KEY
-npm install
-npm run dev                   # http://localhost:5173
+make dashboard                # → http://localhost:5173
 ```
 
-มี 6 หน้า:
+**11 หน้า**: ภาพรวม · ตรวจหลาย URL · ประวัติ · สถิติเชิงลึก · **แคมเปญฟิชชิง** 🆕 · **เฝ้าระวังแบรนด์** 🆕 · **ตรวจประวัติโดเมน** 🆕 · **Threat Feed** 🆕 · จัดการ Whitelist · รายงานผลผิด · **แจ้งเว็บฟิชชิง** 🆕
 
-- **ภาพรวม** — stat cards, ช่องตรวจ URL เดี่ยว, กราฟ 7 วัน, รายการล่าสุด
-- **ตรวจหลาย URL** — วางได้สูงสุด 50 URLs แล้วตรวจพร้อมกัน, export CSV ได้
-- **ประวัติ** — ตารางกรอง/ค้นหา/paginate, กดแถวเพื่อดู feature ทั้ง 21 ตัว, export CSV
-- **สถิติเชิงลึก** — โดเมนถูกปลอมมากที่สุด, สัดส่วน verdict, heatmap รายชั่วโมง
-- **จัดการ Whitelist** — เพิ่ม/ลบโดเมนที่เชื่อถือได้ มีผลทันทีโดยไม่ต้อง restart
-- **รายงานผลผิด** — ดู feedback จากผู้ใช้ทั้งหมด กรองและ export CSV ได้
+---
+
+## Citizen Report Portal (ใหม่ใน v1)
+
+หน้า `/report` ในแดชบอร์ด — ออกแบบมาสำหรับ **ประชาชนทั่วไป ไม่ต้อง login**:
+
+1. กรอก URL ที่สงสัย
+2. กดปุ่ม "ตรวจสอบก่อนแจ้ง" — เห็นคะแนน + เหตุผล + rule ที่ทำงาน
+3. ระบุว่าเชื่อว่าเป็นอะไร (phishing / suspicious / safe)
+4. ใส่รายละเอียดเพิ่มเติม (ไม่จำเป็น)
+5. ส่ง → เก็บไว้ที่ `/api/v1/feedback` ใช้ปรับปรุงโมเดล
 
 ---
 
 ## Configuration
 
-ค่าทั้งหมดมาจาก environment variables หรือไฟล์ `.env` (ดูตัวอย่างที่ [`.env.example`](.env.example)):
+ค่าทั้งหมดมาจาก env หรือ `.env` (ดู [`.env.example`](.env.example)):
 
 | Variable | ความหมาย | Default |
 |----------|----------|---------|
-| `DATABASE_URL` | connection string (PostgreSQL หรือ SQLite) | `postgresql+asyncpg://phish:phish@db:5432/phishdb` |
-| `API_KEY` | รหัสสำหรับ `X-API-Key` header | `dev-local-key-change-me` |
-| `CORS_ORIGINS` | origins ที่อนุญาต | `http://localhost:5173,...` |
-| `RATE_LIMIT` | จำนวน request สูงสุดต่อนาที | `100/minute` |
-| `ENABLE_WHOIS` / `ENABLE_TLS` | เปิด/ปิดการดึงข้อมูลเพิ่มเติม | `true` |
-| `NETWORK_TIMEOUT` | timeout ต่อ lookup (วินาที) | `2.5` |
+| `DATABASE_URL` | PostgreSQL หรือ SQLite | `postgresql+asyncpg://phish:phish@db:5432/phishdb` |
+| `API_KEY` | รหัส `X-API-Key` header | `dev-local-key-change-me` ⚠️ **เปลี่ยนก่อน deploy** |
+| `CORS_ORIGINS` | origins ที่อนุญาต | localhost dashboard |
+| `RATE_LIMIT` | requests per minute | `100/minute` |
+| `ENABLE_WHOIS` / `ENABLE_TLS` | network lookups | `true` |
+| `NETWORK_TIMEOUT` | timeout ต่อ lookup | `2.5` |
+| `THRESHOLD_PHISHING` / `THRESHOLD_SUSPICIOUS` | label cutoffs | `0.7` / `0.3` |
+| `LOG_FORMAT` | `text` หรือ `json` | `text` |
+| `ENABLE_PUBLIC_FEED` | เปิด `/api/v1/feed.*` | `true` |
+| `ENABLE_CAMPAIGN_TRACKING` | เปิด campaign clustering | `true` |
 
 Dashboard: `VITE_API_URL`, `VITE_API_KEY`
-
----
-
-## ทำไมผลตอนฝึกกับตอนใช้งานจริงถึงตรงกัน
-
-ปัญหาที่พบบ่อยใน ML คือโมเดลทำงานดีตอนทดสอบ แต่พอ deploy จริงผลเปลี่ยนไป เพราะโค้ดที่ดึง feature ตอนฝึกกับตอนใช้งานไม่เหมือนกัน ระบบนี้ป้องกันปัญหานั้นด้วย:
-
-1. **โค้ดเดียว** — `phish_features` เป็นที่เดียวที่มี feature math ทั้งหมด ทั้ง pipeline และ API import package นี้ ไม่มีโค้ดแยก
-2. **ล็อก contract** — `train.py` เขียน `models/features.json` พร้อม `FEATURE_SCHEMA_VERSION` ไว้ เมื่อ backend start จะเช็คว่า schema ตรงกับโค้ดปัจจุบัน ถ้าไม่ตรงจะปฏิเสธ start
-3. **Scaler ชุดเดียวกัน** — `StandardScaler` ถูก fit ตอนฝึกและ save ไว้ serving ใช้ตัวเดิม ไม่ fit ใหม่
-4. **Whitelist ชุดเดียวกัน** — ทั้งฝึกและ serve โหลด `models/whitelist.json` เดียวกัน ผล edit distance จึงเหมือนกันเสมอ
 
 ---
 
 ## Tests
 
 ```bash
-pip install -e . && pip install -r backend/requirements.txt
-pip install pytest==8.3.4 httpx==0.28.1
-python -m pytest
+make test                     # 162 tests, ~16 วินาที
 ```
 
-108 tests ครอบคลุม:
+| Suite                  | ครอบคลุม |
+|------------------------|---------|
+| `test_lexical.py`      | URL normalisation, entropy, IP, subdomain |
+| `test_whitelist.py`    | registrable domain, brand label, typosquat, TLD-swap |
+| `test_homoglyph.py`    | IDN decode, confusable fold, mixed script |
+| `test_extractor.py`    | feature vector shape, network override |
+| `test_scorer.py`       | thresholds, real model on examples |
+| `test_cache.py`        | TTL, eviction |
+| `test_api.py`          | ทุก endpoint เดิม + error path |
+| `test_golden.py`       | pin verdicts สำหรับ URL ราชการ/การศึกษาจริง + 8 phishing patterns |
+| `test_seed_corpus.py`  | sanity check Thai seed corpus |
+| **🆕 `test_rules.py`** | rules engine: ทุก rule + clamp + pin priority |
+| **🆕 `test_campaigns.py`** | fingerprint + path shape normalisation |
+| **🆕 `test_new_endpoints.py`** | watchlist, feed (JSON/CSV/STIX), campaigns, domain history, middleware, request-id |
 
-| Suite               | ครอบคลุมอะไร |
-|---------------------|-------------|
-| `test_lexical.py`   | Shannon entropy, URL normalisation, ตรวจ IP, นับ subdomain |
-| `test_whitelist.py` | Registrable domain, brand label, typosquat และ TLD-swap rules |
-| `test_extractor.py` | shape ของ feature vector, network override, IP-host short-circuit |
-| `test_scorer.py`    | threshold logic, output shape, โมเดลจริงบน URL ตัวอย่าง |
-| `test_cache.py`     | TTL expiry, maxsize eviction, clear |
-| `test_api.py`       | ทุก endpoint + error path + whitelist CRUD + feedback |
-| `test_golden.py`    | pin verdict ของ URL ราชการ/การศึกษาจริง และ phishing 8 รูปแบบ |
-
-GitHub Actions รัน test suite, build dashboard และ build Docker image ทุก push (ดูที่ [`.github/workflows/ci.yml`](.github/workflows/ci.yml))
-
----
-
-## ระบบนี้จับอะไรได้บ้าง และอะไรจับไม่ได้
-
-| ประเภทการโจมตี | จับได้? | วิธีที่ระบบตรวจ |
-|----------------|---------|----------------|
-| พิมพ์ชื่อโดเมนผิดนิดหน่อย (`0bec.go.th`, `0bec.xyz`) | ✅ | typosquat + brand-label edit distance |
-| เปลี่ยน TLD (`obec.com`, `chula.org`) | ✅ | min_edit_distance = 0 บน TLD ที่ไม่ใช่ของรัฐ |
-| ยัดชื่อราชการไว้ใน subdomain (`obec.go.th.evil.com`) | ✅ | num_subdomains, num_dots, lexical features |
-| ใช้ IP แทนโดเมน (`http://203.0.113.45/obec/login`) | ✅ | has_ip = 1 |
-| ใช้ @ หลอก (`https://obec.go.th@evil.xyz/`) | ✅ | num_at = 1 |
-| โดเมนยาวมีขีดเยอะ (`secure-bot-or-th-update.club`) | ✅ | num_hyphens, length, brand distance |
-| **ใช้ตัวอักษรซีริลลิก/Greek/Fullwidth** (`chulа.com` ที่ а เป็น Cyrillic) | ✅ | `has_mixed_script`, `homoglyph_distance` (confusable fold + edit distance) |
-| **Punycode IDN spoofing** (`xn--obec-9bc.com`) | ✅ | `has_punycode`, IDN decode → confusable fold → edit distance |
-| **เลียน Thai brand บน TLD ผิด** (`paotang-th.com`, `kasikornbank.online`) | ✅ | whitelist ขยายเป็น 500+ โดเมนรวมธนาคาร/telecom ที่ถูกเลียนบ่อย |
-| URL แปลกๆ บน TLD ถูก (`.cfd`, `.fwh.is`) โดยไม่เลียนแบบใคร | ⚠️ บางส่วน | พึ่ง lexical signals เท่านั้น — generic holdout recall ≈ 88% |
-| โดเมนเก่าที่ถูกแฮ็ก (อายุโดเมนดี แต่เนื้อหาไม่ดี) | ⚠️ บางส่วน | เห็นแค่ URL ไม่เห็นเนื้อหา |
-| ผ่าน URL shortener หรือ redirect chain | ❌ | ระบบเห็นแค่ URL ต้นทาง ต้องใช้ redirect resolver ช่วย |
-| เว็บปลอมที่ URL ดูปกติ แต่หน้าเว็บเป็นฟิชชิง | ❌ | ระบบนี้ดู URL อย่างเดียว ต้องใช้ content scanner เสริม |
-
-ระบบนี้ทำงานได้ดีที่สุดในฐานะ "ชั้นแรก" ของการป้องกัน ไม่ใช่ชั้นเดียว
+GitHub Actions รัน test suite + dashboard build + Docker build + extension package + ML primary-metric gate ทุก push
 
 ---
 
-## ก่อน deploy จริง
+## ก่อน Deploy จริง
 
-ถ้าจะเอาไปใช้งานจริงนอกสภาพแวดล้อม demo ควรทำเพิ่ม:
+| ต้องทำ | ทำไม |
+|--------|------|
+| เปลี่ยน `API_KEY` ใหม่ | default คือค่า dev — เห็นในซอร์สโค้ด |
+| HTTPS termination | API key เดินทางใน plaintext ถ้าไม่ทำ TLS |
+| ใช้ Redis แทน in-process cache | ถ้าจะ scale เกิน 1 replica |
+| ใส่ WAF / per-IP limit เพิ่ม | ปัจจุบัน rate-limit per-key เท่านั้น |
+| ตั้ง `LOG_FORMAT=json` + ส่งเข้า aggregator | structured logs ใช้ alert ง่ายกว่า |
+| Scrape `/metrics` + alert `phish_model_ready==0` | จับโมเดลหายตอน boot |
+| Retention policy บน `url_checks`, `webhook_delivery`, `campaigns` | ตารางพวกนี้โตเรื่อย ๆ |
+| Retrain ด้วยข้อมูลจริงจาก deployment | seed corpus มี 175 รายการ — เสริมด้วย live telemetry จะดีกว่า |
+| review Permissions extension store | ใช้ list ใน [`extension/README.md`](extension/README.md) |
 
-- **Secrets** — เปลี่ยน `API_KEY` ใหม่ และ serve ผ่าน HTTPS (Caddy / nginx / Cloud Run)
-- **Cache** — ถ้า scale เกิน 1 replica ให้เปลี่ยนจาก in-process `TTLCache` เป็น Redis
-- **Rate limiting** — slowapi ปัจจุบัน key ด้วย API key ถ้าอยู่หลัง load balancer ให้เพิ่ม per-IP limit และ WAF ด้วย
-- **Database** — ควรมี retention policy สำหรับ `url_checks` ที่เก่า และใช้ `pg_repack` ไม่ให้ table bloat
-- **Observability** — scrape `/metrics`, ส่ง log เข้า aggregator และตั้ง alert เมื่อ `phish_model_ready == 0`
-- **โมเดล** — ควร retrain บนชุดข้อมูลจริง (PhishTank credentials, URLhaus) โมเดลที่ ship มาได้ ~93% recall จากข้อมูลสังเคราะห์ แต่ชุดข้อมูลจริงจะยกระดับขึ้นได้อีก
-
----
-
-## ข้อจำกัดที่ควรรู้
-
-โมเดลที่ ship มาฝึกบน**ข้อมูลผสม** — synthetic จำนวนมาก (anchored กับ whitelist 500+ โดเมนไทย) + curated Thai-targeting phishing seed (95 URLs จากการรวบรวม case จริง) + real generic phishing จาก OpenPhish (210 URLs สำหรับ train + 90 URLs สำหรับ holdout) จุดแข็งของมันอยู่ที่การจับการปลอมแปลงโดเมนราชการ/การศึกษา/ธนาคารไทย ถ้าต้องการครอบคลุมฟิชชิงทั่วไปในวงกว้างขึ้น ให้ต่อ PhishTank หรือ URLhaus แล้วรัน pipeline ใหม่
-
-ค่า WHOIS / TLS ในชุดข้อมูลสังเคราะห์เป็นการจำลอง (เพราะ URL ปลอมไม่มี DNS record จริง) — lexical, whitelist และ IDN/homoglyph features ทุกตัวคำนวณจาก URL string จริงเสมอ
-
-**Thai-targeting seed corpus** (`data/thai_phishing_seed.csv`) เป็น 95 รายการที่ผมรวบรวมจาก pattern ที่ปรากฏใน ThaiCERT/ETDA advisories, ข่าว และ URLhaus archive เมื่อเลี้ยว Thai brand เข้าไปใน URL — ในการ deploy จริงควรเสริมด้วย feed จาก ThaiCERT โดยตรง หรือ telemetry จากการใช้งานจริง
+ดูเพิ่มที่ [`SECURITY.md`](SECURITY.md)
 
 ---
 
-## ทดสอบ end-to-end
+## Tech Stack
 
-```bash
-# 1. tests
-python -m pytest                              # 108 tests, ~4 วินาที
+**ML** — scikit-learn 1.5 · XGBoost 2.1 · pandas · python-Levenshtein
 
-# 2. ฝึกโมเดลใหม่
-python -m ml_pipeline.build_whitelist && python -m ml_pipeline.collect_dataset \
-  && python -m ml_pipeline.train && python -m ml_pipeline.evaluate
+**Backend** — FastAPI 0.115 · SQLAlchemy 2.0 async · PostgreSQL 16 · Pydantic v2 · slowapi · prometheus-client
 
-# 3. API
-docker compose up -d --build && curl localhost:8000/health
+**Frontend** — React 18 · Vite 5 · TailwindCSS · Recharts · TanStack Query · React Router
 
-# 4. ข้อมูลตัวอย่าง
-python scripts/seed_demo.py
+**Extension** — Chrome Manifest V3 service worker · plain JavaScript
 
-# 5. extension: load unpacked จาก extension/ แล้วตั้ง API key ใน Options
-# 6. dashboard
-cd dashboard && cp .env.example .env && npm install && npm run dev
-```
+**Infra** — Docker · Docker Compose · Render Blueprint
 
 ---
 
-## Tech stack
+## License
 
-**ML** — scikit-learn · XGBoost · pandas · python-Levenshtein
+[Apache 2.0](LICENSE) · เห็นรายการ third-party dependencies ที่ [`NOTICE`](NOTICE)
 
-**Backend** — FastAPI · SQLAlchemy async · PostgreSQL · Pydantic v2 · slowapi · prometheus-client
-
-**Extension** — Chrome Manifest V3 service worker · plain JavaScript (ไม่มี build step)
-
-**Dashboard** — React 18 · Vite · TailwindCSS · Recharts · TanStack Query · React Router
+ดู [`CHANGELOG.md`](CHANGELOG.md) สำหรับการเปลี่ยนแปลงทุกเวอร์ชัน, [`SECURITY.md`](SECURITY.md) สำหรับ vulnerability disclosure, และ [`CONTRIBUTING.md`](CONTRIBUTING.md) สำหรับการมีส่วนร่วม

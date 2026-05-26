@@ -6,12 +6,14 @@ from fastapi import APIRouter, Depends, Request
 from sqlalchemy.ext.asyncio import AsyncSession
 from starlette.concurrency import run_in_threadpool
 
+from app.campaigns import record_campaign
 from app.config import settings
 from app.crud import insert_check
 from app.database import get_session
 from app.deps import get_scorer, verify_api_key
 from app.errors import AppError
 from app.metrics import CACHE_SIZE, CHECK_LATENCY, CHECKS_TOTAL
+from app.notifier import maybe_alert
 from app.schemas import (
     BatchCheckRequest,
     BatchCheckResponse,
@@ -37,15 +39,46 @@ async def _score_and_persist(
 
     with CHECK_LATENCY.time():
         result = await run_in_threadpool(scorer.score, url)
-    # Persist history best-effort: a managed-DB outage (Render free tier
-    # cold start, DNS hiccup) should never block scoring. The scorer's
-    # job is to score; history is observability, not a hard dependency.
+    # Persist history + cluster the campaign + maybe fire a webhook --
+    # ALL of these are observability work. A failure in any one of them
+    # must never block the verdict from reaching the user. Scoring is the
+    # contract; everything below is best-effort.
     try:
         await insert_check(session, result)
     except Exception as exc:  # noqa: BLE001 - any DB driver/network error
         import logging
         logging.getLogger("phish-detector").warning(
             "history persist skipped (db unreachable): %s", exc
+        )
+
+    if settings.enable_campaign_tracking and result["label"] in (
+        "phishing", "suspicious"
+    ):
+        try:
+            await record_campaign(
+                session,
+                url=result["url"],
+                closest_domain=result.get("closest_domain"),
+            )
+        except Exception as exc:  # noqa: BLE001
+            import logging
+            logging.getLogger("phish-detector").warning(
+                "campaign clustering skipped: %s", exc
+            )
+
+    try:
+        await maybe_alert(
+            session,
+            url=result["url"],
+            label=result["label"],
+            score=result["score"],
+            closest_domain=result.get("closest_domain"),
+            reason=result.get("reason", ""),
+        )
+    except Exception as exc:  # noqa: BLE001
+        import logging
+        logging.getLogger("phish-detector").warning(
+            "watchlist alert skipped: %s", exc
         )
 
     if cache is not None:
