@@ -10,7 +10,7 @@ def test_version_endpoint(client):
     body = resp.json()
     assert "backend" in body
     assert "phish_features" in body
-    assert body["schema"] == "1.3.0"
+    assert body["schema"] == "1.4.0"
 
 
 def test_request_id_header_propagates(client):

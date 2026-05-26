@@ -14,8 +14,8 @@ import pytest
 
 ROOT = Path(__file__).resolve().parents[1]
 SEED_CSV = ROOT / "data" / "thai_phishing_seed.csv"
-PER_BRAND_CAP = 4
-MIN_TOTAL_ROWS = 150
+PER_BRAND_CAP = 8
+MIN_TOTAL_ROWS = 200
 MIN_DISTINCT_BRANDS = 50
 
 

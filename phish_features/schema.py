@@ -23,7 +23,11 @@ from __future__ import annotations
 #             keywords into the URL path (~40% of OpenPhish misses had this
 #             pattern), and on URLs sitting on the long tail of cheap
 #             abused TLDs the ML had learnt only through indirect signals.
-FEATURE_SCHEMA_VERSION = "1.3.0"
+#   v1.4.0 -- 4 new lexical features: num_login_keywords (count, not binary),
+#             query_param_count, path_entropy, host_token_count. These give
+#             the model richer signal on credential-stuffed paths and
+#             brand-stuffed hostnames without adding any network lookups.
+FEATURE_SCHEMA_VERSION = "1.4.0"
 
 # The exact, ordered list of numeric features fed to the model.
 # Index position IS the contract -- never reorder, only append + bump version.
@@ -73,6 +77,11 @@ ORDERED_FEATURES: list[str] = [
                             #   while the host's brand label does not
                             #   (e.g. ``random.cc/bot.go.th/login``)
     "path_length",          # total characters in URL path (>120 is rare on legit sites)
+    # --- v1.4 richer lexical features ---
+    "num_login_keywords",   # count of LOGIN_KEYWORDS tokens in path+query (int ≥ 0)
+    "query_param_count",    # number of query parameters (& separators + 1 if ? present)
+    "path_entropy",         # Shannon entropy of the URL path string
+    "host_token_count",     # alphanumeric tokens in hostname (split on - and .)
 ]
 
 N_FEATURES = len(ORDERED_FEATURES)
