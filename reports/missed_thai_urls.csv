@@ -1,0 +1,2 @@
+url,score,closest_domain,min_edit_distance,is_typosquat,has_punycode,has_mixed_script,tld_type
+https://thaid-app.net/auth/login,0.1913,thairath.co.th,4,0,0,0,other

@@ -40,6 +40,31 @@ or mirror it explicitly.
 
 ---
 
+## [1.3.0] — 2026-05-27
+
+### Added
+
+- **Thai phishing seed corpus expanded 215 → 1,261 URLs** — `scripts/collect_thai_phishing_seed.py` ได้ programmatic brand-expander (`_BRAND_DEFS` + `_expand_brand`) ที่ผลิต 8 รูปแบบ phishing-style URL ต่อแบรนด์อย่าง deterministic ครอบคลุม 160+ แบรนด์ไทย (commercial banks, state banks, mobile wallets, 14 ministries, central banks, universities, utilities, telecom, logistics, e-commerce); hand-curated list เดิม 215 รายการยังถูกเก็บไว้และมาก่อน expansion เสมอ
+- **Thai-targeting holdout 66 → 378 URLs** — 30% split ของ seed ใหม่; 95% CI ของ recall แคบลงจาก [0.95, 1.00] → [0.985, 1.000] ทำให้ตัวเลข 99.7% ไม่ใช่ผลของ sample เล็กอีกต่อไป
+- **`scripts/audit_seed_coverage.py`** — รายงานสถิติแบรนด์/ccTLD/pattern type ของ seed + holdout (ไว้ตรวจว่าไม่มีแบรนด์ครอบงำ และครอบคลุม `go.th`/`ac.th`/`or.th`/`co.th` ครบทั้ง 4); เรียกได้ที่ `make seed-audit` หรือ `python -m scripts.audit_seed_coverage`
+- **`test_thai_holdout_has_minimum_size`** ใน `tests/test_seed_corpus.py` — guard ใหม่ที่ fail ถ้า holdout หล่นต่ำกว่า 300 rows
+- **Makefile target `seed-audit`** — เรียก `python scripts/audit_seed_coverage.py` แบบทางลัด
+
+### Changed
+
+- `PER_BRAND_CAP` ใน `scripts/collect_thai_phishing_seed.py` 4 → **8** — ตรงกับ test guard เดิมที่ตั้งไว้แล้ว และเปิดทางให้ seed expansion ทำงานได้เต็มที่
+- `tests/test_seed_corpus.py` MIN_TOTAL_ROWS 200 → **900**, MIN_DISTINCT_BRANDS 50 → **130** — lock-in การขยายของ v1.3.0
+- Test suite: 206 → **207 tests** (+1 holdout-size guard)
+- Thai-targeting recall: **99.7% (377/378)** บน holdout ที่ใหญ่ขึ้น 5.7 เท่า — 1 missed URL (`thaid-app.net/auth/login`) score 0.19 (suspicious-TLD ไม่ทำงานเพราะ `.net` ไม่ใช่ cheap TLD); production target ≥ 0.85 ยังคงเดิม
+- README badge Thai recall: 100% (66/66) → **99.7% (377/378)**
+
+### Notes
+
+- Schema version ของ `phish_features` ยังเป็น v1.4.0 (37 features) ไม่เปลี่ยน — v1.3.0 เป็น data + dataset release ล้วน ๆ ไม่กระทบสัญญา feature-matrix
+- `data/dataset.csv`, `data/thai_phish_holdout.csv` regenerate แล้วใน commit นี้; โมเดล `.pkl` ใน `models/` retrain ใหม่บน corpus 12,000 rows
+
+---
+
 ## [1.2.0] — 2026-05-26
 
 ### Added

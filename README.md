@@ -3,9 +3,9 @@
 [![CI](https://github.com/reenx8/security/actions/workflows/ci.yml/badge.svg)](https://github.com/reenx8/security/actions/workflows/ci.yml)
 [![License: Apache 2.0](https://img.shields.io/badge/License-Apache_2.0-blue.svg)](LICENSE)
 [![Schema](https://img.shields.io/badge/feature%20schema-v1.4.0-informational)](phish_features/schema.py)
-[![Thai recall](https://img.shields.io/badge/Thai%20holdout%20recall-100%25%20(66%2F66)-success)](reports/evaluation_summary.json)
+[![Thai recall](https://img.shields.io/badge/Thai%20holdout%20recall-99.7%25%20(377%2F378)-success)](reports/evaluation_summary.json)
 [![Generic recall](https://img.shields.io/badge/Generic%20recall-98.9%25%20(89%2F90)-success)](reports/evaluation_summary.json)
-[![Tests](https://img.shields.io/badge/tests-206%20passing-success)](tests/)
+[![Tests](https://img.shields.io/badge/tests-207%20passing-success)](tests/)
 
 **ผู้พัฒนา:** [REENX8](https://github.com/REENX8) (asdawesdzd22@gmail.com)
 
@@ -47,7 +47,7 @@
 
 ## สารบัญ
 
-- [จุดเด่นในเวอร์ชัน 1.0](#จุดเด่นในเวอร์ชัน-10)
+- [จุดเด่นในเวอร์ชัน 1.3](#จุดเด่นในเวอร์ชัน-13)
 - [ความแม่นยำของโมเดล](#ความแม่นยำของโมเดล)
 - [โครงสร้างโปรเจกต์](#โครงสร้างโปรเจกต์)
 - [Quickstart — เริ่มต้นใช้งาน](#quickstart--เริ่มต้นใช้งาน)
@@ -69,12 +69,16 @@
 
 ---
 
-## จุดเด่นในเวอร์ชัน 1.0
+## จุดเด่นในเวอร์ชัน 1.3
 
-**ความแม่นยำสูงและตรงเป้า** — โมเดลฝึกบน Thai-targeting seed corpus 215 รายการ + synthetic 12,000 rows anchored กับ 500+ Thai gov/edu/state-bank domains
-จับ phishing ที่เลียนแบบเว็บราชการ/การศึกษา/ธนาคารไทยจาก holdout ได้ **100% (66/66)** ที่ threshold ≥ 0.7 บน schema v1.4.0
+**Thai-targeting seed corpus ขยายใหญ่ (215 → 1,261 URLs, holdout 66 → 378)** — v1.3.0 เพิ่ม programmatic brand-expander ที่ผลิต 8 รูปแบบ phishing ต่อแบรนด์อย่าง deterministic ครอบคลุม **160+ แบรนด์ไทย** (banks, ministries, มหาวิทยาลัย, รัฐวิสาหกิจ, e-commerce, logistics, telecom) — holdout ที่ใหญ่ขึ้นเกือบ 6 เท่าทำให้ 95% CI ของ Thai recall แคบลงจาก [0.95, 1.00] เหลือ [0.985, 1.00] และเลิกพึ่ง sample เล็กไปได้
+
+**ความแม่นยำสูงและตรงเป้า** — โมเดลฝึกบน Thai-targeting seed corpus 1,261 รายการ + synthetic 12,000 rows anchored กับ 500+ Thai gov/edu/state-bank domains
+จับ phishing ที่เลียนแบบเว็บราชการ/การศึกษา/ธนาคารไทยจาก holdout ได้ **99.7% (377/378)** ที่ threshold ≥ 0.7 บน schema v1.4.0
 Generic phishing recall **98.9% (89/90)** บน holdout จาก OpenPhish/PhishTank
 มี **CI gate ที่ recall ≥ 0.85** — ถ้าโมเดลใหม่ตกต่ำกว่าค่านี้ build จะ fail ทันที
+
+**Seed-coverage audit script (`scripts/audit_seed_coverage.py`)** — รัน `make seed-audit` เพื่อดูสถิติแบรนด์/TLD/pattern type ใน seed corpus + holdout (สำหรับตรวจว่าไม่มีแบรนด์ครอบงำ และครอบคลุม ccTLD ครบทั้ง 4 ประเภท)
 
 **Feature Schema v1.4.0** — 37 features รวม 4 ตัวใหม่ล่าสุด:
 - `num_login_keywords` (จำนวน keywords จริง ไม่ใช่แค่ binary — phishing kit ยัดหลาย keyword)
@@ -106,7 +110,7 @@ Generic phishing recall **98.9% (89/90)** บน holdout จาก OpenPhish/Phi
 
 **Production-grade observability** — `/health`, `/version`, `/metrics` (Prometheus), structured JSON logs (`LOG_FORMAT=json`), `X-Request-ID` propagation, security response headers ทุก response
 
-**206 automated tests** — feature extraction, rules engine, campaign clustering, scorer, middleware, ทุก API endpoint, golden URLs, Thai seed corpus + holdout split, feed ingestion, URL unshortener, content check, LINE bot, feedback retrain
+**207 automated tests** — feature extraction, rules engine, campaign clustering, scorer, middleware, ทุก API endpoint, golden URLs, Thai seed corpus + holdout split (รวม guard ใหม่ใน v1.3.0 ที่ฟ้องถ้า holdout < 300 rows), feed ingestion, URL unshortener, content check, LINE bot, feedback retrain
 
 ---
 
@@ -115,16 +119,16 @@ Generic phishing recall **98.9% (89/90)** บน holdout จาก OpenPhish/Phi
 ระบบนี้ทำมาเพื่อจับ phishing ที่เลียนแบบเว็บราชการ/การศึกษา/ธนาคารไทย **metric หลัก**จึงเป็นค่า recall บนชุด Thai-targeting
 
 ### 🎯 Primary — Thai-targeting phishing holdout (schema v1.4.0)
-| เกณฑ์                              | v1.3.0 | **v1.4.0** |
-|------------------------------------|--------|------------|
-| Holdout size                       | 53 URLs | **66 URLs** |
-| Recall ที่ threshold ≥ 0.7         | 100% (53/53) | **100% (66/66)** |
-| Recall ที่ threshold ≥ 0.3         | 100% (53/53) | **100% (66/66)** |
-| 95% CI (phishing threshold)        | [0.93, 1.00] | **[0.95, 1.00]** |
-| คะแนนเฉลี่ย                        | 0.994        | **0.992** |
+| เกณฑ์                              | repo v1.2.0 | **repo v1.3.0** |
+|------------------------------------|-------------|-----------------|
+| Holdout size                       | 66 URLs     | **378 URLs** |
+| Recall ที่ threshold ≥ 0.7         | 100% (66/66) | **99.7% (377/378)** |
+| Recall ที่ threshold ≥ 0.3         | 100% (66/66) | **99.7% (377/378)** |
+| 95% CI (phishing threshold)        | [0.95, 1.00] | **[0.985, 1.000]** |
+| คะแนนเฉลี่ย                        | 0.992        | **0.996** |
 | CV F1 (5-fold synthetic)           | 0.998 ± 0.001 | **0.999 ± 0.001** |
 
-ชุดทดสอบนี้คือ 30% ของ curated Thai-targeting phishing seed (`data/thai_phishing_seed.csv`, **215 รายการ**) ที่ถูก hold out ก่อนการฝึก
+ชุดทดสอบนี้คือ 30% ของ curated Thai-targeting phishing seed (`data/thai_phishing_seed.csv`, **1,261 รายการ** ใน v1.3.0) ที่ถูก hold out ก่อนการฝึก โดย hold out ครอบคลุม **160+ แบรนด์ไทย** (cap 8 URLs/แบรนด์) — CI ที่แคบลง ([0.985, 1.000]) ยืนยันว่า 99.7% ไม่ใช่ผลของขนาด sample ที่เล็กเกินไปอีกต่อไป
 
 ### 🌐 Generic — Real-world phishing holdout (OpenPhish/PhishTank)
 | เกณฑ์                       | v1.4.0 |
@@ -200,8 +204,8 @@ Security/
 │
 ├── data/
 │   ├── thai_gov_domains.csv          #  500+ trusted Thai domains
-│   ├── thai_phishing_seed.csv        #  215 curated Thai-targeting phishing URLs (v1.4.0)
-│   └── thai_phish_holdout.csv        #  66-URL holdout (auto-generated)
+│   ├── thai_phishing_seed.csv        #  1,261 curated Thai-targeting phishing URLs (v1.3.0)
+│   └── thai_phish_holdout.csv        #  378-URL holdout (auto-generated)
 ├── models/
 │   ├── ensemble.pkl scaler.pkl features.json (committed, ready-to-serve)
 │   └── whitelist.json
@@ -216,8 +220,8 @@ Security/
 ├── render.yaml                       #  Render Blueprint (one-click deploy)
 ├── LICENSE NOTICE CHANGELOG.md
 ├── SECURITY.md CONTRIBUTING.md
-├── VERSION                           #  single source of truth (1.0.0)
-└── tests/                            #  206 tests
+├── VERSION                           #  single source of truth (1.3.0)
+└── tests/                            #  207 tests
 ```
 
 ---
@@ -231,7 +235,7 @@ cp .env.example .env          # แก้ API_KEY (สำคัญ)
 docker compose up -d --build  # PostgreSQL + API
 
 curl http://localhost:8000/version
-# {"backend":"1.0.0","phish_features":"1.1.0","schema":"1.4.0"}
+# {"backend":"1.3.0","phish_features":"1.1.0","schema":"1.4.0"}
 
 curl -H "X-API-Key: $(grep API_KEY .env | cut -d= -f2)" \
      -X POST http://localhost:8000/api/v1/check \
@@ -523,7 +527,7 @@ Dashboard: `VITE_API_URL`, `VITE_API_KEY`
 ## Tests
 
 ```bash
-make test                     # 206 tests, ~15 วินาที
+make test                     # 207 tests, ~15 วินาที
 ```
 
 | Suite                  | ครอบคลุม |
@@ -561,7 +565,7 @@ GitHub Actions รัน test suite + dashboard build + Docker build + extension
 | ตั้ง `LOG_FORMAT=json` + ส่งเข้า aggregator | structured logs ใช้ alert ง่ายกว่า |
 | Scrape `/metrics` + alert `phish_model_ready==0` | จับโมเดลหายตอน boot |
 | Retention policy บน `url_checks`, `webhook_delivery`, `campaigns` | ตารางพวกนี้โตเรื่อย ๆ |
-| Retrain ด้วยข้อมูลจริงจาก deployment | seed corpus มี 215 รายการ (v1.4.0) — เสริมด้วย live telemetry และ `--tune` flag จะดีกว่า |
+| Retrain ด้วยข้อมูลจริงจาก deployment | seed corpus มี 1,261 รายการ (v1.3.0) — เสริมด้วย live telemetry และ `--tune` flag จะดีกว่า |
 | review Permissions extension store | ใช้ list ใน [`extension/README.md`](extension/README.md) |
 
 ดูเพิ่มที่ [`SECURITY.md`](SECURITY.md)
