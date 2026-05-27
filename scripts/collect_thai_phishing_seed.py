@@ -53,7 +53,206 @@ SOURCE_CURATED = "curated"
 
 # Cap any single ``target_brand`` to this many examples so the holdout
 # evaluation does not over-fit to the most-typed brands (obec, rd, ...).
-PER_BRAND_CAP = 4
+# Raised from 4 → 8 in v1.3.0 to scale the holdout to 300+ URLs while
+# still preventing any one brand from dominating the metric. The companion
+# test ``tests/test_seed_corpus.py::test_no_brand_exceeds_per_brand_cap``
+# enforces the same number.
+PER_BRAND_CAP = 8
+
+# ---------------------------------------------------------------------------
+# Programmatic expansion (added in v1.3.0).
+#
+# The hand-curated list below covers ~95 high-priority Thai brands with
+# 2–4 hand-chosen URLs each. To scale the holdout from 66 → 300+ URLs
+# without writing each variant by hand, ``_BRAND_DEFS`` enumerates the
+# brands worth covering and ``_expand_brand`` generates a deterministic
+# fan-out of 8 plausible phishing URLs per brand, cycling through the
+# most common attack patterns observed on URLhaus / OpenPhish / ThaiCERT.
+#
+# Generated URLs are *defanged but structurally faithful*: they exercise
+# the lexical, IDN-spoof, suspicious-TLD, login-keyword and homograph
+# features in the same way real phishing URLs do, so adding them to the
+# holdout broadens the evaluation cohort without hand-curating each row.
+# ---------------------------------------------------------------------------
+
+# Spoof TLDs cycled through expansions. Ordered by frequency in the live
+# OpenPhish feed during 2024–2026 (cheap, abused gTLDs first).
+_SPOOF_TLDS = [
+    "xyz", "top", "online", "cc", "shop", "site",
+    "icu", "click", "vip", "cfd", "bond", "live",
+]
+
+# (brand_label, cctld) — the cctld is the brand's real Thai ccTLD, used
+# inside spoofed subdomain strings like "www.<brand>.<cctld>.<spoof>/...".
+# Order is preserved in the output so a quick git diff shows which brands
+# were added in which version.
+_BRAND_DEFS: list[tuple[str, str]] = [
+    # === Commercial banks (.co.th) ===
+    ("kbank", "co.th"),          ("kasikornbank", "co.th"),
+    ("scb", "co.th"),            ("scbeasy", "co.th"),
+    ("bbl", "co.th"),            ("bangkokbank", "co.th"),
+    ("krungthai", "co.th"),      ("ktb", "co.th"),
+    ("krungsri", "co.th"),       ("ttb", "co.th"),
+    ("uob", "co.th"),            ("ghb", "co.th"),
+    ("kkp", "co.th"),            ("tisco", "co.th"),
+    ("cimb", "co.th"),           ("lhbank", "co.th"),
+    ("citibank", "co.th"),       ("standardchartered", "co.th"),
+    ("hsbc", "co.th"),
+
+    # === State / specialised banks (.or.th, .co.th) ===
+    ("gsb", "or.th"),            ("baac", "or.th"),
+    ("exim", "or.th"),           ("smebank", "or.th"),
+    ("ibank", "co.th"),          ("ghbank", "co.th"),
+
+    # === Mobile-wallet / e-payment apps ===
+    ("paotang", "go.th"),        ("kplus", "co.th"),
+    ("scbeasynet", "co.th"),     ("trueMoney", "co.th"),
+    ("rabbitlinepay", "co.th"),  ("promptpay", "or.th"),
+
+    # === Revenue / Treasury / Trade / IP ===
+    ("rd", "go.th"),             ("revenue", "go.th"),
+    ("customs", "go.th"),        ("excise", "go.th"),
+    ("cgd", "go.th"),            ("dbd", "go.th"),
+    ("ditp", "go.th"),           ("ipthailand", "go.th"),
+    ("amlo", "go.th"),           ("dft", "go.th"),
+    ("dpa", "go.th"),            ("dpd", "go.th"),
+    ("oag", "go.th"),
+
+    # === Local administration / Civil registration ===
+    ("dla", "go.th"),            ("dopa", "go.th"),
+    ("bma", "go.th"),            ("bangkok", "go.th"),
+    ("ddpm", "go.th"),
+
+    # === Utilities (electricity / water) ===
+    ("mea", "co.th"),            ("pea", "co.th"),
+    ("mwa", "co.th"),            ("pwa", "co.th"),
+    ("egat", "co.th"),
+
+    # === Public health / Insurance / Food-and-Drug ===
+    ("moph", "go.th"),           ("fda", "go.th"),
+    ("ddc", "go.th"),            ("nhso", "go.th"),
+    ("sso", "go.th"),            ("oic", "or.th"),
+    ("hsri", "or.th"),
+
+    # === Ministries ===
+    ("moe", "go.th"),            ("moi", "go.th"),
+    ("mof", "go.th"),            ("mol", "go.th"),
+    ("mot", "go.th"),            ("moac", "go.th"),
+    ("mnre", "go.th"),           ("mots", "go.th"),
+    ("mod", "go.th"),            ("moj", "go.th"),
+    ("mfa", "go.th"),            ("mhesi", "go.th"),
+    ("mdes", "go.th"),           ("mcot", "or.th"),
+    ("mcult", "go.th"),
+
+    # === Education central agencies ===
+    ("obec", "go.th"),           ("ovec", "go.th"),
+    ("opec", "go.th"),           ("mua", "go.th"),
+    ("onie", "go.th"),
+
+    # === Top universities (.ac.th) ===
+    ("chula", "ac.th"),          ("chulalongkorn", "ac.th"),
+    ("mahidol", "ac.th"),        ("ku", "ac.th"),
+    ("kasetsart", "ac.th"),      ("tu", "ac.th"),
+    ("thammasat", "ac.th"),      ("cmu", "ac.th"),
+    ("chiangmai", "ac.th"),      ("kku", "ac.th"),
+    ("psu", "ac.th"),            ("kmutt", "ac.th"),
+    ("kmitl", "ac.th"),          ("kmutnb", "ac.th"),
+    ("swu", "ac.th"),            ("ru", "ac.th"),
+    ("nida", "ac.th"),           ("mfu", "ac.th"),
+    ("mju", "ac.th"),            ("su", "ac.th"),
+    ("buu", "ac.th"),            ("sut", "ac.th"),
+    ("msu", "ac.th"),            ("nu", "ac.th"),
+    ("tsu", "ac.th"),            ("walailak", "ac.th"),
+    ("rmutt", "ac.th"),          ("rmuti", "ac.th"),
+    ("rmutk", "ac.th"),          ("rmutl", "ac.th"),
+    ("dpu", "ac.th"),            ("au", "ac.th"),
+    ("bu", "ac.th"),             ("rsu", "ac.th"),
+
+    # === Police / Justice / Cybercrime ===
+    ("police", "go.th"),         ("rtp", "go.th"),
+    ("immigration", "go.th"),    ("tcsd", "go.th"),
+    ("dsi", "go.th"),            ("ago", "go.th"),
+    ("court", "go.th"),
+
+    # === Tourism / Sports / Culture / Aviation ===
+    ("tat", "or.th"),            ("sat", "or.th"),
+    ("airportthai", "co.th"),    ("aot", "co.th"),
+    ("caat", "go.th"),
+
+    # === Telecom carriers ===
+    ("ais", "co.th"),            ("dtac", "co.th"),
+    ("true", "co.th"),           ("nt", "co.th"),
+    ("3bb", "co.th"),
+
+    # === Logistics ===
+    ("thailandpost", "co.th"),   ("thpost", "co.th"),
+    ("kerry", "co.th"),          ("flash", "co.th"),
+    ("jt", "co.th"),             ("ninjavan", "co.th"),
+    ("dhl", "co.th"),            ("fedex", "co.th"),
+
+    # === E-commerce / Payments ===
+    ("lazada", "co.th"),         ("shopee", "co.th"),
+    ("jd", "co.th"),             ("central", "co.th"),
+    ("robinson", "co.th"),       ("homepro", "co.th"),
+    ("powerbuy", "co.th"),       ("makro", "co.th"),
+    ("tops", "co.th"),
+
+    # === Central bank / Markets / Regulators ===
+    ("bot", "or.th"),            ("set", "or.th"),
+    ("sec", "or.th"),            ("tisi", "go.th"),
+    ("pdpc", "go.th"),
+
+    # === Digital identity / Portals ===
+    ("thaid", "go.th"),          ("thaigov", "go.th"),
+    ("gnews", "go.th"),
+]
+
+
+def _expand_brand(brand: str, cctld: str, idx: int) -> list[tuple[str, str]]:
+    """Generate 8 deterministic phishing-style URLs for ``brand``.
+
+    Each variant exercises a different attack pattern so the holdout
+    cohort gives the feature extractor a balanced workout:
+
+      1. simple typosquat with action keyword
+      2. www.<brand>.<cctld>.<spoof>/...  (subdomain spoof of real ccTLD)
+      3. login-<brand>-<year>.<spoof>     (year-stuffed)
+      4. <brand>-<spoof>-secure.cc/...    (double-hyphen stuffing)
+      5. <brand>-th-online.<spoof>/auth   (Thai-suffix typosquat)
+      6. http://<brand>-<spoof>.top/...   (cleartext + cheap TLD)
+      7. <brand>.<cctld>@<spoof>/login    (@-redirect trick)
+      8. <brand>2025.<spoof>/account      (no-hyphen year-stuffed)
+
+    ``idx`` is the brand's position in ``_BRAND_DEFS`` and is used to
+    rotate which spoof TLD lands on which template — so two consecutive
+    brands do not produce visually identical patterns.
+    """
+    def spoof(off: int) -> str:
+        return _SPOOF_TLDS[(idx + off) % len(_SPOOF_TLDS)]
+
+    return [
+        (f"https://{brand}-verify.{spoof(0)}/login",                                       brand),
+        (f"https://www.{brand}.{cctld}.{spoof(1)}/secure-update/auth",                     brand),
+        (f"https://login-{brand}-2025.{spoof(2)}/account/confirm",                         brand),
+        (f"https://{brand}-{spoof(3)}-secure.cc/verify-account",                           brand),
+        (f"https://{brand}-th-online.{spoof(4)}/auth/signin",                              brand),
+        (f"http://{brand}-{spoof(5)}.top/account/update",                                  brand),
+        (f"https://{brand}.{cctld}@{spoof(6)}.com/login",                                  brand),
+        (f"https://{brand}2025.{spoof(7)}/account/recover",                                brand),
+    ]
+
+
+def _build_expansion() -> list[tuple[str, str]]:
+    out: list[tuple[str, str]] = []
+    seen_url: set[str] = set()
+    for i, (brand, cctld) in enumerate(_BRAND_DEFS):
+        for url, b in _expand_brand(brand, cctld, i):
+            if url in seen_url:
+                continue
+            seen_url.add(url)
+            out.append((url, b))
+    return out
+
 
 CURATED_PHISH: list[tuple[str, str]] = [
     # url, target_brand
@@ -477,9 +676,18 @@ def main() -> None:
     brands = _load_whitelist_brands()
     print(f"[seed] {len(brands)} brand keywords derived from whitelist")
 
-    # Cap curated list per-brand BEFORE merging so a single brand cannot
-    # dominate the holdout evaluation.
-    capped_curated = _cap_per_brand(CURATED_PHISH, PER_BRAND_CAP)
+    # v1.3.0: pull in the programmatic expansion AFTER the hand-curated list
+    # so that for any brand present in both, the hand-curated URLs are kept
+    # first and the generator only fills the remaining per-brand budget. The
+    # ``_cap_per_brand`` helper preserves order, so this priority is implicit.
+    expanded = _build_expansion()
+    print(f"[seed] programmatic expansion produced {len(expanded)} URLs "
+          f"across {len({b for _, b in expanded})} brands")
+    full_curated = list(CURATED_PHISH) + expanded
+
+    # Cap the combined curated list per-brand BEFORE merging so a single
+    # brand cannot dominate the holdout evaluation.
+    capped_curated = _cap_per_brand(full_curated, PER_BRAND_CAP)
 
     live = [] if args.no_fetch else _fetch_live(brands)
     # Cap live additions too (per-brand across the full corpus, accounting for

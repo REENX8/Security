@@ -14,9 +14,14 @@ import pytest
 
 ROOT = Path(__file__).resolve().parents[1]
 SEED_CSV = ROOT / "data" / "thai_phishing_seed.csv"
+HOLDOUT_CSV = ROOT / "data" / "thai_phish_holdout.csv"
 PER_BRAND_CAP = 8
-MIN_TOTAL_ROWS = 200
-MIN_DISTINCT_BRANDS = 50
+# v1.3.0 raised the seed corpus from 215 → 1000+ URLs to widen the
+# Thai-targeting holdout to 300+ rows. The floor below catches accidental
+# truncation of the corpus or a regression in the seed expansion script.
+MIN_TOTAL_ROWS = 900
+MIN_DISTINCT_BRANDS = 130
+MIN_HOLDOUT_ROWS = 300
 
 
 @pytest.fixture(scope="module")
@@ -64,3 +69,17 @@ def test_every_row_is_phishing_label(rows):
 def test_seed_urls_have_valid_scheme(rows):
     bad = [r["url"] for r in rows if not r["url"].startswith(("http://", "https://"))]
     assert not bad, f"rows with non-http(s) URL slipped in: {bad[:5]}"
+
+
+def test_thai_holdout_has_minimum_size():
+    """The Thai-targeting holdout is the primary evaluation cohort. A
+    sample size below 300 leaves the 95% Wilson CI too wide to claim a
+    recall number with confidence (v1.3.0 baseline: n=378)."""
+    if not HOLDOUT_CSV.exists():
+        pytest.skip(f"{HOLDOUT_CSV} not generated yet")
+    with HOLDOUT_CSV.open(newline="", encoding="utf-8") as fh:
+        n = sum(1 for _ in csv.DictReader(fh))
+    assert n >= MIN_HOLDOUT_ROWS, (
+        f"Thai-targeting holdout shrunk to {n} rows (min {MIN_HOLDOUT_ROWS}); "
+        "regenerate with `python -m ml_pipeline.collect_dataset --no-feeds`"
+    )

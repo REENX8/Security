@@ -1,17 +1,28 @@
 {
-  "sample_size": 66,
-  "recall_phishing_threshold": 1.0,
+  "sample_size": 378,
+  "recall_phishing_threshold": 0.9974,
   "recall_phishing_ci_95": [
-    0.945,
-    1.0
+    0.9852,
+    0.9995
   ],
-  "recall_suspicious_threshold": 1.0,
+  "recall_suspicious_threshold": 0.9974,
   "recall_suspicious_ci_95": [
-    0.945,
-    1.0
+    0.9852,
+    0.9995
   ],
-  "mean_score": 0.9915,
+  "mean_score": 0.9964,
   "median_score": 1.0,
-  "missed_count": 0,
-  "missed_urls": []
+  "missed_count": 1,
+  "missed_urls": [
+    {
+      "url": "https://thaid-app.net/auth/login",
+      "score": 0.1913,
+      "closest_domain": "thairath.co.th",
+      "min_edit_distance": 4,
+      "is_typosquat": 0,
+      "has_punycode": 0,
+      "has_mixed_script": 0,
+      "tld_type": "other"
+    }
+  ]
 }

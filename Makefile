@@ -1,6 +1,6 @@
 .PHONY: help install test lint format run train evaluate \
         dashboard extension docker clean nsc-bundle \
-        demo-setup demo-reset demo-verify
+        demo-setup demo-reset demo-verify seed-audit
 
 PY        ?= python
 PIP       ?= $(PY) -m pip
@@ -41,6 +41,9 @@ evaluate:  ## Run the evaluation + write reports/.
 
 evaluate-gate:  ## Same as evaluate but fails CI if Thai recall < THAI_RECALL_MIN_THRESHOLD.
 	$(PY) -m ml_pipeline.evaluate --enforce-threshold
+
+seed-audit:  ## Print brand / TLD / pattern coverage of the Thai seed corpus.
+	$(PY) scripts/audit_seed_coverage.py
 
 dashboard:  ## Start the Vite dev server for the dashboard.
 	cd dashboard && npm install && npm run dev
