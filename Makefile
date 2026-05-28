@@ -1,5 +1,6 @@
 .PHONY: help install test lint format run train evaluate \
-        dashboard extension docker clean nsc-bundle
+        dashboard extension docker clean nsc-bundle \
+        demo-setup demo-reset demo-verify
 
 PY        ?= python
 PIP       ?= $(PY) -m pip
@@ -53,6 +54,15 @@ docker:  ## Build the backend Docker image.
 clean:  ## Remove caches, coverage, build artifacts.
 	rm -rf .pytest_cache __pycache__ */__pycache__ */*/__pycache__ \
 	       *.egg-info build dist dashboard/dist
+
+demo-setup:  ## Boot the backend and seed it with the NSC demo URLs.
+	bash scripts/demo_setup.sh
+
+demo-reset:  ## Reset DB to seeded state (use between demo rounds).
+	bash scripts/demo_reset.sh
+
+demo-verify:  ## Verify 6 golden demo URLs return expected labels.
+	$(PY) scripts/demo_verify.py
 
 nsc-bundle:  ## Build the NSC 2026 submission ZIP (code + docs + models).
 	@mkdir -p dist

@@ -189,11 +189,56 @@ async def lifespan(app: FastAPI):
 
 app = FastAPI(
     title=settings.app_name,
-    description="Real-time phishing URL detection for Thai government "
-                "and educational websites.",
+    description=(
+        "Real-time phishing URL detection for Thai government and "
+        "educational websites.\n\n"
+        "**Disclaimer / ข้อตกลงในการใช้ซอฟต์แวร์:** ซอฟต์แวร์นี้พัฒนาขึ้นภายใต้ "
+        "การแข่งขันพัฒนาโปรแกรมคอมพิวเตอร์แห่งประเทศไทย (NSC) สนับสนุนโดย "
+        "สำนักงานพัฒนาวิทยาศาสตร์และเทคโนโลยีแห่งชาติ (สวทช.) "
+        "เพื่อการศึกษาและการเรียนรู้ ไม่ใช่เพื่อวัตถุประสงค์เชิงพาณิชย์ "
+        "สวทช. ไม่รับรองความถูกต้องและไม่รับผิดชอบต่อความเสียหายที่เกิด "
+        "จากการใช้งาน  เผยแพร่ภายใต้ Apache License 2.0 — ดูฉบับเต็มได้ที่ "
+        "endpoint `/api/v1/disclaimer`."
+    ),
     version=__version__,
     lifespan=lifespan,
 )
+
+
+@app.get("/api/v1/disclaimer", tags=["meta"], include_in_schema=True)
+async def disclaimer() -> dict:
+    """ข้อตกลงในการใช้ซอฟต์แวร์ตามข้อกำหนด NSC (booklet หน้า 44)."""
+    return {
+        "thai": (
+            "ซอฟต์แวร์นี้เป็นผลงานที่พัฒนาขึ้นภายใต้โครงการ \"ระบบตรวจจับเว็บไซต์"
+            "ฟิชชิงสำหรับหน่วยงานราชการและสถาบันการศึกษาไทย ด้วยการเรียนรู้ของ"
+            "เครื่องและกฎอ้างอิงที่โปร่งใส\" ซึ่งสนับสนุนโดยสำนักงานพัฒนา"
+            "วิทยาศาสตร์และเทคโนโลยีแห่งชาติ (สวทช.) ในการแข่งขันพัฒนาโปรแกรม"
+            "คอมพิวเตอร์แห่งประเทศไทย ครั้งที่ 28 (NSC 2026) โดยมีวัตถุประสงค์"
+            "เพื่อส่งเสริมให้นักเรียนและนักศึกษาได้เรียนรู้และฝึกทักษะในการ"
+            "พัฒนาซอฟต์แวร์ สวทช. ไม่มีหน้าที่ในการดูแล บำรุงรักษา อบรมการ"
+            "ใช้งาน หรือพัฒนาประสิทธิภาพซอฟต์แวร์ ตลอดจนไม่รับประกันความ"
+            "เสียหายต่าง ๆ อันเกิดจากการใช้งาน เผยแพร่ภายใต้ Apache License 2.0"
+        ),
+        "english": (
+            "This software is a work developed under the project "
+            "\"Thai Public-Sector Phishing URL Detection System using "
+            "Machine Learning with a Transparent Rules Engine\", supported "
+            "by the National Science and Technology Development Agency "
+            "(NSTDA) in the 28th National Software Contest (NSC 2026), "
+            "in order to encourage pupils and students to learn and "
+            "practice their skills in developing software. NSTDA shall "
+            "not be responsible for taking care, maintaining, training, "
+            "or developing the efficiency of this software, and shall "
+            "not be liable for any damages arising out of its use. "
+            "Distributed under the Apache License 2.0."
+        ),
+        "license": "Apache-2.0",
+        "license_url": (
+            "https://github.com/reenx8/security/blob/main/LICENSE"
+        ),
+        "contest": "NSC 2026 (The 28th National Software Contest)",
+    }
 
 # --- middleware (added last = outermost) ---
 app.state.limiter = limiter

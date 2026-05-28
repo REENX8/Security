@@ -21,6 +21,8 @@
 | 08 | `08_video_script.md` | ชิงชนะเลิศ | สคริปต์คลิป 7 นาที |
 | 09 | `09_checklist.md` | ทุกรอบ | เช็คลิสต์ก่อนส่ง |
 | 10 | `10_rubric_mapping.md` | ภายในทีม | mapping rubric กับระบบ |
+| 11 | `11_demo_flashcards.md` | นำเสนอ (วันสาธิต) | URL ตัวอย่าง + ลำดับการ demo + backup plan |
+| 12 | `12_qa_cheatsheet.md` | นำเสนอ (วันสาธิต) | คำตอบ Q&A กรรมการ พิมพ์ A5 พกติดตัว |
 
 ---
 
