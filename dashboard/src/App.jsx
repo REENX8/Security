@@ -10,6 +10,7 @@ import Watchlist from "./pages/Watchlist.jsx";
 import Campaigns from "./pages/Campaigns.jsx";
 import Feed from "./pages/Feed.jsx";
 import DomainLookup from "./pages/DomainLookup.jsx";
+import About from "./pages/About.jsx";
 
 export default function App() {
   return (
@@ -25,6 +26,7 @@ export default function App() {
       <Route path="/campaigns" element={<Campaigns />} />
       <Route path="/domain" element={<DomainLookup />} />
       <Route path="/feed" element={<Feed />} />
+      <Route path="/about" element={<About />} />
       <Route path="*" element={<Navigate to="/" replace />} />
     </Routes>
   );

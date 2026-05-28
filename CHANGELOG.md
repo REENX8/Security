@@ -12,6 +12,34 @@ or mirror it explicitly.
 
 ---
 
+## [Unreleased] — NSC 2026 Presentation Round prep (2026-05-28)
+
+### Added
+
+- **Disclaimer endpoint + UI integration** — `GET /api/v1/disclaimer` คืนข้อความ
+  ข้อตกลงในการใช้ซอฟต์แวร์สองภาษาตามที่ NSC booklet หน้า 44 กำหนด;
+  dashboard มีหน้า `/about` ใหม่ที่แสดง disclaimer + ข้อมูลโครงการ; popup
+  ของ extension มีลิงก์ "เกี่ยวกับ / Disclaimer" ไปยังหน้า `/about`; README.md
+  มี section Disclaimer
+- **Demo automation scripts** — `scripts/demo_setup.sh` boot backend +
+  seed + verify; `scripts/demo_reset.sh` reset DB ก่อนสาธิตรอบใหม่;
+  `scripts/demo_verify.py` ตรวจ 6 golden URL ว่า verdict ตรงตามคาด;
+  Makefile target `demo-setup` / `demo-reset` / `demo-verify`
+- **NSC presentation-day documents** — `docs/nsc2026/11_demo_flashcards.md`
+  (ลำดับ demo + backup plan + URL ตัวอย่าง 7 patterns) และ
+  `docs/nsc2026/12_qa_cheatsheet.md` (คำตอบ Q&A กรรมการ พิมพ์ A5)
+
+### Changed
+
+- **`02_full_report.md`** — เติมเนื้อหาเต็มในทุก section ที่เคย placeholder ว่า
+  "(เหมือนข้อเสนอ)": วัตถุประสงค์/เป้าหมาย, story board (พร้อม ASCII
+  architecture), เครื่องมือพัฒนา, software specification (I/O + 11 endpoints
+  + design tree), ขอบเขต/ข้อจำกัด, เอกสารอ้างอิง 12 รายการ; เพิ่ม section
+  ใหม่ "เปรียบเทียบกับโซลูชันที่มีอยู่" (vs Google Safe Browsing / SmartScreen
+  / ETDA) และ "การสอดคล้องกับ Sustainable Innovation Theme" 4 มิติ
+
+---
+
 ## [1.2.0] — 2026-05-26
 
 ### Added
