@@ -12,6 +12,7 @@ const NAV = [
   { to: "/admin", label: "จัดการ Whitelist", icon: "🛡️" },
   { to: "/feedback", label: "รายงานผลผิดพลาด", icon: "🚩" },
   { to: "/report", label: "แจ้งเว็บฟิชชิง", icon: "✉️" },
+  { to: "/about", label: "เกี่ยวกับ / Disclaimer", icon: "ℹ️" },
 ];
 
 export default function Sidebar({ open, onClose }) {
