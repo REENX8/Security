@@ -15,7 +15,7 @@ install:  ## Install Python deps for backend + ML.
 	$(PIP) install -e .
 	$(PIP) install -r backend/requirements.txt
 	$(PIP) install -r ml_pipeline/requirements.txt
-	$(PIP) install "pytest==8.3.4" "httpx==0.28.1"
+	$(PIP) install "pytest==8.3.4" "httpx==0.28.1" "pytest-asyncio>=0.23"
 
 test:  ## Run the full pytest suite.
 	$(PYTEST) -ra
