@@ -8,7 +8,7 @@
 ## เรื่องการพัฒนา
 
 **Q: ทำเองทั้งหมดเลยไหม หรือใช้ AI ช่วย?**
-→ ผมออกแบบ architecture เอง: feature schema v1.4.0, rules engine, IDN
+→ ผมออกแบบ architecture เอง: feature schema v1.5.0, rules engine, IDN
 defense, campaign clustering, evaluation framework AI เป็นเครื่องมือช่วย
 type code บางส่วน แต่ทุก design decision (เลือก ensemble vs single,
 schema fields, rule thresholds, fingerprint formula) ตัดสินใจเอง
@@ -19,9 +19,11 @@ schema fields, rule thresholds, fingerprint formula) ตัดสินใจเ
 Transformer ต้องการ GPU + RAM สูง ไม่คุ้ม URL detection ใช้ lexical features
 ก็ให้ผลดี (recall 100% บน Thai holdout)
 
-**Q: ทำไม recall บน generic phishing ถึงไม่ 100% (98.9%)?**
-→ ตั้งใจ — ระบบนี้ออกแบบเพื่อ Thai-targeting โดยเฉพาะ generic เป็น
-cross-check ทดสอบ alignment_score = +5.9pp เป็นค่าที่ออกแบบไว้
+**Q: ทำไม recall บน generic phishing ถึงต่ำกว่า Thai holdout?**
+→ ตั้งใจ — ระบบนี้ออกแบบเพื่อ Thai-targeting โดยเฉพาะ (alignment score เป็นบวก)
+generic เป็นเพียง cross-check ทางเลือก และ**ผันผวนสูงตาม snapshot ของ feed**
+(วัดบน OpenPhish คนละวันได้ค่าต่างกันมาก) จึงไม่ผูกเป็นตัวเลขตายตัวในเอกสาร —
+วัดสำหรับโมเดลปัจจุบันได้ด้วย `make evaluate` ที่เข้าถึง live feed ได้
 
 ---
 
@@ -29,7 +31,7 @@ cross-check ทดสอบ alignment_score = +5.9pp เป็นค่าที
 
 **Q: 12,000 rows ที่ใช้ฝึก = synthetic ใช่ไหม Bias ไหม?**
 → ใช่ synthetic แต่ anchored กับ Thai brand list 500+ โดเมนจริง การประเมิน
-ใช้ holdout **66 URL จริง** ที่โมเดลไม่เคยเห็น ไม่ได้ใช้ synthetic วัด
+ใช้ holdout **378 URL จริง** ที่โมเดลไม่เคยเห็น ไม่ได้ใช้ synthetic วัด
 
 **Q: ถ้า model มี false positive บนโดเมนใหม่ที่เพิ่ง register?**
 → Feature `domain_age_days` ลด score สำหรับโดเมนเก่า + Rules Engine มี

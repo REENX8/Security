@@ -88,3 +88,12 @@ If you operate a deployment of this system, please review:
   model artifact is noticed before users are.
 - Apply Postgres updates and rotate the `POSTGRES_PASSWORD` away from
   the default `phish` value in any production environment.
+- **Redis cache (optional, `REDIS_URL`)**: the `/check` cache stores scored
+  URLs and their verdicts (data-at-rest). Run Redis on a private network /
+  with auth + TLS, and do not point `REDIS_URL` at a shared/multi-tenant
+  instance. With no `REDIS_URL` the cache stays in-process and per-replica.
+- **Model retraining endpoint (`POST /api/v1/admin/retrain`)**: API-key
+  protected and CPU/IO-intensive. Keep `FEEDBACK_PROMOTE_REQUIRES_GATE=true`
+  (the default) so a new model is promoted only after clearing the eval gate,
+  and treat the endpoint as privileged — confirmed feedback becomes training
+  data, so restrict who can submit feedback and who holds the admin key.

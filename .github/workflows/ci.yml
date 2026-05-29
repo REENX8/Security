@@ -74,6 +74,9 @@ jobs:
       - name: Enforce Thai-targeting recall ≥ THAI_RECALL_MIN_THRESHOLD
         run: python -m ml_pipeline.evaluate --enforce-threshold
 
+      - name: Check docs metrics are in sync with the evaluation
+        run: python scripts/sync_docs_metrics.py --check
+
       - name: Upload evaluation artifacts
         if: always()
         uses: actions/upload-artifact@v4
