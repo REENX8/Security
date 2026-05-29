@@ -15,6 +15,17 @@ services:
       retries: 12
     restart: unless-stopped
 
+  redis:
+    image: redis:7-alpine
+    container_name: phish-redis
+    command: ["redis-server", "--save", "", "--appendonly", "no"]
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 12
+    restart: unless-stopped
+
   backend:
     build:
       context: .
@@ -27,13 +38,18 @@ services:
       RATE_LIMIT: ${RATE_LIMIT:-100/minute}
       ENABLE_WHOIS: ${ENABLE_WHOIS:-true}
       ENABLE_TLS: ${ENABLE_TLS:-true}
+      REDIS_URL: ${REDIS_URL:-redis://redis:6379/0}
     ports:
       - "8000:8000"
     volumes:
-      # Model artifacts produced by the ML pipeline (read-only).
-      - ./models:/app/models:ro
+      # Model artifacts produced by the ML pipeline. Writable so the
+      # feedback-driven retrain (POST /admin/retrain) can stage + promote a
+      # new model in place; promotion is atomic and gated on the eval check.
+      - ./models:/app/models
     depends_on:
       db:
+        condition: service_healthy
+      redis:
         condition: service_healthy
     restart: unless-stopped
 

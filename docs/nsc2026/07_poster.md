@@ -49,7 +49,7 @@ URL ปลอม         ความเสียหาย
                               │
                 ┌─────────────▼────────────────────────┐
                 │   ML Ensemble + Rules Engine         │
-                │   schema v1.4.0 · 37 features        │
+                │   schema v1.5.0 · 42 features        │
                 │   RF + XGB + Isotonic Calibration    │
                 └──────────────────────────────────────┘
 ```
@@ -63,12 +63,12 @@ URL ปลอม         ความเสียหาย
 │        Thai-targeting holdout            │
 │                                          │
 │              100% recall                 │   ← ตัวใหญ่สุด สีเขียว
-│              (66 / 66 URL)               │
+│              (378 / 378 URL)               │
 │                                          │
-│   Generic holdout: 98.9% (89/90 URL)    │
+│  Generic holdout: 91% (82/90) x-check    │
 │                                          │
 │       CI gate ≥ 0.85 → PASS              │
-│       206 automated tests → PASS         │
+│       251 automated tests → PASS         │
 └──────────────────────────────────────────┘
 ```
 
@@ -78,14 +78,15 @@ URL ปลอม         ความเสียหาย
 
 ```
 ✦ ML Ensemble:    RandomForest + XGBoost + Isotonic Calibration
-                  on 37 deterministic features
+                  on 42 deterministic features
 
 ✦ IDN Defense:    decode Punycode → fold Unicode confusables
                   จับ chulа.com (Cyrillic) ได้เป็น distance 0
 
-✦ Schema v1.4.0:  เพิ่ม 4 features ล่าสุด
-                  num_login_keywords · query_param_count
-                  path_entropy · host_token_count
+✦ Schema v1.5.0:  เพิ่ม 5 features ล่าสุด (ไม่ต้องเรียก network เพิ่ม)
+                  cert_is_lets_encrypt · cert_validity_days
+                  cert_san_count · digit_to_letter_ratio
+                  host_has_brand_and_suspicious_tld
 
 ✦ Rules Engine:   declarative rules โปร่งใส
                   ทุก verdict แสดง rule_id ที่ทำงาน

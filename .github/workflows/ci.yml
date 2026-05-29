@@ -74,6 +74,9 @@ jobs:
       - name: Enforce Thai-targeting recall ≥ THAI_RECALL_MIN_THRESHOLD
         run: python -m ml_pipeline.evaluate --enforce-threshold
 
+      - name: Check docs metrics are in sync with the evaluation
+        run: python scripts/sync_docs_metrics.py --check
+
       - name: Upload evaluation artifacts
         if: always()
         uses: actions/upload-artifact@v4
@@ -124,6 +127,9 @@ jobs:
         with:
           python-version: "3.11"
 
+      - name: Check store-readiness
+        run: python scripts/build_extension.py --check
+
       - name: Validate + package extension
         run: python scripts/build_extension.py
 
@@ -131,6 +137,7 @@ jobs:
         run: |
           unzip -l dist/thai-phishing-detector-v*.zip
           test -f dist/thai-phishing-detector-v*.zip
+          ! unzip -l dist/thai-phishing-detector-v*.zip | grep -qE '\.md$|\.map$'
 
       - name: Upload extension zip
         uses: actions/upload-artifact@v4

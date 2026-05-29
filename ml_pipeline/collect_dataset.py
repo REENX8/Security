@@ -22,7 +22,12 @@ from phish_features import Whitelist
 
 from ml_pipeline.config import (
     DATASET_CSV,
+    FEEDBACK_CSV,
     FEED_TIMEOUT,
+    GENERIC_HOLDOUT_CSV,
+    GENERIC_PHISH_SEED_CSV,
+    GENERIC_SEED_TRAIN_FRACTION,
+    GENERIC_TRAIN_MAX,
     OPENPHISH_URL,
     PHISHTANK_URL,
     RANDOM_SEED,
@@ -42,6 +47,8 @@ from ml_pipeline.synthetic_generator import SyntheticGenerator
 _FIELDS = [
     "url", "label", "domain_age_days", "is_known_registrar",
     "has_valid_cert", "cert_age_days", "is_self_signed", "whois_ok", "tls_ok",
+    # v1.5 simulated TLS-derived columns
+    "cert_is_lets_encrypt", "cert_validity_days", "cert_san_count",
 ]
 
 
@@ -200,6 +207,57 @@ def _load_thai_phish_seed() -> list[str]:
     return urls
 
 
+def _load_generic_phish_seed() -> list[str]:
+    """Load the committed real generic-phishing snapshot (urls only)."""
+    if not os.path.exists(GENERIC_PHISH_SEED_CSV):
+        return []
+    urls: list[str] = []
+    import csv as _csv
+    with open(GENERIC_PHISH_SEED_CSV, newline="", encoding="utf-8") as fh:
+        for row in _csv.DictReader(fh):
+            u = (row.get("url") or "").strip()
+            if u.startswith(("http://", "https://")):
+                urls.append(u)
+    print(f"[seed] loaded {len(urls)} real generic-phishing URLs")
+    return urls
+
+
+def _load_feedback_rows(gen, exclude_urls: set[str]) -> list[dict]:
+    """Load confirmed-feedback labels exported from the DB as TRAINING rows.
+
+    Rows are (url, label) pairs written by feedback_retrain.py. We attach
+    simulated network features (the URLs do not resolve offline) and drop any
+    URL already present in a holdout so feedback can never leak the eval set
+    into training. Feedback rows are training-only by construction.
+    """
+    if not os.path.exists(FEEDBACK_CSV):
+        return []
+    import csv as _csv
+
+    rows: list[dict] = []
+    seen: set[str] = set()
+    with open(FEEDBACK_CSV, newline="", encoding="utf-8") as fh:
+        for row in _csv.DictReader(fh):
+            url = (row.get("url") or "").strip()
+            label_raw = (row.get("label") or "").strip()
+            if not url.startswith(("http://", "https://")):
+                continue
+            if url in exclude_urls or url in seen:
+                continue
+            try:
+                label = int(label_raw)
+            except ValueError:
+                continue
+            if label not in (0, 1):
+                continue
+            seen.add(url)
+            net = gen.sim_network(label, url.startswith("https://"))
+            rows.append({"url": url, "label": label, **net})
+    if rows:
+        print(f"[feedback] folded {len(rows)} confirmed-feedback rows into training")
+    return rows
+
+
 def main(use_feeds: bool = True) -> None:
     ensure_dirs()
     wl = Whitelist.from_csv(WHITELIST_CSV)
@@ -218,6 +276,8 @@ def main(use_feeds: bool = True) -> None:
     real_holdout: list[dict] = []
     thai_holdout: list[dict] = []
     thai_train: list[dict] = []
+    generic_train: list[dict] = []
+    generic_holdout: list[dict] = []
 
     # --- curated Thai-targeting seed corpus (always loaded, no network) ---
     seed_urls = _load_thai_phish_seed()
@@ -229,6 +289,23 @@ def main(use_feeds: bool = True) -> None:
             row = {"url": url, "label": 1, **net}
             (thai_train if i < n_train else thai_holdout).append(row)
         print(f"[seed] split: train={len(thai_train)}  holdout={len(thai_holdout)}")
+
+    # --- committed generic-phishing snapshot: deterministic 70/30 split into
+    #     TRAINING + a reproducible generic cross-check holdout (no network) ---
+    generic_urls = _load_generic_phish_seed()
+    if generic_urls:
+        gen.rng.shuffle(generic_urls)
+        g_train = int(round(len(generic_urls) * GENERIC_SEED_TRAIN_FRACTION))
+        for i, url in enumerate(generic_urls):
+            net = gen.sim_network(1, url.startswith("https://"))
+            row = {"url": url, "label": 1, **net}
+            (generic_train if i < g_train else generic_holdout).append(row)
+        # Cap training rows to protect the Thai cohort's decision boundary; the
+        # full 30% holdout is always kept for an honest cross-check.
+        if len(generic_train) > GENERIC_TRAIN_MAX:
+            generic_train = generic_train[:GENERIC_TRAIN_MAX]
+        print(f"[seed] generic split: train={len(generic_train)}  "
+              f"holdout={len(generic_holdout)}")
 
     if use_feeds:
         feed_urls = _fetch_feed_urls(max_urls=n_each // 2)
@@ -255,13 +332,23 @@ def main(use_feeds: bool = True) -> None:
     print(f"[dataset] real phishing -- train: {len(real_train)}  "
           f"holdout: {len(real_holdout)}  thai-holdout: {len(thai_holdout)}")
 
+    # --- confirmed-feedback rows (training only; never the holdout) ---
+    holdout_urls = {r["url"] for r in (thai_holdout + real_holdout + generic_holdout)}
+    feedback_rows = _load_feedback_rows(gen, exclude_urls=holdout_urls)
+    feedback_phish = [r for r in feedback_rows if r["label"] == 1]
+    feedback_legit = [r for r in feedback_rows if r["label"] == 0]
+
     # --- synthetic phishing top-up to balance the classes (training only) ---
-    need = n_legit - len(real_train) - len(thai_train)
+    need = (n_legit + len(feedback_legit)
+            - len(real_train) - len(thai_train) - len(feedback_phish)
+            - len(generic_train))
     synth_phish = gen.generate(n_legit=0, n_phish=max(need, 0))
     print(f"[dataset] synthetic phishing rows: {len(synth_phish)}")
 
     rows.extend(real_train)
     rows.extend(thai_train)
+    rows.extend(generic_train)
+    rows.extend(feedback_rows)
     rows.extend(synth_phish)
     gen.rng.shuffle(rows)
 
@@ -299,6 +386,16 @@ def main(use_feeds: bool = True) -> None:
     else:
         print("[dataset] no Thai-specific phishing holdout written "
               "(none found in feeds — expected for most environments)")
+
+    # --- write the committed generic-phishing cross-check holdout ---
+    if generic_holdout:
+        with open(GENERIC_HOLDOUT_CSV, "w", newline="", encoding="utf-8") as fh:
+            writer = csv.DictWriter(fh, fieldnames=_FIELDS)
+            writer.writeheader()
+            for r in generic_holdout:
+                writer.writerow({k: r.get(k, "") for k in _FIELDS})
+        print(f"[dataset] wrote {len(generic_holdout)} generic-phishing holdout "
+              f"rows -> {GENERIC_HOLDOUT_CSV}")
 
 
 if __name__ == "__main__":

@@ -19,7 +19,7 @@ from phish_features import FEATURE_SCHEMA_VERSION
 from phish_features import __version__ as features_version
 
 from app import __version__
-from app.cache import TTLCache
+from app.cache import build_cache
 from app.config import settings
 from app.database import SessionLocal, init_db
 from app.errors import register_error_handlers
@@ -115,10 +115,7 @@ async def _seed_external_feed_sources() -> None:
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     app.state.started_at = _dt.datetime.now(_dt.timezone.utc)
-    app.state.cache = (
-        TTLCache(ttl=settings.cache_ttl, maxsize=settings.cache_maxsize)
-        if settings.enable_cache else None
-    )
+    app.state.cache = build_cache(settings)
 
     # The core URL scorer does not need the database -- history, stats and
     # admin endpoints do. Tolerate a missing/unreachable DB at startup so
@@ -166,11 +163,30 @@ async def lifespan(app: FastAPI):
     app.state.feedback_task = None
     if settings.feedback_retrain_enabled and app.state.db_ready:
         async def _feedback_retrain_loop() -> None:
+            from functools import partial
+
             from ml_pipeline.feedback_retrain import run as _run_retrain
             while True:
                 await asyncio.sleep(settings.feedback_retrain_interval_hours * 3600)
                 try:
-                    await asyncio.get_event_loop().run_in_executor(None, _run_retrain)
+                    ok = await asyncio.get_event_loop().run_in_executor(
+                        None,
+                        partial(
+                            _run_retrain,
+                            min_rows=settings.feedback_accumulation_threshold,
+                            enforce_gate=settings.feedback_promote_requires_gate,
+                        ),
+                    )
+                    # Hot-swap the freshly promoted model without a restart.
+                    if ok:
+                        try:
+                            app.state.scorer = load_scorer()
+                            logger.info("scorer hot-reloaded after retrain")
+                        except Exception as exc:  # noqa: BLE001 - keep old model
+                            logger.error(
+                                "scorer reload failed (%s) -- keeping previous "
+                                "model", exc,
+                            )
                 except Exception as exc:  # noqa: BLE001
                     logger.warning("feedback retrain failed: %s", exc)
         app.state.feedback_task = asyncio.create_task(_feedback_retrain_loop())
