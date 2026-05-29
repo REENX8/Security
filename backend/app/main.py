@@ -19,7 +19,7 @@ from phish_features import FEATURE_SCHEMA_VERSION
 from phish_features import __version__ as features_version
 
 from app import __version__
-from app.cache import TTLCache
+from app.cache import build_cache
 from app.config import settings
 from app.database import SessionLocal, init_db
 from app.errors import register_error_handlers
@@ -115,10 +115,7 @@ async def _seed_external_feed_sources() -> None:
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     app.state.started_at = _dt.datetime.now(_dt.timezone.utc)
-    app.state.cache = (
-        TTLCache(ttl=settings.cache_ttl, maxsize=settings.cache_maxsize)
-        if settings.enable_cache else None
-    )
+    app.state.cache = build_cache(settings)
 
     # The core URL scorer does not need the database -- history, stats and
     # admin endpoints do. Tolerate a missing/unreachable DB at startup so

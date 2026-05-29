@@ -9,6 +9,7 @@ asyncpg==0.30.0
 aiosqlite==0.20.0
 slowapi==0.1.9
 prometheus-client==0.21.1
+redis==5.2.1  # optional: shared /check cache across replicas (see REDIS_URL)
 # --- ML runtime (versions pinned to the training environment for
 #     pickle compatibility -- keep in sync with ml_pipeline/requirements.txt) ---
 joblib==1.4.2

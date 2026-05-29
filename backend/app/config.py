@@ -66,6 +66,11 @@ class Settings(BaseSettings):
     cache_ttl: float = Field(default=60.0)        # seconds
     cache_maxsize: int = Field(default=2048)
     batch_max_size: int = Field(default=50)
+    # Set REDIS_URL (e.g. redis://redis:6379/0) to share the /check cache
+    # across replicas. Empty = per-process in-memory cache. If a URL is given
+    # but unreachable, the app logs a warning and uses the in-memory cache.
+    redis_url: str = Field(default="")
+    redis_namespace: str = Field(default="phish:cache:")
 
     # --- server ---
     app_name: str = Field(default="Thai Phishing URL Detector")
