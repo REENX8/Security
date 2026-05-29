@@ -119,7 +119,10 @@ CI runs this on every push to `main`/`feature/**` and uploads the artifact
 
 1. **Bump the version** in `extension/manifest.json` (every upload must
    strictly increment).
-2. `python scripts/build_extension.py` to produce the `.zip`.
+2. `python scripts/build_extension.py --check` to validate store-readiness
+   (valid version, all manifest-referenced files present, no docs/source-maps
+   leaking into the package), then `python scripts/build_extension.py` to
+   produce the `.zip`.
 3. Sign in to the [Chrome Web Store developer dashboard](
    https://chrome.google.com/webstore/devconsole).
 4. **Create a new item** and upload the `.zip`.

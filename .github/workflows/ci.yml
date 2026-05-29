@@ -124,6 +124,9 @@ jobs:
         with:
           python-version: "3.11"
 
+      - name: Check store-readiness
+        run: python scripts/build_extension.py --check
+
       - name: Validate + package extension
         run: python scripts/build_extension.py
 
@@ -131,6 +134,7 @@ jobs:
         run: |
           unzip -l dist/thai-phishing-detector-v*.zip
           test -f dist/thai-phishing-detector-v*.zip
+          ! unzip -l dist/thai-phishing-detector-v*.zip | grep -qE '\.md$|\.map$'
 
       - name: Upload extension zip
         uses: actions/upload-artifact@v4

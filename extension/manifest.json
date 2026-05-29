@@ -2,7 +2,7 @@
   "manifest_version": 3,
   "name": "Thai Phishing Detector",
   "short_name": "PhishDetector",
-  "version": "1.1.0",
+  "version": "1.2.0",
   "description": "Real-time detection of phishing URLs impersonating Thai government (.go.th) and education (.ac.th) websites.",
   "author": "Thai Phishing Detector contributors",
   "homepage_url": "https://github.com/reenx8/security",
