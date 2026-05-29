@@ -12,9 +12,9 @@
 หน่วยงานราชการไทย (`.go.th`) สถาบันการศึกษา (`.ac.th`) และธนาคาร/รัฐวิสาหกิจ
 แบบ realtime ประกอบด้วย 5 ส่วนที่ทำงานร่วมกัน:
 
-1. **ML pipeline** ที่ฝึก ensemble RandomForest + XGBoost บนชุด feature 37 ตัว
+1. **ML pipeline** ที่ฝึก ensemble RandomForest + XGBoost บนชุด feature 42 ตัว
    (lexical, IDN/homoglyph, path-impersonation, WHOIS, TLS, whitelist, lexical patterns ใหม่)
-   ได้ recall **100% (66/66)** บน Thai-targeting holdout
+   ได้ recall **100% (378/378)** บน Thai-targeting holdout
 2. **FastAPI backend** ให้บริการ `/check`, public threat feed (JSON/CSV/STIX),
    brand watchlist + webhook (รองรับ LINE Notify), campaign clustering,
    domain reputation timeline, social-impact metrics และเนื้อหาให้ความรู้
@@ -65,7 +65,7 @@ LINE Messaging API · Phishing Detection · Cybersecurity · Thai Government
 
 1. **วัตถุประสงค์หลัก:** สร้างระบบตรวจจับ URL ฟิชชิงเฉพาะทางที่จับการปลอม
    แบรนด์ราชการ/การศึกษา/ธนาคารไทย ได้ recall ≥ 95% บนชุดข้อมูลทดสอบที่
-   โมเดลไม่เคยเห็น (ปัจจุบันได้ **100%** บนชุด holdout 66 URL)
+   โมเดลไม่เคยเห็น (ปัจจุบันได้ **100%** บนชุด holdout 378 URL)
 2. **วัตถุประสงค์รอง:**
    * เปิดให้ประชาชนทั่วไปและหน่วยงานเข้าถึงได้ฟรี ผ่านส่วนขยายเบราว์เซอร์
      และ public threat feed (no-auth)
@@ -103,10 +103,10 @@ LINE Messaging API · Phishing Detection · Cybersecurity · Thai Government
 
 ### เป้าหมาย (Goals)
 
-1. **ความแม่นยำ:** Recall ≥ 95% บน Thai-targeting holdout (✅ ทำได้ 100% บน 66 URL แล้ว)
+1. **ความแม่นยำ:** Recall ≥ 95% บน Thai-targeting holdout (✅ ทำได้ 100% บน 378 URL แล้ว)
 2. **ความครอบคลุม:** รองรับเว็บราชการ/การศึกษา/ธนาคาร 500+ โดเมน (✅ ใส่ใน whitelist แล้ว)
 3. **ความใช้งานได้จริง:** ส่วนขยายเบราว์เซอร์ติดตั้งได้ใน Chrome/Edge/Firefox (✅)
-4. **ความยั่งยืน:** เปิด source, มีเอกสารครบ, มี CI/test 206 cases (✅)
+4. **ความยั่งยืน:** เปิด source, มีเอกสารครบ, มี CI/test 242 cases (✅)
 5. **ผลกระทบทางสังคม:** มีหน้า portal ให้ประชาชนแจ้งเว็บปลอมไม่ต้อง login (✅)
 
 ### ขอบเขต (Scope)
@@ -147,8 +147,8 @@ LINE Messaging API · Phishing Detection · Cybersecurity · Thai Government
                               ┌────────▼─────────┐
                               │ ML Ensemble      │
                               │ RF + XGB         │
-                              │ schema v1.4.0    │
-                              │ 37 features      │
+                              │ schema v1.5.0    │
+                              │ 42 features      │
                               └──────────────────┘
 ```
 
@@ -157,7 +157,7 @@ LINE Messaging API · Phishing Detection · Cybersecurity · Thai Government
 | ส่วน | เทคนิค / Algorithm |
 |------|--------------------|
 | ML model | RandomForest + XGBoost soft-voting ensemble + isotonic calibration |
-| Feature extraction | Lexical 16 ตัว + IDN/Homoglyph 3 ตัว + Path-impersonation 4 ตัว + WHOIS 4 ตัว + TLS 3 ตัว + Whitelist 2 ตัว + Meta 2 ตัว + Lexical v1.4 4 ตัว = **37 features** |
+| Feature extraction | Lexical 15 ตัว + IDN/Homoglyph 3 ตัว + Path-impersonation 4 ตัว + WHOIS 4 ตัว + TLS 3 ตัว + Whitelist 2 ตัว + Meta 2 ตัว + Lexical v1.4 4 ตัว + TLS/interaction v1.5 5 ตัว = **42 features** |
 | IDN Defense | Punycode decode + Unicode confusable fold (TR36) + Levenshtein distance |
 | Typosquat | Brand-label edit distance ≤ 3 + TLD-swap detection |
 | Campaign clustering | Fingerprint = `brand|tld|path-shape` (digit → `#`, hex → `$hex`) |
@@ -187,7 +187,7 @@ LINE Messaging API · Phishing Detection · Cybersecurity · Thai Government
 #### Input / Output
 * **Input:** URL string (HTTP/HTTPS, ≤ 2048 chars) — ส่งเข้า `/api/v1/check`
 * **Output:** JSON ที่มี `score` (0–1), `label` (safe/suspicious/phishing),
-  `reason` (อธิบายภาษาไทย), `features` (37 ตัว), `rules.hits[]` (กฎที่ทำงาน),
+  `reason` (อธิบายภาษาไทย), `features` (42 ตัว), `rules.hits[]` (กฎที่ทำงาน),
   `closest_domain`, `edit_distance`, `checked_at`
 
 #### Functional Specification (เลือกที่สำคัญ)
@@ -205,7 +205,7 @@ LINE Messaging API · Phishing Detection · Cybersecurity · Thai Government
 #### โครงสร้างซอฟต์แวร์ (Design)
 ```
 phish_features/   ← shared package, ML pipeline และ backend ใช้ร่วมกัน
-├── schema.py     ← single source of truth ของ 37 features + LOGIN_KEYWORDS + SUSPICIOUS_TLDS
+├── schema.py     ← single source of truth ของ 42 features + LOGIN_KEYWORDS + SUSPICIOUS_TLDS
 ├── lexical.py    ← computed-from-string features (เร็ว, deterministic)
 ├── whitelist.py  ← typosquat + brand-label edit distance
 ├── homoglyph.py  ← IDN decode + confusable fold
@@ -252,7 +252,7 @@ ml_pipeline/
 
 | สัปดาห์ | กิจกรรม |
 |---------|---------|
-| 1–2 | Code review + เพิ่ม test coverage ให้ครบ 90% (ปัจจุบัน 206 tests) ✅ |
+| 1–2 | Code review + เพิ่ม test coverage ให้ครบ 90% (ปัจจุบัน 242 tests) ✅ |
 | 3–4 | ขยาย Thai-targeting seed corpus จาก 215 → 300 URLs จากแหล่ง ThaiCERT advisory |
 | 5–6 | LINE Messaging API Bot + URL Unshortening + Content-based Fallback + Feedback Auto-retrain ✅ |
 | 7–8 | เพิ่ม dashboard widget แสดง social-impact metrics แบบ public (เปิด iframe ใส่เว็บอื่นได้) |

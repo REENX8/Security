@@ -12,6 +12,48 @@ or mirror it explicitly.
 
 ---
 
+## [Unreleased] — v1.5.0 schema + scale + continuous retraining (2026-05-29)
+
+### Added
+
+- **Feature schema v1.5.0 (37 → 42 features)** — 5 new features that add signal
+  WITHOUT any new network lookup: `cert_is_lets_encrypt`, `cert_validity_days`,
+  `cert_san_count` (parsed from the SAME TLS handshake — free 90-day DV certs
+  over-index on phishing), `digit_to_letter_ratio`, and
+  `host_has_brand_and_suspicious_tld` (a brand impersonated on a cheap/abused
+  TLD). The previously-missed `thaid-app.net/auth/login` is now caught →
+  **Thai-holdout recall 99.7% → 100% (378/378)**, 95% CI [0.990, 1.000].
+- **Optional Redis-backed `/check` cache** — set `REDIS_URL` to share the cache
+  across replicas; falls back silently to the in-process TTLCache when Redis is
+  unset or unreachable. Added a `redis:7-alpine` service to docker-compose.
+- **Continuous, gated feedback retraining** — `collect_dataset` now folds
+  `data/feedback_labels.csv` into the TRAINING set; `feedback_retrain` trains
+  into `models/staging`, runs the eval gate there, and promotes (atomic, with a
+  `models/previous` backup) only when the gate passes. New API-key-protected
+  `POST /api/v1/admin/retrain` runs it and hot-swaps the scorer with no restart.
+  `PHISH_MODELS_DIR` / `PHISH_REPORTS_DIR` let train/evaluate target staging.
+- **Docs metric de-hardcoding** — `scripts/sync_docs_metrics.py` injects the
+  numbers from `reports/evaluation_summary.json` into sentinel-wrapped spots in
+  the docs; `make sync-docs` / `make sync-docs-check` (run in CI) keep them from
+  ever drifting again.
+- **Extension store-readiness check** — `build_extension.py --check` (run in CI)
+  validates version + manifest references + that no docs/source-maps leak into
+  the package; extension bumped to v1.2.0.
+
+### Changed
+
+- **Generic-phishing holdout is now documented as an optional, feed-dependent
+  cross-check, not a fixed headline.** It requires live feeds, is highly
+  variable across feed snapshots, and the system is deliberately tuned for
+  Thai-targeting (positive alignment score). The hardcoded "98.9% (89/90)"
+  claim was removed from the README/NSC docs to avoid overstating generic
+  performance; run `make evaluate` with network access to measure it for the
+  current model.
+- **`make install`** now also installs `pytest-asyncio` (matches CI), so the
+  async tests collect locally.
+
+---
+
 ## [Unreleased] — NSC 2026 Presentation Round prep (2026-05-28)
 
 ### Added

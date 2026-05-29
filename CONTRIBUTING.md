@@ -85,7 +85,21 @@ A pull request is ready to merge when **all** of the following hold:
    `IMPUTED_DEFAULTS` or `TLD_TYPE_MAP` in
    `phish_features/schema.py` is a breaking change. Bump
    `FEATURE_SCHEMA_VERSION` and retrain the model in the same PR.
-5. **No regressions on golden tests**: the verdicts in
+   Adding a feature touches a fixed set of files **in lockstep** — the
+   backend refuses a model whose `features.json` disagrees with the code:
+   - `phish_features/schema.py` — append to `ORDERED_FEATURES` (never reorder)
+     + add any `IMPUTED_DEFAULTS`,
+   - the extractor that computes it (`lexical.py` / `tls.py` / `extractor.py`),
+   - `ml_pipeline/synthetic_generator.py` `sim_network` (for simulated
+     network columns), `collect_dataset._FIELDS` and
+     `feature_engineering._NETWORK_COLS`,
+   - then `make train && make evaluate-gate && make sync-docs`, committing the
+     regenerated `models/*` + `features.json` + reports in the same PR.
+5. **Docs stay in sync**: headline metrics live only in
+   `reports/evaluation_summary.json`; run `make sync-docs` after `make
+   evaluate` and never hand-edit the values between `<!--M:...-->` sentinels.
+   CI runs `make sync-docs-check` and fails on drift.
+6. **No regressions on golden tests**: the verdicts in
    `tests/test_golden.py` are pinned for known-good and known-bad URLs.
    If you have to change one, write down why in the PR description.
 

@@ -1,5 +1,5 @@
-.PHONY: help install test lint format run train evaluate \
-        dashboard extension docker clean nsc-bundle \
+.PHONY: help install test lint format run train evaluate evaluate-gate \
+        sync-docs sync-docs-check dashboard extension docker clean nsc-bundle \
         demo-setup demo-reset demo-verify seed-audit
 
 PY        ?= python
@@ -41,6 +41,12 @@ evaluate:  ## Run the evaluation + write reports/.
 
 evaluate-gate:  ## Same as evaluate but fails CI if Thai recall < THAI_RECALL_MIN_THRESHOLD.
 	$(PY) -m ml_pipeline.evaluate --enforce-threshold
+
+sync-docs:  ## Inject metrics from reports/evaluation_summary.json into the docs.
+	$(PY) scripts/sync_docs_metrics.py
+
+sync-docs-check:  ## Fail if docs metrics drift from evaluation_summary.json (CI).
+	$(PY) scripts/sync_docs_metrics.py --check
 
 seed-audit:  ## Print brand / TLD / pattern coverage of the Thai seed corpus.
 	$(PY) scripts/audit_seed_coverage.py
