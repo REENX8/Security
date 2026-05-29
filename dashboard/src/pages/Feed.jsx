@@ -1,11 +1,13 @@
 import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import Layout from "../components/Layout.jsx";
+import ErrorBanner from "../components/ErrorBanner.jsx";
+import { CardSkeleton } from "../components/Skeleton.jsx";
 import { getPublicFeed, getPublicFeedUrl } from "../api/client.js";
 
 export default function Feed() {
   const [hours, setHours] = useState(24);
-  const { data, isLoading } = useQuery({
+  const { data, isLoading, isError, error } = useQuery({
     queryKey: ["feed", hours],
     queryFn: () => getPublicFeed({ hours, limit: 200 }),
     refetchInterval: 60_000,
@@ -47,7 +49,8 @@ export default function Feed() {
           </div>
         </div>
 
-        {isLoading && <div className="text-slate-400">กำลังโหลด...</div>}
+        {isLoading && <CardSkeleton rows={6} />}
+        {isError && <ErrorBanner error={error} />}
         {data && (
           <>
             <div className="rounded-2xl border border-slate-800 bg-slate-900/60 p-4 text-sm">

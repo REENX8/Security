@@ -1,5 +1,6 @@
 import { useState } from "react";
 import Layout from "../components/Layout.jsx";
+import { Skeleton } from "../components/Skeleton.jsx";
 import { useFeedback } from "../api/queries.js";
 import { getFeedbackExportUrl } from "../api/client.js";
 import LabelBadge from "../components/LabelBadge.jsx";
@@ -83,7 +84,11 @@ export default function Feedback() {
       {/* Table */}
       <div className="rounded-xl border border-slate-800 bg-slate-900 p-5">
         {isLoading ? (
-          <p className="py-8 text-center text-slate-400">กำลังโหลด...</p>
+          <div className="space-y-2 py-4">
+            {Array.from({ length: 6 }).map((_, i) => (
+              <Skeleton key={i} className="h-9 w-full" />
+            ))}
+          </div>
         ) : isError ? (
           <p className="py-8 text-center text-red-400">{error?.message}</p>
         ) : items.length === 0 ? (

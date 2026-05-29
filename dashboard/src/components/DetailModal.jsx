@@ -1,7 +1,8 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import LabelBadge from "./LabelBadge.jsx";
 import RulesPanel from "./RulesPanel.jsx";
 import { formatDateTime, formatPct, labelInfo } from "../lib/format.js";
+import { FEATURE_LABELS, groupFeatures, isNotable } from "../lib/features.js";
 import { useSubmitFeedback } from "../api/queries.js";
 
 const VERDICTS = ["safe", "suspicious", "phishing"];
@@ -14,16 +15,43 @@ export default function DetailModal({ item, onClose }) {
   const [feedbackSent, setFeedbackSent] = useState(false);
   const [showFeatures, setShowFeatures] = useState(false);
   const submitFeedback = useSubmitFeedback();
+  const dialogRef = useRef(null);
+  const closeRef = useRef(null);
 
-  // close on escape
+  // close on escape; trap focus inside the dialog; restore focus on unmount
   useEffect(() => {
     if (!item) return undefined;
     setShowFeedback(false);
     setFeedbackSent(false);
     setShowFeatures(false);
-    const handler = (e) => { if (e.key === "Escape") onClose(); };
+    const previouslyFocused = document.activeElement;
+    closeRef.current?.focus();
+
+    const handler = (e) => {
+      if (e.key === "Escape") {
+        onClose();
+        return;
+      }
+      if (e.key !== "Tab") return;
+      const focusable = dialogRef.current?.querySelectorAll(
+        'button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])'
+      );
+      if (!focusable || focusable.length === 0) return;
+      const first = focusable[0];
+      const last = focusable[focusable.length - 1];
+      if (e.shiftKey && document.activeElement === first) {
+        e.preventDefault();
+        last.focus();
+      } else if (!e.shiftKey && document.activeElement === last) {
+        e.preventDefault();
+        first.focus();
+      }
+    };
     window.addEventListener("keydown", handler);
-    return () => window.removeEventListener("keydown", handler);
+    return () => {
+      window.removeEventListener("keydown", handler);
+      if (previouslyFocused instanceof HTMLElement) previouslyFocused.focus();
+    };
   }, [item, onClose]);
 
   if (!item) return null;
@@ -50,6 +78,10 @@ export default function DetailModal({ item, onClose }) {
       onClick={onClose}
     >
       <div
+        ref={dialogRef}
+        role="dialog"
+        aria-modal="true"
+        aria-label={`รายละเอียดผลตรวจ ${VERDICT_TH[item.label] ?? item.label}`}
         className="max-h-[88vh] w-full max-w-2xl overflow-y-auto rounded-xl border border-slate-700 bg-slate-900"
         onClick={(e) => e.stopPropagation()}
       >
@@ -77,9 +109,10 @@ export default function DetailModal({ item, onClose }) {
               </button>
             )}
             <button
+              ref={closeRef}
               onClick={onClose}
               className="rounded-lg p-2 text-slate-400 hover:bg-slate-800 hover:text-white"
-              aria-label="Close"
+              aria-label="ปิด"
             >
               ✕
             </button>
@@ -177,21 +210,37 @@ export default function DetailModal({ item, onClose }) {
                 ดูฟีเจอร์ทั้งหมด ({Object.keys(item.features).length})
               </button>
               {showFeatures && (
-                <div className="overflow-hidden rounded-lg border border-slate-800">
-                  <table className="w-full text-xs">
-                    <tbody>
-                      {Object.entries(item.features).map(([k, v], i) => (
-                        <tr key={k}
-                            className={i % 2 ? "bg-slate-950" : "bg-slate-900"}>
-                          <td className="px-3 py-1.5 font-mono text-slate-400">{k}</td>
-                          <td className="px-3 py-1.5 text-right font-mono text-slate-200">
-                            {typeof v === "boolean" ? String(v) :
-                             v === null ? "—" : String(v)}
-                          </td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
+                <div className="space-y-3">
+                  {groupFeatures(item.features).map((group) => (
+                    <div key={group.title}
+                         className="overflow-hidden rounded-lg border border-slate-800">
+                      <div className="bg-slate-800/60 px-3 py-1.5 text-[11px] font-semibold text-slate-300">
+                        {group.title}
+                      </div>
+                      <table className="w-full text-xs">
+                        <tbody>
+                          {group.rows.map(([k, v], i) => {
+                            const notable = isNotable(k, v);
+                            return (
+                              <tr key={k}
+                                  className={i % 2 ? "bg-slate-950" : "bg-slate-900"}>
+                                <td className="px-3 py-1.5 text-slate-400">
+                                  {FEATURE_LABELS[k] || k}
+                                  <span className="ml-1 font-mono text-[10px] text-slate-600">{k}</span>
+                                </td>
+                                <td className={`px-3 py-1.5 text-right font-mono ${
+                                  notable ? "font-bold text-phishing" : "text-slate-200"
+                                }`}>
+                                  {typeof v === "boolean" ? String(v) :
+                                   v === null ? "—" : String(v)}
+                                </td>
+                              </tr>
+                            );
+                          })}
+                        </tbody>
+                      </table>
+                    </div>
+                  ))}
                 </div>
               )}
             </div>

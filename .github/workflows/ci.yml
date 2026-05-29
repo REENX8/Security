@@ -102,10 +102,11 @@ jobs:
           cache: npm
           cache-dependency-path: dashboard/package-lock.json
 
-      - name: Install + build
+      - name: Install + test + build
         working-directory: dashboard
         run: |
           npm ci
+          npm test
           npm run build
 
   docker-build:

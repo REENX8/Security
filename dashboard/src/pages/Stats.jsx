@@ -3,19 +3,27 @@ import TopTargetsBar from "../components/TopTargetsBar.jsx";
 import LabelPie from "../components/LabelPie.jsx";
 import HourHeatmap from "../components/HourHeatmap.jsx";
 import StatCard from "../components/StatCard.jsx";
+import ErrorBanner from "../components/ErrorBanner.jsx";
+import { StatCardSkeleton } from "../components/Skeleton.jsx";
 import { useStats } from "../api/queries.js";
 import { formatPct } from "../lib/format.js";
 
 export default function Stats() {
-  const { data: stats, isError, error } = useStats();
+  const { data: stats, isLoading, isError, error } = useStats();
+
+  if (isLoading) {
+    return (
+      <Layout title="สถิติเชิงลึก">
+        <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
+          {Array.from({ length: 3 }).map((_, i) => <StatCardSkeleton key={i} />)}
+        </div>
+      </Layout>
+    );
+  }
 
   return (
     <Layout title="สถิติเชิงลึก">
-      {isError && (
-        <div className="mb-6 rounded-lg border border-phishing/40 bg-phishing/10 px-4 py-3 text-sm text-phishing">
-          ไม่สามารถเชื่อมต่อ API ได้: {error.message}
-        </div>
-      )}
+      {isError && <div className="mb-6"><ErrorBanner error={error} /></div>}
 
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
         <StatCard title="อัตราการพบภัยคุกคาม" icon="📛"

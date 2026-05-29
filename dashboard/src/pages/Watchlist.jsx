@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import Layout from "../components/Layout.jsx";
+import { Skeleton } from "../components/Skeleton.jsx";
 import {
   getWatchlist, addWatchlistEntry, deleteWatchlistEntry,
   getWebhookDeliveries,
@@ -98,7 +99,13 @@ export default function Watchlist() {
           <div className="border-b border-slate-800 p-4 text-base font-semibold">
             แบรนด์ที่เฝ้าระวัง
           </div>
-          {isLoading && <div className="p-4 text-slate-400">กำลังโหลด...</div>}
+          {isLoading && (
+            <div className="space-y-2 p-4">
+              {Array.from({ length: 4 }).map((_, i) => (
+                <Skeleton key={i} className="h-9 w-full" />
+              ))}
+            </div>
+          )}
           {data && data.items.length === 0 && (
             <div className="p-4 text-slate-500">ยังไม่มีแบรนด์ในรายการ</div>
           )}
