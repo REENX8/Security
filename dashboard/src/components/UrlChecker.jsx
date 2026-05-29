@@ -2,6 +2,7 @@ import { useState } from "react";
 import { useQueryClient } from "@tanstack/react-query";
 import { useCheckUrl } from "../api/queries.js";
 import LabelBadge from "./LabelBadge.jsx";
+import RulesPanel from "./RulesPanel.jsx";
 import { formatPct, labelInfo } from "../lib/format.js";
 
 export default function UrlChecker() {
@@ -82,6 +83,14 @@ export default function UrlChecker() {
                 ` (edit distance: ${result.edit_distance})`}
             </p>
           )}
+
+          <div className="mt-4">
+            <RulesPanel
+              rules={result.rules}
+              mlScore={result.ml_score}
+              finalScore={result.score}
+            />
+          </div>
         </div>
       )}
     </div>

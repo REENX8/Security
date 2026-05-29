@@ -23,14 +23,23 @@ export default function Layout({ title, children }) {
             <h1 className="text-lg font-bold md:text-xl">{title}</h1>
           </div>
 
-          <div className="flex items-center gap-2 text-xs">
-            <span
-              className={`h-2.5 w-2.5 rounded-full ${
-                health?.model_ready ? "bg-safe" : "bg-phishing"
-              }`}
-            />
-            <span className="text-slate-400">
-              {health?.model_ready ? "โมเดลพร้อมใช้งาน" : "โมเดลไม่พร้อม"}
+          <div className="flex items-center gap-3 text-xs">
+            {health?.schema_version && (
+              <span className="hidden rounded-full border border-slate-700 px-2.5 py-1 font-mono text-[11px] text-slate-400 sm:inline">
+                schema {health.schema_version}
+                {health.model_metrics?.test_f1 != null &&
+                  ` · F1 ${Number(health.model_metrics.test_f1).toFixed(3)}`}
+              </span>
+            )}
+            <span className="flex items-center gap-2">
+              <span
+                className={`h-2.5 w-2.5 rounded-full ${
+                  health?.model_ready ? "bg-safe" : "bg-phishing"
+                }`}
+              />
+              <span className="text-slate-400">
+                {health?.model_ready ? "โมเดลพร้อมใช้งาน" : "โมเดลไม่พร้อม"}
+              </span>
             </span>
           </div>
         </header>

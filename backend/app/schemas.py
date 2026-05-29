@@ -59,6 +59,7 @@ class HistoryItem(BaseModel):
     edit_distance: int | None = None
     checked_at: str
     features: dict[str, Any] | None = None
+    rules: dict[str, Any] | None = None
 
 
 class HistoryResponse(BaseModel):

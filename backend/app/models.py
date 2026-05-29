@@ -35,6 +35,7 @@ class UrlCheck(Base):
     )
     reason: Mapped[str] = mapped_column(String(512), default="")
     features: Mapped[dict] = mapped_column(JsonType, default=dict)
+    rules: Mapped[dict | None] = mapped_column(JsonType, nullable=True)
     closest_domain: Mapped[str | None] = mapped_column(
         String(255), nullable=True
     )
@@ -53,6 +54,7 @@ class UrlCheck(Base):
             "label": self.label.value,
             "reason": self.reason,
             "features": self.features,
+            "rules": self.rules,
             "closest_domain": self.closest_domain,
             "edit_distance": self.edit_distance,
             "checked_at": self.checked_at.isoformat(),

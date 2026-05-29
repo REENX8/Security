@@ -9,7 +9,7 @@ export default {
         phishing: "#ef4444",
       },
       fontFamily: {
-        sans: ["Segoe UI", "Sarabun", "Tahoma", "sans-serif"],
+        sans: ["Sarabun", "Segoe UI", "Tahoma", "sans-serif"],
       },
     },
   },
