@@ -18,6 +18,8 @@ from ml_pipeline.config import DATASET_CSV, WHITELIST_JSON
 _NETWORK_COLS = [
     "domain_age_days", "is_known_registrar", "has_valid_cert",
     "cert_age_days", "is_self_signed", "whois_ok", "tls_ok",
+    # v1.5 simulated TLS-derived columns
+    "cert_is_lets_encrypt", "cert_validity_days", "cert_san_count",
 ]
 
 

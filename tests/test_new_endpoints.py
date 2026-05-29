@@ -8,9 +8,11 @@ def test_version_endpoint(client):
     resp = client.get("/version")
     assert resp.status_code == 200
     body = resp.json()
+    from phish_features.schema import FEATURE_SCHEMA_VERSION
+
     assert "backend" in body
     assert "phish_features" in body
-    assert body["schema"] == "1.4.0"
+    assert body["schema"] == FEATURE_SCHEMA_VERSION
 
 
 def test_request_id_header_propagates(client):

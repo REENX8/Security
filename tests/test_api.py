@@ -15,9 +15,11 @@ def test_health_reports_model_ready(client):
     resp = client.get("/health")
     assert resp.status_code == 200
     body = resp.json()
+    from phish_features.schema import FEATURE_SCHEMA_VERSION
+
     assert body["model_ready"] is True
     assert body["db_ok"] is True
-    assert body["schema_version"] == "1.4.0"
+    assert body["schema_version"] == FEATURE_SCHEMA_VERSION
     assert isinstance(body["model_metrics"], dict)
 
 
