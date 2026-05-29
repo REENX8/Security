@@ -232,7 +232,7 @@ verdict กลับ:
 |------|------|----------|
 | Lexical v1 | 10 | url_length, num_dots, has_ip, entropy |
 | Lexical v1.1 | 5 | path_depth, max_digit_run, has_query_string |
-| Domain | 4 | domain_age_days, is_thai_tld, tld_type, is_known_registrar |
+| Domain | 4 | domain_age_days, is_thai_tld, tld_type_enc, is_known_registrar |
 | Whitelist | 2 | min_edit_distance, is_typosquat |
 | TLS | 3 | has_valid_cert, cert_age_days, is_self_signed |
 | Meta | 2 | whois_ok, tls_ok |
