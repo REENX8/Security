@@ -1,18 +1,18 @@
 {
-  "accuracy": 0.9992,
-  "precision": 0.9983,
-  "recall": 1.0,
-  "f1_score": 0.9992,
-  "roc_auc": 1.0,
+  "accuracy": 0.9988,
+  "precision": 0.9992,
+  "recall": 0.9983,
+  "f1_score": 0.9987,
+  "roc_auc": 0.9996,
   "test_rows": 2400,
   "confusion_matrix": [
     [
-      1198,
-      2
+      1199,
+      1
     ],
     [
-      0,
-      1200
+      2,
+      1198
     ]
   ],
   "data_source": "same_distribution_synthetic",
