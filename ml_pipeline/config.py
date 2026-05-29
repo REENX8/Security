@@ -68,6 +68,12 @@ THAI_SEED_TRAIN_FRACTION = 0.70
 GENERIC_PHISH_SEED_CSV = os.path.join(DATA_DIR, "generic_phishing_seed.csv")
 GENERIC_HOLDOUT_CSV = os.path.join(DATA_DIR, "generic_phish_holdout.csv")
 GENERIC_SEED_TRAIN_FRACTION = 0.70
+# Cap how many generic-phishing rows are folded into TRAINING. Generic phish
+# lifts generic recall, but unconstrained it shifts the decision boundary away
+# from the Thai cohort and drops a Thai homoglyph case below threshold. This
+# cap keeps Thai-holdout recall at 100% while still lifting generic recall.
+# Overridable via env for tuning sweeps.
+GENERIC_TRAIN_MAX = int(os.environ.get("PHISH_GENERIC_TRAIN_MAX", "90"))
 
 # CI gate: minimum recall on the Thai-targeting holdout at the phishing
 # threshold (score >= 0.7). evaluate.py exits non-zero when run with

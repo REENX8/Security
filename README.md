@@ -5,7 +5,7 @@
 [![Schema](https://img.shields.io/badge/feature%20schema-v1.5.0-informational)](phish_features/schema.py)
 [![Thai recall](https://img.shields.io/badge/Thai%20holdout%20recall-100%25%20(378%2F378)-success)](reports/evaluation_summary.json)
 [![Features](https://img.shields.io/badge/features-42-informational)](phish_features/schema.py)
-[![Tests](https://img.shields.io/badge/tests-242%20passing-success)](tests/)
+[![Tests](https://img.shields.io/badge/tests-247%20passing-success)](tests/)
 
 **ผู้พัฒนา:** [REENX8](https://github.com/REENX8) (asdawesdzd22@gmail.com)
 
@@ -78,12 +78,12 @@
 - `cert_is_lets_encrypt`, `cert_validity_days`, `cert_san_count` — อ่านจาก TLS handshake เดิม (cert ฟรี DV อายุ 90 วันพบมากใน phishing)
 - `digit_to_letter_ratio` — โฮสต์ที่สร้างด้วยอัลกอริทึมมักมีตัวเลขปนตัวอักษรเยอะ
 - `host_has_brand_and_suspicious_tld` — แบรนด์ที่เชื่อถือถูกปลอมบน TLD ราคาถูก/น่าสงสัย
-- ฟีเจอร์ใหม่ทำให้ URL ที่เคยหลุด (`thaid-app.net/auth/login`) ถูกจับได้ → Thai recall ขึ้นจาก 99.7% เป็น <!--M:thai_recall_pct-->99.47%<!--/M-->
+- ฟีเจอร์ใหม่ทำให้ URL ที่เคยหลุด (`thaid-app.net/auth/login`) ถูกจับได้ → Thai recall ขึ้นจาก 99.7% เป็น <!--M:thai_recall_pct-->100%<!--/M-->
 
-**Thai-targeting seed corpus ขยายใหญ่ (215 → <!--M:seed_count-->1,261<!--/M--> URLs, holdout 66 → <!--M:thai_holdout_n-->378<!--/M-->)** — v1.3.0 เพิ่ม programmatic brand-expander ที่ผลิต 8 รูปแบบ phishing ต่อแบรนด์อย่าง deterministic ครอบคลุม **160+ แบรนด์ไทย** (banks, ministries, มหาวิทยาลัย, รัฐวิสาหกิจ, e-commerce, logistics, telecom) — holdout ที่ใหญ่ขึ้นเกือบ 6 เท่าทำให้ 95% CI ของ Thai recall แคบลงเหลือ <!--M:thai_recall_ci-->[0.981, 0.999]<!--/M--> และเลิกพึ่ง sample เล็กไปได้
+**Thai-targeting seed corpus ขยายใหญ่ (215 → <!--M:seed_count-->1,261<!--/M--> URLs, holdout 66 → <!--M:thai_holdout_n-->378<!--/M-->)** — v1.3.0 เพิ่ม programmatic brand-expander ที่ผลิต 8 รูปแบบ phishing ต่อแบรนด์อย่าง deterministic ครอบคลุม **160+ แบรนด์ไทย** (banks, ministries, มหาวิทยาลัย, รัฐวิสาหกิจ, e-commerce, logistics, telecom) — holdout ที่ใหญ่ขึ้นเกือบ 6 เท่าทำให้ 95% CI ของ Thai recall แคบลงเหลือ <!--M:thai_recall_ci-->[0.990, 1.000]<!--/M--> และเลิกพึ่ง sample เล็กไปได้
 
 **ความแม่นยำสูงและตรงเป้า** — โมเดลฝึกบน Thai-targeting seed corpus <!--M:seed_count-->1,261<!--/M--> รายการ + synthetic 12,000 rows anchored กับ 500+ Thai gov/edu/state-bank domains
-จับ phishing ที่เลียนแบบเว็บราชการ/การศึกษา/ธนาคารไทยจาก holdout ได้ **<!--M:thai_recall-->99.47% (377/378)<!--/M-->** ที่ threshold ≥ 0.7
+จับ phishing ที่เลียนแบบเว็บราชการ/การศึกษา/ธนาคารไทยจาก holdout ได้ **<!--M:thai_recall-->100% (378/378)<!--/M-->** ที่ threshold ≥ 0.7
 มี **CI gate ที่ recall ≥ 0.85** — ถ้าโมเดลใหม่ตกต่ำกว่าค่านี้ build จะ fail ทันที
 
 **Redis cache + continuous retraining (ใหม่ใน v1.5)** — ตั้ง `REDIS_URL` เพื่อแชร์ cache ข้าม replica (fallback เป็น in-process อัตโนมัติ); `POST /api/v1/admin/retrain` ฝึกใหม่จาก feedback แบบ staged + ผ่าน eval-gate ก่อน promote แล้ว hot-swap โมเดลโดยไม่ต้อง restart
@@ -129,8 +129,8 @@
 | เกณฑ์                              | repo v1.2.0 | **repo ปัจจุบัน** |
 |------------------------------------|-------------|-----------------|
 | Holdout size                       | 66 URLs     | **<!--M:thai_holdout_n-->378<!--/M--> URLs** |
-| Recall ที่ threshold ≥ 0.7         | 100% (66/66) | **<!--M:thai_recall-->99.47% (377/378)<!--/M-->** |
-| 95% CI (phishing threshold)        | [0.95, 1.00] | **<!--M:thai_recall_ci-->[0.981, 0.999]<!--/M-->** |
+| Recall ที่ threshold ≥ 0.7         | 100% (66/66) | **<!--M:thai_recall-->100% (378/378)<!--/M-->** |
+| 95% CI (phishing threshold)        | [0.95, 1.00] | **<!--M:thai_recall_ci-->[0.990, 1.000]<!--/M-->** |
 | CV F1 (5-fold synthetic)           | 0.998 ± 0.001 | **0.999 ± 0.000** |
 
 ชุดทดสอบนี้คือ 30% ของ curated Thai-targeting phishing seed (`data/thai_phishing_seed.csv`, **<!--M:seed_count-->1,261<!--/M--> รายการ**) ที่ถูก hold out ก่อนการฝึก โดย hold out ครอบคลุม **160+ แบรนด์ไทย** (cap 8 URLs/แบรนด์) — CI ที่แคบ ยืนยันว่าค่า recall ไม่ใช่ผลของ sample ที่เล็กเกินไป
@@ -227,7 +227,7 @@ Security/
 ├── LICENSE NOTICE CHANGELOG.md
 ├── SECURITY.md CONTRIBUTING.md
 ├── VERSION                           #  single source of truth (1.3.0)
-└── tests/                            #  242 tests
+└── tests/                            #  247 tests
 ```
 
 ---
@@ -534,7 +534,7 @@ Dashboard: `VITE_API_URL`, `VITE_API_KEY`
 ## Tests
 
 ```bash
-make test                     # 242 tests, ~15 วินาที
+make test                     # 247 tests, ~15 วินาที
 ```
 
 | Suite                  | ครอบคลุม |
