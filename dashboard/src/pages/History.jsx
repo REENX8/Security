@@ -2,6 +2,7 @@ import { useState } from "react";
 import Layout from "../components/Layout.jsx";
 import HistoryTable from "../components/HistoryTable.jsx";
 import DetailModal from "../components/DetailModal.jsx";
+import ErrorBanner from "../components/ErrorBanner.jsx";
 import { useHistory } from "../api/queries.js";
 import { getHistory } from "../api/client.js";
 import { downloadCsv, toCsv } from "../lib/csv.js";
@@ -131,11 +132,7 @@ export default function History() {
         </div>
       </div>
 
-      {isError && (
-        <div className="mb-4 rounded-lg border border-phishing/40 bg-phishing/10 px-4 py-3 text-sm text-phishing">
-          โหลดข้อมูลไม่สำเร็จ: {error.message}
-        </div>
-      )}
+      {isError && <div className="mb-4"><ErrorBanner error={error} /></div>}
 
       <HistoryTable
         items={data?.items || []}

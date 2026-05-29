@@ -2,6 +2,9 @@
 
 from __future__ import annotations
 
+import asyncio
+import logging
+
 from fastapi import APIRouter, Depends, Request
 from sqlalchemy.ext.asyncio import AsyncSession
 from starlette.concurrency import run_in_threadpool
@@ -25,11 +28,16 @@ from app.schemas import (
 
 router = APIRouter()
 
+_log = logging.getLogger("phish-detector")
 
-async def _score_and_persist(
-    request: Request, session: AsyncSession, url: str
-) -> dict:
-    """Score one URL with caching, persistence and metric updates."""
+# Bound the number of URLs scored concurrently in a batch. Scoring runs in a
+# threadpool (sklearn inference + optional network), so a small ceiling keeps
+# latency low without exhausting the default threadpool.
+_BATCH_CONCURRENCY = 8
+
+
+async def _score_url(request: Request, url: str) -> dict:
+    """Score one URL (cache, unshorten, model, content fallback). No DB I/O."""
     scorer = get_scorer(request)
     cache = getattr(request.app.state, "cache", None)
 
@@ -60,17 +68,25 @@ async def _score_and_persist(
             from app.ml.scorer import label_from_score
             new_score = max(0.0, min(1.0, result["score"] + adj))
             result = {**result, "score": new_score, "label": label_from_score(new_score)}
-    # Persist history + cluster the campaign + maybe fire a webhook --
-    # ALL of these are observability work. A failure in any one of them
-    # must never block the verdict from reaching the user. Scoring is the
-    # contract; everything below is best-effort.
+
+    if cache is not None:
+        cache.set(url, result)
+        CACHE_SIZE.set(len(cache))
+    CHECKS_TOTAL.labels(label=result["label"], cached="false").inc()
+    return {**result, "cached": False}
+
+
+async def _persist_observability(session: AsyncSession, result: dict) -> None:
+    """Best-effort history + campaign + webhook work. Never blocks a verdict.
+
+    Persisting history, clustering the campaign and firing a webhook are all
+    observability concerns. A failure in any one of them must never stop the
+    verdict from reaching the user. Scoring is the contract; this is extra.
+    """
     try:
         await insert_check(session, result)
     except Exception as exc:  # noqa: BLE001 - any DB driver/network error
-        import logging
-        logging.getLogger("phish-detector").warning(
-            "history persist skipped (db unreachable): %s", exc
-        )
+        _log.warning("history persist skipped (db unreachable): %s", exc)
 
     if settings.enable_campaign_tracking and result["label"] in (
         "phishing", "suspicious"
@@ -82,10 +98,7 @@ async def _score_and_persist(
                 closest_domain=result.get("closest_domain"),
             )
         except Exception as exc:  # noqa: BLE001
-            import logging
-            logging.getLogger("phish-detector").warning(
-                "campaign clustering skipped: %s", exc
-            )
+            _log.warning("campaign clustering skipped: %s", exc)
 
     try:
         await maybe_alert(
@@ -97,16 +110,18 @@ async def _score_and_persist(
             reason=result.get("reason", ""),
         )
     except Exception as exc:  # noqa: BLE001
-        import logging
-        logging.getLogger("phish-detector").warning(
-            "watchlist alert skipped: %s", exc
-        )
+        _log.warning("watchlist alert skipped: %s", exc)
 
-    if cache is not None:
-        cache.set(url, result)
-        CACHE_SIZE.set(len(cache))
-    CHECKS_TOTAL.labels(label=result["label"], cached="false").inc()
-    return {**result, "cached": False}
+
+async def _score_and_persist(
+    request: Request, session: AsyncSession, url: str
+) -> dict:
+    """Score one URL with caching, persistence and metric updates."""
+    result = await _score_url(request, url)
+    # Cache hits were already persisted on their first sighting; don't dup.
+    if not result.get("cached"):
+        await _persist_observability(session, result)
+    return result
 
 
 @router.post(
@@ -141,8 +156,21 @@ async def check_batch(
             code="BATCH_TOO_LARGE",
             status_code=413,
         )
+
+    # Score concurrently (CPU/network-bound, threadpool) with a bounded
+    # semaphore; gather preserves input order. Persist sequentially afterwards
+    # because the AsyncSession is not safe for concurrent use.
+    sem = asyncio.Semaphore(_BATCH_CONCURRENCY)
+
+    async def _score_one(u: str) -> dict:
+        async with sem:
+            return await _score_url(request, u)
+
+    scored = await asyncio.gather(*[_score_one(u) for u in payload.urls])
+
     results = []
-    for url in payload.urls:
-        result = await _score_and_persist(request, session, url)
+    for result in scored:
+        if not result.get("cached"):
+            await _persist_observability(session, result)
         results.append(CheckResponse(**result))
     return BatchCheckResponse(count=len(results), results=results)
