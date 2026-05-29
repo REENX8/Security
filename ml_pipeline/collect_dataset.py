@@ -42,6 +42,8 @@ from ml_pipeline.synthetic_generator import SyntheticGenerator
 _FIELDS = [
     "url", "label", "domain_age_days", "is_known_registrar",
     "has_valid_cert", "cert_age_days", "is_self_signed", "whois_ok", "tls_ok",
+    # v1.5 simulated TLS-derived columns
+    "cert_is_lets_encrypt", "cert_validity_days", "cert_san_count",
 ]
 
 

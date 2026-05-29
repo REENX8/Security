@@ -1,14 +1,14 @@
 {
-  "accuracy": 1.0,
-  "precision": 1.0,
+  "accuracy": 0.9992,
+  "precision": 0.9983,
   "recall": 1.0,
-  "f1_score": 1.0,
+  "f1_score": 0.9992,
   "roc_auc": 1.0,
   "test_rows": 2400,
   "confusion_matrix": [
     [
-      1200,
-      0
+      1198,
+      2
     ],
     [
       0,

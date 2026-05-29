@@ -117,6 +117,9 @@ def extract_lexical(url: str) -> dict:
     path_parts = [p for p in parsed.path.split("/") if p]
     digit_runs = _DIGIT_RUN_RE.findall(host)
 
+    host_digits = sum(ch.isdigit() for ch in host)
+    host_letters = sum(ch.isalpha() for ch in host)
+
     return {
         "url_length": len(norm),
         "num_dots": norm.count("."),
@@ -143,4 +146,10 @@ def extract_lexical(url: str) -> dict:
         "query_param_count": _count_query_params(parsed.query or ""),
         "path_entropy": round(shannon_entropy(unquote(parsed.path or "")), 6),
         "host_token_count": len(_HOST_TOKEN_RE.findall(host)),
+        # v1.5: algorithmically-generated phishing hosts pack digits among
+        # letters; legit brand hosts are letter-dominant. For IP hosts (no
+        # letters) this is the digit count, which is itself a strong signal.
+        "digit_to_letter_ratio": round(
+            host_digits / host_letters if host_letters else float(host_digits), 6
+        ),
     }

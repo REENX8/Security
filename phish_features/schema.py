@@ -27,7 +27,14 @@ from __future__ import annotations
 #             query_param_count, path_entropy, host_token_count. These give
 #             the model richer signal on credential-stuffed paths and
 #             brand-stuffed hostnames without adding any network lookups.
-FEATURE_SCHEMA_VERSION = "1.4.0"
+#   v1.5.0 -- 5 new features that add signal WITHOUT new network lookups:
+#             three are parsed from the SAME TLS handshake the model already
+#             performs (cert_is_lets_encrypt, cert_validity_days,
+#             cert_san_count) -- free DV certs with short 90-day validity
+#             over-index heavily on phishing; two are deterministic
+#             (digit_to_letter_ratio, host_has_brand_and_suspicious_tld --
+#             a brand impersonated on a cheap/abused TLD).
+FEATURE_SCHEMA_VERSION = "1.5.0"
 
 # The exact, ordered list of numeric features fed to the model.
 # Index position IS the contract -- never reorder, only append + bump version.
@@ -82,6 +89,12 @@ ORDERED_FEATURES: list[str] = [
     "query_param_count",    # number of query parameters (& separators + 1 if ? present)
     "path_entropy",         # Shannon entropy of the URL path string
     "host_token_count",     # alphanumeric tokens in hostname (split on - and .)
+    # --- v1.5 features (no new network lookups) ---
+    "digit_to_letter_ratio",          # host digits / host letters (algorithmic hosts skew high)
+    "cert_is_lets_encrypt",           # 1 if leaf cert issuer is a free DV CA (Let's Encrypt et al.)
+    "cert_validity_days",             # notAfter - notBefore in days (90 = LE; legit DV/OV longer)
+    "cert_san_count",                 # number of subjectAltName entries on the leaf cert
+    "host_has_brand_and_suspicious_tld",  # trusted brand impersonated on a cheap/abused TLD
 ]
 
 N_FEATURES = len(ORDERED_FEATURES)
@@ -108,6 +121,10 @@ IMPUTED_DEFAULTS: dict[str, float] = {
     "is_self_signed": 0,
     "whois_ok": 0,
     "tls_ok": 0,
+    # v1.5 TLS-derived: -1/0 = "unknown", same convention as cert_age_days.
+    "cert_is_lets_encrypt": 0,
+    "cert_validity_days": -1,
+    "cert_san_count": -1,
 }
 
 # Known Thai domain registrars (lower-cased substrings matched against the
