@@ -5,7 +5,7 @@
 [![Schema](https://img.shields.io/badge/feature%20schema-v1.5.0-informational)](phish_features/schema.py)
 [![Thai recall](https://img.shields.io/badge/Thai%20holdout%20recall-100%25%20(378%2F378)-success)](reports/evaluation_summary.json)
 [![Features](https://img.shields.io/badge/features-42-informational)](phish_features/schema.py)
-[![Tests](https://img.shields.io/badge/tests-247%20passing-success)](tests/)
+[![Tests](https://img.shields.io/badge/tests-248%20passing-success)](tests/)
 
 **ผู้พัฒนา:** [REENX8](https://github.com/REENX8) (asdawesdzd22@gmail.com)
 
@@ -135,14 +135,16 @@
 
 ชุดทดสอบนี้คือ 30% ของ curated Thai-targeting phishing seed (`data/thai_phishing_seed.csv`, **<!--M:seed_count-->1,261<!--/M--> รายการ**) ที่ถูก hold out ก่อนการฝึก โดย hold out ครอบคลุม **160+ แบรนด์ไทย** (cap 8 URLs/แบรนด์) — CI ที่แคบ ยืนยันว่าค่า recall ไม่ใช่ผลของ sample ที่เล็กเกินไป
 
-### 🌐 Generic — Real-world phishing holdout (ทางเลือก, ต้องมี live feed)
-ระบบนี้ถูก **จูนให้เน้น Thai-targeting โดยตั้งใจ** (alignment score เป็นบวก) — recall บน generic
-phishing จึงต่ำกว่าและ**ผันผวนสูงตาม snapshot ของ feed** จึงเป็นเพียง cross-check ไม่ใช่ metric หลัก
-และไม่ถูก commit เป็นค่าตายตัว รันเพื่อวัดสำหรับโมเดลปัจจุบัน:
+### 🌐 Generic — Real-world phishing holdout (committed cross-check)
+เดิมโมเดลฝึกแบบ `--no-feeds` จึง**ตาบอดต่อ generic phishing** (จับได้แค่ ~4% บน holdout นี้)
+v1.5 เพิ่ม **committed snapshot ของ generic phishing จริง** (`data/generic_phishing_seed.csv`
+จาก OpenPhish) fold เข้า training (cap 90 rows) แล้วแยก 30% เป็น holdout — generic recall ขึ้นเป็น
+**<!--M:generic_recall-->n/a (run `make evaluate` with live feeds)<!--/M-->** โดย **Thai recall ยังคง 100% (378/378)**
 
-```bash
-make evaluate   # ต้องเข้าถึง OpenPhish ได้ -> เขียน generic recall ลง evaluation_summary.json
-```
+> ⚠️ **เป็น in-distribution cross-check**: holdout มาจาก feed snapshot เดียวกับ training (คนละ URL,
+> ไม่มี host ซ้ำกับ training set เลย แต่เป็น scrape วันเดียวกัน) ตัวเลขนี้จึง**มองโลกในแง่ดี** — phishing
+> ทั่วไปแบบใหม่จริง ๆ จะได้ต่ำกว่านี้ ค่าที่ commit ไว้ reproducible แบบ offline; อัปเดต snapshot ด้วย
+> `python scripts/collect_generic_phishing_seed.py` แล้ว retrain เพื่อตามรูปแบบใหม่ให้ทัน
 
 **CI gate** ที่ `THAI_RECALL_MIN_THRESHOLD = 0.85` — ถ้าตกต่ำกว่าค่านี้ CI fail (`python -m ml_pipeline.evaluate --enforce-threshold`)
 
@@ -227,7 +229,7 @@ Security/
 ├── LICENSE NOTICE CHANGELOG.md
 ├── SECURITY.md CONTRIBUTING.md
 ├── VERSION                           #  single source of truth (1.3.0)
-└── tests/                            #  247 tests
+└── tests/                            #  248 tests
 ```
 
 ---
@@ -534,7 +536,7 @@ Dashboard: `VITE_API_URL`, `VITE_API_KEY`
 ## Tests
 
 ```bash
-make test                     # 247 tests, ~15 วินาที
+make test                     # 248 tests, ~15 วินาที
 ```
 
 | Suite                  | ครอบคลุม |
