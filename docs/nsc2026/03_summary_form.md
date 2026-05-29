@@ -57,10 +57,11 @@ STIX 2.1 (no auth) + **Citizen Report Portal** ไม่ต้อง login
 
 * **Thai-targeting holdout (378 URL ที่โมเดลไม่เคยเห็น):** recall **100% (378/378)**
   ที่ threshold ≥ 0.7
-* **Generic phishing holdout:** cross-check ทางเลือก (ต้องมี live feed) — ระบบจูน
-  เน้น Thai-targeting โดยตั้งใจ recall generic จึงต่ำกว่าและผันผวนตาม snapshot
+* **Generic phishing holdout (90 URL committed snapshot):** recall **91.11% (82/90)** —
+  ระบบจูนเน้น Thai-targeting โดยตั้งใจ recall generic จึงต่ำกว่า Thai holdout
+  เป็น in-distribution cross-check ที่ reproduce ได้ offline ด้วย `make evaluate`
 * **CI gate ≥ 0.85** — automated, fail build ถ้า regress
-* **248 automated tests** ผ่านทั้งหมด
+* **251 automated tests** ผ่านทั้งหมด
 
 ### ประโยชน์ (Sustainable Innovation)
 

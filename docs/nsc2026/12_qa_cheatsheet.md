@@ -21,9 +21,10 @@ Transformer ต้องการ GPU + RAM สูง ไม่คุ้ม URL 
 
 **Q: ทำไม recall บน generic phishing ถึงต่ำกว่า Thai holdout?**
 → ตั้งใจ — ระบบนี้ออกแบบเพื่อ Thai-targeting โดยเฉพาะ (alignment score เป็นบวก)
-generic เป็นเพียง cross-check ทางเลือก และ**ผันผวนสูงตาม snapshot ของ feed**
-(วัดบน OpenPhish คนละวันได้ค่าต่างกันมาก) จึงไม่ผูกเป็นตัวเลขตายตัวในเอกสาร —
-วัดสำหรับโมเดลปัจจุบันได้ด้วย `make evaluate` ที่เข้าถึง live feed ได้
+generic เป็นเพียง cross-check ทางเลือก วัดได้ **91.11% (82/90)** บน committed snapshot
+ของ OpenPhish/URLhaus (split คงที่ด้วย seed) reproduce ได้ offline ด้วย `make evaluate`
+**ข้อควรระวังที่ผมยอมรับเอง:** host ~24% ซ้ำระหว่าง train/holdout จึงเป็น in-distribution
+cross-check ไม่ใช่การทดสอบ phishing แปลกใหม่อิสระ — แต่คงที่และตรวจสอบซ้ำได้
 
 ---
 

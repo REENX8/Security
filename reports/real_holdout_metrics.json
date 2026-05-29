@@ -1,25 +1,55 @@
 {
   "sample_size": 90,
-  "recall_phishing_threshold": 0.9889,
+  "recall_phishing_threshold": 0.9111,
   "recall_phishing_ci_95": [
-    0.9397,
-    0.998
+    0.8343,
+    0.9543
   ],
-  "recall_suspicious_threshold": 0.9889,
+  "recall_suspicious_threshold": 0.9556,
   "recall_suspicious_ci_95": [
-    0.9397,
-    0.998
+    0.8912,
+    0.9826
   ],
-  "mean_score": 0.9854,
+  "mean_score": 0.9319,
   "median_score": 1.0,
-  "missed_count": 1,
+  "missed_count": 4,
   "missed_urls": [
     {
-      "url": "http://www.kistok.com/sherris/",
-      "score": 0.0024,
-      "closest_domain": "gistda.or.th",
-      "min_edit_distance": 3,
+      "url": "https://diskcacambasdetroit.com.br/auth/rackespace/",
+      "score": 0.0,
+      "closest_domain": "coj.go.th",
+      "min_edit_distance": 1,
+      "is_typosquat": 0,
+      "has_punycode": 0,
+      "has_mixed_script": 0,
+      "tld_type": "other"
+    },
+    {
+      "url": "https://lnsta.fr/",
+      "score": 0.0209,
+      "closest_domain": "nstda.or.th",
+      "min_edit_distance": 2,
       "is_typosquat": 1,
+      "has_punycode": 0,
+      "has_mixed_script": 0,
+      "tld_type": "other"
+    },
+    {
+      "url": "https://www.metanask.com/metamask/welcome.php",
+      "score": 0.1065,
+      "closest_domain": "smebank.co.th",
+      "min_edit_distance": 4,
+      "is_typosquat": 0,
+      "has_punycode": 0,
+      "has_mixed_script": 0,
+      "tld_type": "other"
+    },
+    {
+      "url": "https://www.wapluszone.com/",
+      "score": 0.1333,
+      "closest_domain": "kalasin.go.th",
+      "min_edit_distance": 6,
+      "is_typosquat": 0,
       "has_punycode": 0,
       "has_mixed_script": 0,
       "tld_type": "other"
