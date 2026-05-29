@@ -65,7 +65,7 @@
     "cert_san_count": -1
   },
   "whitelist_sha256": "0f1348f26de6b0f3",
-  "trained_at": "2026-05-29T07:21:32.563142Z",
+  "trained_at": "2026-05-29T07:34:15.258318Z",
   "sklearn_version": "1.5.2",
   "xgboost_version": "2.1.3",
   "metrics": {
