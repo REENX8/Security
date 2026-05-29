@@ -50,6 +50,7 @@ async def history(
             edit_distance=r.edit_distance,
             checked_at=r.checked_at.isoformat(),
             features=r.features,
+            rules=r.rules,
         )
         for r in rows
     ]

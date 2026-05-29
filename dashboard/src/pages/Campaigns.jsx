@@ -1,6 +1,8 @@
 import { useState } from "react";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, keepPreviousData } from "@tanstack/react-query";
 import Layout from "../components/Layout.jsx";
+import ErrorBanner from "../components/ErrorBanner.jsx";
+import { CardSkeleton } from "../components/Skeleton.jsx";
 import { getCampaigns } from "../api/client.js";
 
 export default function Campaigns() {
@@ -10,7 +12,7 @@ export default function Campaigns() {
   const { data, isLoading, error } = useQuery({
     queryKey: ["campaigns", { brand: search, min_urls: minUrls }],
     queryFn: () => getCampaigns({ brand: search, min_urls: minUrls, limit: 100 }),
-    keepPreviousData: true,
+    placeholderData: keepPreviousData,
   });
 
   return (
@@ -43,12 +45,8 @@ export default function Campaigns() {
           </select>
         </div>
 
-        {isLoading && <div className="text-slate-400">กำลังโหลด...</div>}
-        {error && (
-          <div className="rounded-lg bg-phishing/10 px-3 py-2 text-phishing">
-            {error.message}
-          </div>
-        )}
+        {isLoading && <CardSkeleton rows={5} />}
+        {error && <ErrorBanner error={error} />}
 
         {data && (
           <div className="overflow-x-auto rounded-2xl border border-slate-800 bg-slate-900/60">

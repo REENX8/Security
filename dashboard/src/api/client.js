@@ -1,7 +1,13 @@
 // Backend API client.
 
-const BASE_URL = (import.meta.env.VITE_API_URL || "http://localhost:8000")
-  .replace(/\/+$/, "");
+function normalizeBase(raw) {
+  let v = (raw || "http://localhost:8000").replace(/\/+$/, "");
+  // Render's `fromService` injects a bare hostname; add a scheme so fetch works.
+  if (v && !/^https?:\/\//i.test(v)) v = `https://${v}`;
+  return v;
+}
+
+const BASE_URL = normalizeBase(import.meta.env.VITE_API_URL);
 const API_KEY = import.meta.env.VITE_API_KEY || "dev-local-key-change-me";
 
 async function request(path, options = {}) {
@@ -96,7 +102,7 @@ export function submitFeedback(data) {
 }
 
 export function getFeedbackExportUrl() {
-  return `${(import.meta.env.VITE_API_URL || "http://localhost:8000").replace(/\/+$/, "")}/api/v1/feedback/export`;
+  return `${BASE_URL}/api/v1/feedback/export`;
 }
 
 // --- Brand watchlist ---
@@ -146,6 +152,18 @@ export function getPublicFeed({ hours = 24, limit = 200 } = {}) {
 }
 
 export function getPublicFeedUrl(format = "json") {
-  const base = (import.meta.env.VITE_API_URL || "http://localhost:8000").replace(/\/+$/, "");
-  return `${base}/api/v1/feed.${format}`;
+  return `${BASE_URL}/api/v1/feed.${format}`;
+}
+
+// --- Social / economic impact (no auth required) ---
+
+export function getImpact(windowDays = 30) {
+  return request(`/api/v1/impact?window_days=${windowDays}`);
+}
+
+// --- Awareness content (no auth required) ---
+
+export function getLearn(audience) {
+  const qs = audience ? `?audience=${encodeURIComponent(audience)}` : "";
+  return request(`/api/v1/learn${qs}`);
 }

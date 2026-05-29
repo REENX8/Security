@@ -19,6 +19,7 @@ async def insert_check(session: AsyncSession, result: dict) -> UrlCheck:
         label=Label(result["label"]),
         reason=result["reason"][:512],
         features=result["features"],
+        rules=result.get("rules"),
         closest_domain=result.get("closest_domain"),
         edit_distance=result.get("edit_distance"),
     )

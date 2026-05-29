@@ -40,6 +40,11 @@ case "$MODE" in
     wait_for_health
     ;;
   --local|"")
+    log "Backfilling 14 days of demo history (charts, heatmap, campaigns) ..."
+    DATABASE_URL="sqlite+aiosqlite:///$(pwd)/backend/demo_phish.db" \
+      python scripts/seed_demo.py --backfill || \
+      log "backfill skipped (continuing with live seed only)"
+
     log "Starting backend locally with SQLite ..."
     if pgrep -f "uvicorn app.main:app" >/dev/null; then
         ok "backend already running"
@@ -59,7 +64,7 @@ case "$MODE" in
     ;;
 esac
 
-log "Seeding demo URLs (legitimate + typosquat + IDN/homoglyph) ..."
+log "Seeding a few live demo URLs (legitimate + typosquat + IDN/homoglyph) ..."
 python scripts/seed_demo.py "$API_URL" "$API_KEY"
 
 log "Verifying golden demo URLs ..."

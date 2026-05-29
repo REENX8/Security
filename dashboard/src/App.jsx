@@ -10,6 +10,8 @@ import Watchlist from "./pages/Watchlist.jsx";
 import Campaigns from "./pages/Campaigns.jsx";
 import Feed from "./pages/Feed.jsx";
 import DomainLookup from "./pages/DomainLookup.jsx";
+import Impact from "./pages/Impact.jsx";
+import Learn from "./pages/Learn.jsx";
 import About from "./pages/About.jsx";
 
 export default function App() {
@@ -25,6 +27,8 @@ export default function App() {
       <Route path="/watchlist" element={<Watchlist />} />
       <Route path="/campaigns" element={<Campaigns />} />
       <Route path="/domain" element={<DomainLookup />} />
+      <Route path="/impact" element={<Impact />} />
+      <Route path="/learn" element={<Learn />} />
       <Route path="/feed" element={<Feed />} />
       <Route path="/about" element={<About />} />
       <Route path="*" element={<Navigate to="/" replace />} />

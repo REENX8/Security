@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import LabelBadge from "./LabelBadge.jsx";
+import RulesPanel from "./RulesPanel.jsx";
 import { formatDateTime, formatPct, labelInfo } from "../lib/format.js";
 import { useSubmitFeedback } from "../api/queries.js";
 
@@ -11,6 +12,7 @@ export default function DetailModal({ item, onClose }) {
   const [correctVerdict, setCorrectVerdict] = useState("safe");
   const [comment, setComment] = useState("");
   const [feedbackSent, setFeedbackSent] = useState(false);
+  const [showFeatures, setShowFeatures] = useState(false);
   const submitFeedback = useSubmitFeedback();
 
   // close on escape
@@ -18,6 +20,7 @@ export default function DetailModal({ item, onClose }) {
     if (!item) return undefined;
     setShowFeedback(false);
     setFeedbackSent(false);
+    setShowFeatures(false);
     const handler = (e) => { if (e.key === "Escape") onClose(); };
     window.addEventListener("keydown", handler);
     return () => window.removeEventListener("keydown", handler);
@@ -149,6 +152,14 @@ export default function DetailModal({ item, onClose }) {
             </p>
           </div>
 
+          {item.rules && (
+            <RulesPanel
+              rules={item.rules}
+              mlScore={item.ml_score}
+              finalScore={item.score}
+            />
+          )}
+
           <div className="grid grid-cols-2 gap-4 sm:grid-cols-3">
             <KV label="ตรวจสอบเมื่อ" value={formatDateTime(item.checked_at)} />
             <KV label="โดเมนใกล้เคียง" value={item.closest_domain || "—"} />
@@ -157,25 +168,32 @@ export default function DetailModal({ item, onClose }) {
 
           {item.features && (
             <div>
-              <div className="mb-2 text-xs uppercase tracking-wide text-slate-500">
-                Features (21)
-              </div>
-              <div className="overflow-hidden rounded-lg border border-slate-800">
-                <table className="w-full text-xs">
-                  <tbody>
-                    {Object.entries(item.features).map(([k, v], i) => (
-                      <tr key={k}
-                          className={i % 2 ? "bg-slate-950" : "bg-slate-900"}>
-                        <td className="px-3 py-1.5 font-mono text-slate-400">{k}</td>
-                        <td className="px-3 py-1.5 text-right font-mono text-slate-200">
-                          {typeof v === "boolean" ? String(v) :
-                           v === null ? "—" : String(v)}
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
+              <button
+                onClick={() => setShowFeatures((v) => !v)}
+                className="mb-2 flex items-center gap-2 text-xs uppercase tracking-wide text-slate-400 hover:text-slate-200"
+                aria-expanded={showFeatures}
+              >
+                <span>{showFeatures ? "▾" : "▸"}</span>
+                ดูฟีเจอร์ทั้งหมด ({Object.keys(item.features).length})
+              </button>
+              {showFeatures && (
+                <div className="overflow-hidden rounded-lg border border-slate-800">
+                  <table className="w-full text-xs">
+                    <tbody>
+                      {Object.entries(item.features).map(([k, v], i) => (
+                        <tr key={k}
+                            className={i % 2 ? "bg-slate-950" : "bg-slate-900"}>
+                          <td className="px-3 py-1.5 font-mono text-slate-400">{k}</td>
+                          <td className="px-3 py-1.5 text-right font-mono text-slate-200">
+                            {typeof v === "boolean" ? String(v) :
+                             v === null ? "—" : String(v)}
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              )}
             </div>
           )}
         </div>

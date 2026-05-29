@@ -2,6 +2,7 @@ import { NavLink } from "react-router-dom";
 
 const NAV = [
   { to: "/", label: "ภาพรวม", icon: "📊", end: true },
+  { to: "/impact", label: "ผลกระทบเชิงสังคม", icon: "🌏" },
   { to: "/bulk", label: "ตรวจหลาย URL", icon: "📦" },
   { to: "/history", label: "ประวัติการตรวจสอบ", icon: "🗂️" },
   { to: "/stats", label: "สถิติเชิงลึก", icon: "📈" },
@@ -9,6 +10,7 @@ const NAV = [
   { to: "/watchlist", label: "เฝ้าระวังแบรนด์", icon: "🔔" },
   { to: "/domain", label: "ตรวจประวัติโดเมน", icon: "🔎" },
   { to: "/feed", label: "Threat Feed", icon: "📡" },
+  { to: "/learn", label: "เรียนรู้เท่าทันฟิชชิง", icon: "📚" },
   { to: "/admin", label: "จัดการ Whitelist", icon: "🛡️" },
   { to: "/feedback", label: "รายงานผลผิดพลาด", icon: "🚩" },
   { to: "/report", label: "แจ้งเว็บฟิชชิง", icon: "✉️" },

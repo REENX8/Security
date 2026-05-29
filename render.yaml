@@ -68,3 +68,25 @@ services:
         value: "https://*.onrender.com"
       - key: RATE_LIMIT
         value: "60/minute"
+
+  # Static dashboard so judges get a public, no-install URL. Vite bakes
+  # VITE_API_URL at build time; we point it at the backend service's host.
+  # client.js prefixes https:// when the value has no scheme.
+  - type: web
+    name: phish-dashboard
+    runtime: static
+    rootDir: dashboard
+    buildCommand: npm ci && npm run build
+    staticPublishPath: dist
+    autoDeploy: true
+    envVars:
+      - key: VITE_API_URL
+        fromService:
+          name: phish-backend
+          type: web
+          property: host
+    routes:
+      # SPA fallback so client-side routes (/impact, /learn, ...) deep-link.
+      - type: rewrite
+        source: /*
+        destination: /index.html

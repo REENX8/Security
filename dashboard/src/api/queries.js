@@ -1,10 +1,12 @@
 // TanStack Query hooks.
 
-import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import {
+  useQuery, useMutation, useQueryClient, keepPreviousData,
+} from "@tanstack/react-query";
 import {
   getStats, getHistory, checkUrl, checkBatch, getHealth,
   getWhitelist, addWhitelistEntry, deleteWhitelistEntry,
-  getFeedback, submitFeedback,
+  getFeedback, submitFeedback, getImpact, getLearn,
 } from "./client.js";
 
 export function useStats() {
@@ -19,7 +21,7 @@ export function useHistory(params) {
   return useQuery({
     queryKey: ["history", params],
     queryFn: () => getHistory(params),
-    keepPreviousData: true,
+    placeholderData: keepPreviousData,
   });
 }
 
@@ -49,7 +51,7 @@ export function useWhitelist(params) {
   return useQuery({
     queryKey: ["whitelist", params],
     queryFn: () => getWhitelist(params),
-    keepPreviousData: true,
+    placeholderData: keepPreviousData,
   });
 }
 
@@ -75,12 +77,32 @@ export function useFeedback(params) {
   return useQuery({
     queryKey: ["feedback", params],
     queryFn: () => getFeedback(params),
-    keepPreviousData: true,
+    placeholderData: keepPreviousData,
   });
 }
 
 export function useSubmitFeedback() {
   return useMutation({
     mutationFn: (data) => submitFeedback(data),
+  });
+}
+
+// --- Social/economic impact ---
+
+export function useImpact(windowDays = 30) {
+  return useQuery({
+    queryKey: ["impact", windowDays],
+    queryFn: () => getImpact(windowDays),
+    placeholderData: keepPreviousData,
+    refetchInterval: 60_000,
+  });
+}
+
+// --- Awareness content ---
+
+export function useLearn(audience) {
+  return useQuery({
+    queryKey: ["learn", audience || "all"],
+    queryFn: () => getLearn(audience),
   });
 }

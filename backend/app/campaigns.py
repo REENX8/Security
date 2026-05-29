@@ -71,8 +71,12 @@ async def record_campaign(
     *,
     url: str,
     closest_domain: str | None,
+    seen_at: dt.datetime | None = None,
 ) -> Campaign | None:
     """Upsert a campaign row for ``url`` and bump its counters.
+
+    ``seen_at`` overrides the timestamp (used by historical backfill so the
+    Campaigns view shows a realistic first/last-seen spread). Defaults to now.
 
     Returns the campaign row (None if URL is too generic to fingerprint).
     """
@@ -86,10 +90,17 @@ async def record_campaign(
         )
     ).scalar_one_or_none()
 
-    now = dt.datetime.now(dt.timezone.utc)
+    now = seen_at or dt.datetime.now(dt.timezone.utc)
     if existing:
         existing.url_count += 1
-        existing.last_seen = now
+        # SQLite returns naive datetimes; normalise to aware UTC before
+        # comparing so backfilled (aware) and stored timestamps are ordered.
+        def _aware(value: dt.datetime) -> dt.datetime:
+            return value if value.tzinfo else value.replace(tzinfo=dt.timezone.utc)
+        if existing.last_seen is None or _aware(existing.last_seen) < now:
+            existing.last_seen = now
+        if existing.first_seen is None or _aware(existing.first_seen) > now:
+            existing.first_seen = now
         await session.commit()
         await session.refresh(existing)
         return existing
