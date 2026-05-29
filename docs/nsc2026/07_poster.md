@@ -65,10 +65,10 @@ URL ปลอม         ความเสียหาย
 │              100% recall                 │   ← ตัวใหญ่สุด สีเขียว
 │              (378 / 378 URL)               │
 │                                          │
-│   Generic holdout: feed-dependent x-check│
+│  Generic holdout: 91% (82/90) x-check    │
 │                                          │
 │       CI gate ≥ 0.85 → PASS              │
-│       248 automated tests → PASS         │
+│       251 automated tests → PASS         │
 └──────────────────────────────────────────┘
 ```
 

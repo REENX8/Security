@@ -32,6 +32,14 @@ or mirror it explicitly.
   `models/previous` backup) only when the gate passes. New API-key-protected
   `POST /api/v1/admin/retrain` runs it and hot-swaps the scorer with no restart.
   `PHISH_MODELS_DIR` / `PHISH_REPORTS_DIR` let train/evaluate target staging.
+- **Committed generic-phishing seed + holdout** — a deterministic OpenPhish/URLhaus
+  snapshot (`data/generic_phishing_seed.csv`, 300 non-Thai URLs) is split 70/30 with
+  a fixed seed. Up to `PHISH_GENERIC_TRAIN_MAX` (default 90) rows feed training so
+  the decision boundary stays Thai-centric; the 90-URL holdout is evaluated offline
+  by `make evaluate`. This raises generic recall from ~57% to **91.11% (82/90)**
+  while keeping Thai recall at 100% (378/378). NB: ~24% host overlap between the
+  generic train/holdout split makes this an in-distribution cross-check, not an
+  independent test of novel phishing.
 - **Docs metric de-hardcoding** — `scripts/sync_docs_metrics.py` injects the
   numbers from `reports/evaluation_summary.json` into sentinel-wrapped spots in
   the docs; `make sync-docs` / `make sync-docs-check` (run in CI) keep them from
@@ -42,13 +50,12 @@ or mirror it explicitly.
 
 ### Changed
 
-- **Generic-phishing holdout is now documented as an optional, feed-dependent
-  cross-check, not a fixed headline.** It requires live feeds, is highly
-  variable across feed snapshots, and the system is deliberately tuned for
-  Thai-targeting (positive alignment score). The hardcoded "98.9% (89/90)"
-  claim was removed from the README/NSC docs to avoid overstating generic
-  performance; run `make evaluate` with network access to measure it for the
-  current model.
+- **Generic-phishing holdout is now a committed, reproducible cross-check rather
+  than a feed-dependent headline.** The system is deliberately tuned for
+  Thai-targeting (positive alignment score), so generic recall (91.11%) sits below
+  the Thai holdout (100%) by design. The earlier hardcoded "98.9% (89/90)" claim —
+  which came from a transient live-feed snapshot — was replaced by the deterministic
+  committed-seed number that `make evaluate` reproduces offline.
 - **`make install`** now also installs `pytest-asyncio` (matches CI), so the
   async tests collect locally.
 

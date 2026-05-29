@@ -15,9 +15,9 @@
 | 3. โซลูชัน (overview) | 1:00 – 1:45 (45s) | สไลด์ architecture + 5 ส่วนหลัก |
 | 4. Demo: ส่วนขยายเบราว์เซอร์ | 1:45 – 2:30 (45s) | เปิด URL ปลอม → หน้าแดงเตือนเต็มจอ |
 | 5. Demo: Citizen Report Portal | 2:30 – 3:00 (30s) | ผู้สูงอายุพิมพ์ URL → เห็นผล → แจ้ง |
-| 6. เทคนิค: ML + Rules Engine | 3:00 – 4:00 (60s) | feature 33 + IDN defense + transparent rules |
+| 6. เทคนิค: ML + Rules Engine | 3:00 – 4:00 (60s) | 42 features + IDN defense + transparent rules |
 | 7. Demo: Brand Watchlist + LINE | 4:00 – 4:45 (45s) | ลงทะเบียน → ทำให้เกิด phishing → LINE แจ้ง |
-| 8. ความแม่นยำ + ทดสอบ | 4:45 – 5:15 (30s) | 100% recall (378/378), 248 tests, CI gate |
+| 8. ความแม่นยำ + ทดสอบ | 4:45 – 5:15 (30s) | 100% recall (378/378), 251 tests, CI gate |
 | 9. Sustainable Innovation | 5:15 – 6:15 (60s) | 4 pillars + impact metrics |
 | 10. Roadmap + ชุมชน | 6:15 – 6:45 (30s) | open source, public feed, LINE bot ต่อไป |
 | 11. ปิดท้าย + Call to action | 6:45 – 7:00 (15s) | URL · GitHub · QR |
@@ -116,7 +116,7 @@
 > "เราวัดความแม่นยำบน Thai-targeting holdout 378 URL ที่โมเดลไม่เคยเห็น
 > ระหว่าง training — ได้ recall 100% (378/378) ซึ่งเป็น metric หลัก ส่วน generic
 > phishing เป็น cross-check ทางเลือก (ระบบจูนเน้น Thai โดยตั้งใจ) ระบบมี CI gate
-> ขั้นต่ำ 0.85 ทุก commit ต้องผ่าน automated tests 248 cases ทั้งหมดผ่าน"
+> ขั้นต่ำ 0.85 ทุก commit ต้องผ่าน automated tests 251 cases ทั้งหมดผ่าน"
 
 ### ฉากที่ 9 (5:15 – 6:15) — Sustainable Innovation
 

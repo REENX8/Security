@@ -207,10 +207,10 @@ def main() -> None:
     # the model has never seen during training.
     # ------------------------------------------------------------------
     real_holdout_metrics: dict | None = None
-    if os.path.exists(REAL_HOLDOUT_CSV):
+    if os.path.exists(GENERIC_HOLDOUT_CSV) or os.path.exists(REAL_HOLDOUT_CSV):
         real_holdout_metrics = evaluate_real_holdout(model, scaler)
     else:
-        print(f"[eval] no real-phishing holdout found at {REAL_HOLDOUT_CSV} "
+        print("[eval] no generic/real-phishing holdout found "
               "(skipping generalisation check)")
 
     thai_holdout_metrics: dict | None = None
