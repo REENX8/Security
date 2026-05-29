@@ -68,7 +68,7 @@ URL ปลอม         ความเสียหาย
 │   Generic holdout: feed-dependent x-check│
 │                                          │
 │       CI gate ≥ 0.85 → PASS              │
-│       242 automated tests → PASS         │
+│       247 automated tests → PASS         │
 └──────────────────────────────────────────┘
 ```
 

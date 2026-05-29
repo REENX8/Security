@@ -27,6 +27,7 @@ from ml_pipeline.config import (
     GENERIC_HOLDOUT_CSV,
     GENERIC_PHISH_SEED_CSV,
     GENERIC_SEED_TRAIN_FRACTION,
+    GENERIC_TRAIN_MAX,
     OPENPHISH_URL,
     PHISHTANK_URL,
     RANDOM_SEED,
@@ -299,6 +300,10 @@ def main(use_feeds: bool = True) -> None:
             net = gen.sim_network(1, url.startswith("https://"))
             row = {"url": url, "label": 1, **net}
             (generic_train if i < g_train else generic_holdout).append(row)
+        # Cap training rows to protect the Thai cohort's decision boundary; the
+        # full 30% holdout is always kept for an honest cross-check.
+        if len(generic_train) > GENERIC_TRAIN_MAX:
+            generic_train = generic_train[:GENERIC_TRAIN_MAX]
         print(f"[seed] generic split: train={len(generic_train)}  "
               f"holdout={len(generic_holdout)}")
 

@@ -39,7 +39,7 @@
 | ความยากง่าย | 20 | เน้น ML ensemble + IDN/Homoglyph + Schema v1.4 + Rules Engine |
 | ความคิดสร้างสรรค์ | 20 | Citizen Portal + Public Feed + Brand Watchlist (LINE) + Campaign clustering + External Feed + LINE Bot + URL Unshortening + Content Fallback + Feedback Retrain |
 | ประโยชน์ใช้งาน | 25 | กลุ่มเป้าหมายชัด, /impact ที่ quantify ผล, ใช้กับผู้สูงอายุได้ |
-| ความน่าจะเสร็จ | 15 | ของจริง deploy ได้แล้ว (Docker, Render), 242 tests ผ่าน |
+| ความน่าจะเสร็จ | 15 | ของจริง deploy ได้แล้ว (Docker, Render), 247 tests ผ่าน |
 
 ---
 

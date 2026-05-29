@@ -1,28 +1,17 @@
 {
   "sample_size": 378,
-  "recall_phishing_threshold": 0.9947,
+  "recall_phishing_threshold": 1.0,
   "recall_phishing_ci_95": [
-    0.9809,
-    0.9985
+    0.9899,
+    1.0
   ],
-  "recall_suspicious_threshold": 0.9974,
+  "recall_suspicious_threshold": 1.0,
   "recall_suspicious_ci_95": [
-    0.9852,
-    0.9995
+    0.9899,
+    1.0
   ],
-  "mean_score": 0.9958,
+  "mean_score": 0.9994,
   "median_score": 1.0,
-  "missed_count": 1,
-  "missed_urls": [
-    {
-      "url": "https://chul\u0430.com/login",
-      "score": 0.2291,
-      "closest_domain": "chula.ac.th",
-      "min_edit_distance": 1,
-      "is_typosquat": 1,
-      "has_punycode": 0,
-      "has_mixed_script": 1,
-      "tld_type": "other"
-    }
-  ]
+  "missed_count": 0,
+  "missed_urls": []
 }
