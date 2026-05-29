@@ -74,6 +74,65 @@ def test_extract_dict_has_idn_features(extractor):
         assert name in feat, f"missing v1.2 feature: {name}"
 
 
+def test_schema_contract_v15(extractor):
+    """v1.5 schema invariants: 42 features, no dups, defaults are a subset."""
+    from phish_features.schema import FEATURE_SCHEMA_VERSION, N_FEATURES
+
+    assert FEATURE_SCHEMA_VERSION == "1.5.0"
+    assert N_FEATURES == 42
+    assert len(set(ORDERED_FEATURES)) == N_FEATURES
+    assert set(IMPUTED_DEFAULTS).issubset(set(ORDERED_FEATURES))
+
+
+def test_v15_features_present_and_imputed(extractor):
+    feat = extractor.extract_dict("https://example.com")
+    for name in (
+        "digit_to_letter_ratio",
+        "cert_is_lets_encrypt",
+        "cert_validity_days",
+        "cert_san_count",
+        "host_has_brand_and_suspicious_tld",
+    ):
+        assert name in feat, f"missing v1.5 feature: {name}"
+    # TLS-derived features fall back to the imputed "unknown" defaults when
+    # the network is disabled.
+    assert feat["cert_is_lets_encrypt"] == IMPUTED_DEFAULTS["cert_is_lets_encrypt"]
+    assert feat["cert_validity_days"] == IMPUTED_DEFAULTS["cert_validity_days"]
+    assert feat["cert_san_count"] == IMPUTED_DEFAULTS["cert_san_count"]
+
+
+def test_digit_to_letter_ratio(extractor):
+    # IP host has no letters -> ratio is the digit count.
+    assert extractor.extract_dict("http://203.0.113.45/x")["digit_to_letter_ratio"] == 9.0
+    # Letter-only host -> zero.
+    assert extractor.extract_dict("https://obec.go.th")["digit_to_letter_ratio"] == 0.0
+
+
+def test_brand_on_suspicious_tld_interaction(extractor):
+    # Brand impersonated (path/typosquat) on a cheap/abused TLD fires the flag.
+    spoof = extractor.extract_dict("https://www.scb.co.th@phish.online/auth")
+    assert spoof["host_has_brand_and_suspicious_tld"] == 1
+    # Legit brand on its real Thai TLD does not.
+    legit = extractor.extract_dict("https://obec.go.th/news")
+    assert legit["host_has_brand_and_suspicious_tld"] == 0
+
+
+def test_v15_tls_overrides_take_precedence(extractor):
+    overrides = {
+        "has_valid_cert": 1,
+        "tls_ok": 1,
+        "cert_is_lets_encrypt": 1,
+        "cert_validity_days": 90,
+        "cert_san_count": 2,
+    }
+    feat = extractor.extract_dict(
+        "https://www.example.com", network_overrides=overrides
+    )
+    assert feat["cert_is_lets_encrypt"] == 1
+    assert feat["cert_validity_days"] == 90
+    assert feat["cert_san_count"] == 2
+
+
 def test_extract_batch_matches_individual(extractor):
     urls = [
         "https://www.obec.go.th",

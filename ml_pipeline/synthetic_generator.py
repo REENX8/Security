@@ -170,6 +170,10 @@ class SyntheticGenerator:
                 "is_self_signed": 0,
                 "whois_ok": 0,
                 "tls_ok": 0,
+                # both lookups failed -> TLS-derived features are "unknown"
+                "cert_is_lets_encrypt": 0,
+                "cert_validity_days": -1,
+                "cert_san_count": -1,
             }
         if label == 0:  # legitimate
             whois_ok = 1 if r.random() < 0.80 else 0
@@ -180,6 +184,10 @@ class SyntheticGenerator:
             else:
                 age = -1
             tls_ok = 1 if (has_https and r.random() < 0.90) else 0
+            # Legit sites use a mix of CAs; ~35% are on free DV (Let's Encrypt)
+            # but most carry longer validity (OV / 1-year DV) and a small,
+            # purpose-built SAN list.
+            le_legit = 1 if (tls_ok and r.random() < 0.35) else 0
             return {
                 "domain_age_days": age,
                 "is_known_registrar": 1 if (whois_ok and r.random() < 0.85) else 0,
@@ -188,6 +196,11 @@ class SyntheticGenerator:
                 "is_self_signed": 0,
                 "whois_ok": whois_ok,
                 "tls_ok": tls_ok,
+                "cert_is_lets_encrypt": le_legit,
+                "cert_validity_days": (
+                    (90 if le_legit else r.randint(180, 397)) if tls_ok else -1
+                ),
+                "cert_san_count": (r.randint(1, 4) if tls_ok else -1),
             }
 
         # phishing — distributions updated to match 2024 reality:
@@ -202,6 +215,9 @@ class SyntheticGenerator:
         tls_ok = 1 if (has_https and r.random() < 0.80) else 0
         # 72% of TLS-ok phishing has a valid cert (Let's Encrypt is free; was 55%)
         valid_cert = 1 if (tls_ok and r.random() < 0.72) else 0
+        # ~80% of valid-cert phishing is on a free DV CA (Let's Encrypt),
+        # which issues short-lived 90-day certs -- the dominant phishing CA.
+        le_phish = 1 if (valid_cert and r.random() < 0.80) else 0
         return {
             "domain_age_days": age,
             # 35% of WHOIS-ok phishing uses a known registrar (was 15%)
@@ -213,6 +229,16 @@ class SyntheticGenerator:
                                     and r.random() < 0.5) else 0,
             "whois_ok": whois_ok,
             "tls_ok": tls_ok,
+            "cert_is_lets_encrypt": le_phish,
+            "cert_validity_days": (
+                (90 if le_phish else r.randint(90, 397)) if valid_cert else -1
+            ),
+            # bulk phishing certs occasionally bundle many hostnames (SAN),
+            # but most are single-host -- skew small with an occasional spike.
+            "cert_san_count": (
+                (r.randint(1, 2) if r.random() < 0.85 else r.randint(3, 30))
+                if valid_cert else -1
+            ),
         }
 
     # ----- legitimate ---------------------------------------------------

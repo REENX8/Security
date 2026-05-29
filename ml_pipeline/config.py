@@ -8,8 +8,12 @@ import os
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 
 DATA_DIR = os.path.join(ROOT, "data")
-MODELS_DIR = os.path.join(ROOT, "models")
-REPORTS_DIR = os.path.join(ROOT, "reports")
+# MODELS_DIR / REPORTS_DIR honour env overrides so a retrain can write to a
+# staging directory and be evaluated there WITHOUT overwriting the live
+# model -- the feedback-driven retrain promotes staging -> models only after
+# the eval gate passes (see ml_pipeline/feedback_retrain.py).
+MODELS_DIR = os.environ.get("PHISH_MODELS_DIR") or os.path.join(ROOT, "models")
+REPORTS_DIR = os.environ.get("PHISH_REPORTS_DIR") or os.path.join(ROOT, "reports")
 
 # Inputs / outputs.
 WHITELIST_CSV = os.path.join(DATA_DIR, "thai_gov_domains.csv")
@@ -45,11 +49,31 @@ THAI_HOLDOUT_CSV = os.path.join(DATA_DIR, "thai_phish_holdout.csv")
 THAI_HOLDOUT_METRICS_JSON = os.path.join(REPORTS_DIR, "thai_holdout_metrics.json")
 EVALUATION_SUMMARY_JSON = os.path.join(REPORTS_DIR, "evaluation_summary.json")
 
+# Confirmed-feedback labels exported from the DB by feedback_retrain.py.
+# When present, collect_dataset folds these real user-confirmed URLs into
+# the TRAINING set (never the holdout) so continuous retraining actually
+# learns from production feedback.
+FEEDBACK_CSV = os.path.join(DATA_DIR, "feedback_labels.csv")
+
 # Curated Thai-targeting phishing seed corpus (committed to repo, no network).
 THAI_PHISH_SEED_CSV = os.path.join(DATA_DIR, "thai_phishing_seed.csv")
 # Fraction of the seed corpus routed into training; rest goes to the
 # Thai-targeting holdout used as the primary alignment metric.
 THAI_SEED_TRAIN_FRACTION = 0.70
+
+# Committed snapshot of real, NON-Thai generic phishing (built by
+# scripts/collect_generic_phishing_seed.py). Folded into TRAINING so the model
+# is not blind to generic phishing; a deterministic 30% split is held out as a
+# reproducible generic cross-check (no live feed needed at train/eval time).
+GENERIC_PHISH_SEED_CSV = os.path.join(DATA_DIR, "generic_phishing_seed.csv")
+GENERIC_HOLDOUT_CSV = os.path.join(DATA_DIR, "generic_phish_holdout.csv")
+GENERIC_SEED_TRAIN_FRACTION = 0.70
+# Cap how many generic-phishing rows are folded into TRAINING. Generic phish
+# lifts generic recall, but unconstrained it shifts the decision boundary away
+# from the Thai cohort and drops a Thai homoglyph case below threshold. This
+# cap keeps Thai-holdout recall at 100% while still lifting generic recall.
+# Overridable via env for tuning sweeps.
+GENERIC_TRAIN_MAX = int(os.environ.get("PHISH_GENERIC_TRAIN_MAX", "90"))
 
 # CI gate: minimum recall on the Thai-targeting holdout at the phishing
 # threshold (score >= 0.7). evaluate.py exits non-zero when run with

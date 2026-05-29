@@ -174,6 +174,14 @@ class FeatureExtractor:
                 url, brand_label(host), self.whitelist
             )
 
+        # --- v1.5 interaction: a trusted brand is being impersonated (in the
+        # path or as a typosquat) AND the eTLD is a cheap/abused one. Each
+        # signal alone is noisy; together they are a strong phishing tell.
+        feat["host_has_brand_and_suspicious_tld"] = int(
+            bool(feat.get("path_brand_hit", 0) or feat.get("is_typosquat", 0))
+            and bool(feat["has_suspicious_tld"])
+        )
+
         # --- WHOIS ---
         if network_overrides and "domain_age_days" in network_overrides:
             feat["domain_age_days"] = network_overrides["domain_age_days"]
@@ -198,6 +206,15 @@ class FeatureExtractor:
                 "is_self_signed", IMPUTED_DEFAULTS["is_self_signed"]
             )
             feat["tls_ok"] = network_overrides.get("tls_ok", 1)
+            feat["cert_is_lets_encrypt"] = network_overrides.get(
+                "cert_is_lets_encrypt", IMPUTED_DEFAULTS["cert_is_lets_encrypt"]
+            )
+            feat["cert_validity_days"] = network_overrides.get(
+                "cert_validity_days", IMPUTED_DEFAULTS["cert_validity_days"]
+            )
+            feat["cert_san_count"] = network_overrides.get(
+                "cert_san_count", IMPUTED_DEFAULTS["cert_san_count"]
+            )
         elif self.enable_tls and host and not feat["has_ip"]:
             feat.update(
                 tls_features(host, timeout=self.network_timeout + 0.5)
@@ -207,6 +224,9 @@ class FeatureExtractor:
             feat["cert_age_days"] = IMPUTED_DEFAULTS["cert_age_days"]
             feat["is_self_signed"] = IMPUTED_DEFAULTS["is_self_signed"]
             feat["tls_ok"] = 0
+            feat["cert_is_lets_encrypt"] = IMPUTED_DEFAULTS["cert_is_lets_encrypt"]
+            feat["cert_validity_days"] = IMPUTED_DEFAULTS["cert_validity_days"]
+            feat["cert_san_count"] = IMPUTED_DEFAULTS["cert_san_count"]
 
         return feat
 
