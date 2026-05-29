@@ -61,6 +61,14 @@ THAI_PHISH_SEED_CSV = os.path.join(DATA_DIR, "thai_phishing_seed.csv")
 # Thai-targeting holdout used as the primary alignment metric.
 THAI_SEED_TRAIN_FRACTION = 0.70
 
+# Committed snapshot of real, NON-Thai generic phishing (built by
+# scripts/collect_generic_phishing_seed.py). Folded into TRAINING so the model
+# is not blind to generic phishing; a deterministic 30% split is held out as a
+# reproducible generic cross-check (no live feed needed at train/eval time).
+GENERIC_PHISH_SEED_CSV = os.path.join(DATA_DIR, "generic_phishing_seed.csv")
+GENERIC_HOLDOUT_CSV = os.path.join(DATA_DIR, "generic_phish_holdout.csv")
+GENERIC_SEED_TRAIN_FRACTION = 0.70
+
 # CI gate: minimum recall on the Thai-targeting holdout at the phishing
 # threshold (score >= 0.7). evaluate.py exits non-zero when run with
 # --enforce-threshold and the measured value drops below this. The env

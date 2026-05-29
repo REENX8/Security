@@ -35,6 +35,7 @@ from phish_features import ORDERED_FEATURES
 
 from ml_pipeline.config import (
     EVALUATION_SUMMARY_JSON,
+    GENERIC_HOLDOUT_CSV,
     METRICS_JSON,
     MODEL_PATH,
     REAL_HOLDOUT_CSV,
@@ -316,10 +317,16 @@ def _eval_holdout_csv(
 
 
 def evaluate_real_holdout(model, scaler) -> dict:
+    # Prefer the committed generic snapshot holdout (reproducible offline);
+    # fall back to the live-feed holdout when only that is present.
+    holdout_csv = (
+        GENERIC_HOLDOUT_CSV if os.path.exists(GENERIC_HOLDOUT_CSV)
+        else REAL_HOLDOUT_CSV
+    )
     return _eval_holdout_csv(
-        REAL_HOLDOUT_CSV,
+        holdout_csv,
         REAL_HOLDOUT_METRICS_JSON,
-        "HOLDOUT EVAL ON UNSEEN REAL PHISHING URLS (OpenPhish/PhishTank/URLhaus)",
+        "HOLDOUT EVAL ON UNSEEN REAL PHISHING URLS (committed snapshot / feeds)",
         model,
         scaler,
         missed_csv_path=os.path.join(REPORTS_DIR, "missed_generic_urls.csv"),
