@@ -163,11 +163,30 @@ async def lifespan(app: FastAPI):
     app.state.feedback_task = None
     if settings.feedback_retrain_enabled and app.state.db_ready:
         async def _feedback_retrain_loop() -> None:
+            from functools import partial
+
             from ml_pipeline.feedback_retrain import run as _run_retrain
             while True:
                 await asyncio.sleep(settings.feedback_retrain_interval_hours * 3600)
                 try:
-                    await asyncio.get_event_loop().run_in_executor(None, _run_retrain)
+                    ok = await asyncio.get_event_loop().run_in_executor(
+                        None,
+                        partial(
+                            _run_retrain,
+                            min_rows=settings.feedback_accumulation_threshold,
+                            enforce_gate=settings.feedback_promote_requires_gate,
+                        ),
+                    )
+                    # Hot-swap the freshly promoted model without a restart.
+                    if ok:
+                        try:
+                            app.state.scorer = load_scorer()
+                            logger.info("scorer hot-reloaded after retrain")
+                        except Exception as exc:  # noqa: BLE001 - keep old model
+                            logger.error(
+                                "scorer reload failed (%s) -- keeping previous "
+                                "model", exc,
+                            )
                 except Exception as exc:  # noqa: BLE001
                     logger.warning("feedback retrain failed: %s", exc)
         app.state.feedback_task = asyncio.create_task(_feedback_retrain_loop())

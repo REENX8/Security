@@ -22,6 +22,7 @@ from phish_features import Whitelist
 
 from ml_pipeline.config import (
     DATASET_CSV,
+    FEEDBACK_CSV,
     FEED_TIMEOUT,
     OPENPHISH_URL,
     PHISHTANK_URL,
@@ -202,6 +203,42 @@ def _load_thai_phish_seed() -> list[str]:
     return urls
 
 
+def _load_feedback_rows(gen, exclude_urls: set[str]) -> list[dict]:
+    """Load confirmed-feedback labels exported from the DB as TRAINING rows.
+
+    Rows are (url, label) pairs written by feedback_retrain.py. We attach
+    simulated network features (the URLs do not resolve offline) and drop any
+    URL already present in a holdout so feedback can never leak the eval set
+    into training. Feedback rows are training-only by construction.
+    """
+    if not os.path.exists(FEEDBACK_CSV):
+        return []
+    import csv as _csv
+
+    rows: list[dict] = []
+    seen: set[str] = set()
+    with open(FEEDBACK_CSV, newline="", encoding="utf-8") as fh:
+        for row in _csv.DictReader(fh):
+            url = (row.get("url") or "").strip()
+            label_raw = (row.get("label") or "").strip()
+            if not url.startswith(("http://", "https://")):
+                continue
+            if url in exclude_urls or url in seen:
+                continue
+            try:
+                label = int(label_raw)
+            except ValueError:
+                continue
+            if label not in (0, 1):
+                continue
+            seen.add(url)
+            net = gen.sim_network(label, url.startswith("https://"))
+            rows.append({"url": url, "label": label, **net})
+    if rows:
+        print(f"[feedback] folded {len(rows)} confirmed-feedback rows into training")
+    return rows
+
+
 def main(use_feeds: bool = True) -> None:
     ensure_dirs()
     wl = Whitelist.from_csv(WHITELIST_CSV)
@@ -257,13 +294,21 @@ def main(use_feeds: bool = True) -> None:
     print(f"[dataset] real phishing -- train: {len(real_train)}  "
           f"holdout: {len(real_holdout)}  thai-holdout: {len(thai_holdout)}")
 
+    # --- confirmed-feedback rows (training only; never the holdout) ---
+    holdout_urls = {r["url"] for r in (thai_holdout + real_holdout)}
+    feedback_rows = _load_feedback_rows(gen, exclude_urls=holdout_urls)
+    feedback_phish = [r for r in feedback_rows if r["label"] == 1]
+    feedback_legit = [r for r in feedback_rows if r["label"] == 0]
+
     # --- synthetic phishing top-up to balance the classes (training only) ---
-    need = n_legit - len(real_train) - len(thai_train)
+    need = (n_legit + len(feedback_legit)
+            - len(real_train) - len(thai_train) - len(feedback_phish))
     synth_phish = gen.generate(n_legit=0, n_phish=max(need, 0))
     print(f"[dataset] synthetic phishing rows: {len(synth_phish)}")
 
     rows.extend(real_train)
     rows.extend(thai_train)
+    rows.extend(feedback_rows)
     rows.extend(synth_phish)
     gen.rng.shuffle(rows)
 

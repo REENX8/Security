@@ -7,10 +7,12 @@ import logging
 from fastapi import APIRouter, Depends, HTTPException, Query, Request
 from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
+from starlette.concurrency import run_in_threadpool
 
 from phish_features import Whitelist
 from phish_features.whitelist import WhitelistEntry as PhishWhitelistEntry
 
+from app.config import settings
 from app.database import get_session
 from app.deps import verify_api_key
 from app.models import DbWhitelistEntry
@@ -52,6 +54,57 @@ async def _hot_reload_whitelist(request: Request, session: AsyncSession) -> None
     ]
     scorer.extractor.whitelist = Whitelist.from_entries(entries)
     logger.info("whitelist hot-reloaded: %d entries", len(entries))
+
+
+def _reload_scorer(request: Request) -> bool:
+    """Reload the model from disk and hot-swap it on app.state.
+
+    Returns True on success. On any failure the previous scorer is kept so the
+    service keeps serving the last known-good model.
+    """
+    from app.ml.loader import load_scorer
+
+    try:
+        request.app.state.scorer = load_scorer()
+        logger.info("scorer hot-reloaded after retrain")
+        return True
+    except Exception as exc:  # noqa: BLE001 - keep serving the old model
+        logger.error("scorer reload failed (%s) -- keeping previous model", exc)
+        return False
+
+
+@router.post(
+    "/admin/retrain",
+    dependencies=[Depends(verify_api_key)],
+    summary="Retrain the model from confirmed feedback (staged + gated)",
+)
+async def trigger_retrain(request: Request) -> dict:
+    """Run the feedback-driven retrain synchronously, then hot-swap the model.
+
+    The pipeline trains into a staging dir, enforces the Thai-recall eval gate
+    (unless disabled in settings), and only promotes the new artifacts if the
+    gate passes. On a successful promote the live scorer is reloaded without a
+    restart; otherwise the current model is left untouched.
+    """
+    from ml_pipeline.feedback_retrain import run as run_retrain
+
+    # run() returns True on success (which includes the no-op cases of "no
+    # feedback yet" / "below threshold") and False only when a retrain was
+    # attempted and failed (training error or the eval gate rejecting it).
+    ok = await run_in_threadpool(
+        run_retrain,
+        min_rows=settings.feedback_accumulation_threshold,
+        enforce_gate=settings.feedback_promote_requires_gate,
+    )
+    # Reloading on success is safe: if nothing was promoted it simply reloads
+    # the same artifacts; if a new model was promoted it hot-swaps it in.
+    reloaded = _reload_scorer(request) if ok else False
+    return {
+        "ok": bool(ok),
+        "reloaded": reloaded,
+        "gate_enforced": settings.feedback_promote_requires_gate,
+        "min_rows": settings.feedback_accumulation_threshold,
+    }
 
 
 @router.get(

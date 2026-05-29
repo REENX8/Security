@@ -42,8 +42,10 @@ services:
     ports:
       - "8000:8000"
     volumes:
-      # Model artifacts produced by the ML pipeline (read-only).
-      - ./models:/app/models:ro
+      # Model artifacts produced by the ML pipeline. Writable so the
+      # feedback-driven retrain (POST /admin/retrain) can stage + promote a
+      # new model in place; promotion is atomic and gated on the eval check.
+      - ./models:/app/models
     depends_on:
       db:
         condition: service_healthy
