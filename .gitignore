@@ -22,6 +22,12 @@ data/features_cache.csv
 data/test_split.csv
 data/real_phish_holdout.csv
 data/raw/
+data/feedback_labels.csv
+
+# --- Feedback-retrain working dirs (staged model + backup + staging reports) ---
+models/staging/
+models/previous/
+reports/staging/
 
 # --- pytest cache ---
 .pytest_cache/

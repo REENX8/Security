@@ -63,6 +63,32 @@ def test_feed_stix_returns_bundle(client):
         assert obj["spec_version"] == "2.1"
 
 
+# ---------- /api/v1/admin/retrain -----------------------------------------
+
+
+def test_retrain_requires_api_key(client):
+    resp = client.post("/api/v1/admin/retrain")
+    assert resp.status_code == 401
+
+
+def test_retrain_runs_staged_pipeline_and_reports(client, headers):
+    from unittest.mock import patch
+
+    # Stub the heavy pipeline run() so the endpoint exercises only its own
+    # logic (threadpool dispatch + response shape + scorer reload-on-success).
+    with patch("ml_pipeline.feedback_retrain.run", return_value=True) as run_mock:
+        resp = client.post("/api/v1/admin/retrain", headers=headers)
+    assert resp.status_code == 200
+    body = resp.json()
+    assert body["ok"] is True
+    assert body["reloaded"] is True            # success -> scorer reloaded
+    assert body["gate_enforced"] is True
+    # accumulation threshold + gate setting are forwarded to run()
+    _, kwargs = run_mock.call_args
+    assert kwargs["enforce_gate"] is True
+    assert "min_rows" in kwargs
+
+
 # ---------- /api/v1/watchlist ---------------------------------------------
 
 

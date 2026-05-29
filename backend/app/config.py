@@ -104,6 +104,13 @@ class Settings(BaseSettings):
     # --- feedback-driven auto-retrain ---
     feedback_retrain_enabled: bool = Field(default=False)
     feedback_retrain_interval_hours: int = Field(default=336)  # 14 days
+    # Minimum confirmed-feedback rows that must accumulate before a retrain is
+    # attempted (background loop + POST /admin/retrain).
+    feedback_accumulation_threshold: int = Field(default=20)
+    # Require the Thai-recall eval gate to pass before promoting a retrained
+    # model. Keep True in production -- it is the floor that prevents a bad
+    # feedback batch from degrading the live model.
+    feedback_promote_requires_gate: bool = Field(default=True)
 
     @property
     def model_path(self) -> str:
