@@ -17,6 +17,8 @@ from app.database import get_session
 from app.deps import verify_api_key
 from app.models import DbWhitelistEntry
 from app.schemas import (
+    WhitelistBulkIn,
+    WhitelistBulkResult,
     WhitelistEntryIn,
     WhitelistEntryOut,
     WhitelistListResponse,
@@ -178,6 +180,69 @@ async def add_whitelist_entry(
     await _hot_reload_whitelist(request, session)
     logger.info("whitelist: added %s", domain)
     return _row_to_schema(row)
+
+
+@router.post(
+    "/admin/whitelist/bulk",
+    response_model=WhitelistBulkResult,
+    status_code=201,
+    dependencies=[Depends(verify_api_key)],
+    summary="Bulk-import many domains into the whitelist (idempotent)",
+)
+async def bulk_add_whitelist(
+    request: Request,
+    payload: WhitelistBulkIn,
+    session: AsyncSession = Depends(get_session),
+) -> WhitelistBulkResult:
+    """Add many domains at once. Domains already present are skipped (not an
+    error), so the call is safe to re-run — handy for seeding 100+ gov domains
+    from a CSV/JSON export instead of one POST per domain."""
+    incoming: dict[str, WhitelistEntryIn] = {}
+    for e in payload.entries:
+        incoming[e.domain.strip().lower()] = e
+
+    existing = set(
+        (
+            await session.execute(
+                select(DbWhitelistEntry.domain).where(
+                    DbWhitelistEntry.domain.in_(list(incoming))
+                )
+            )
+        )
+        .scalars()
+        .all()
+    )
+
+    added = 0
+    for domain, e in incoming.items():
+        if domain in existing:
+            continue
+        session.add(
+            DbWhitelistEntry(
+                domain=domain,
+                agency_name=e.agency_name,
+                category=e.category,
+                added_by="admin",
+                is_seeded=False,
+            )
+        )
+        added += 1
+
+    await session.commit()
+    if added:
+        await _hot_reload_whitelist(request, session)
+
+    total_after = (
+        await session.execute(select(func.count()).select_from(DbWhitelistEntry))
+    ).scalar_one()
+    skipped = sorted(d for d in incoming if d in existing)
+    logger.info("whitelist bulk import: +%d, skipped %d", added, len(skipped))
+    return WhitelistBulkResult(
+        added=added,
+        skipped=len(skipped),
+        total_after=int(total_after),
+        skipped_domains=skipped,
+    )
 
 
 @router.delete(

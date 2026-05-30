@@ -21,7 +21,7 @@ from app.crud import insert_check
 from app.database import get_session
 from app.deps import get_scorer
 from app.errors import AppError
-from app.metrics import CACHE_SIZE, CHECK_LATENCY, CHECKS_TOTAL
+from app.metrics import CACHE_SIZE, CHECK_LATENCY, CHECKS_TOTAL, NETWORK_TIMEOUT
 from app.notifier import maybe_alert
 from app.rate_limit import limiter
 from app.unshorten import unshorten_url
@@ -59,6 +59,14 @@ async def _score_url(request: Request, url: str) -> dict:
 
     with CHECK_LATENCY.time():
         result = await run_in_threadpool(scorer.score, url)
+
+    # Observe silent feature degradation: a lookup that was ENABLED but came
+    # back not-ok timed out or failed and fell back to imputed defaults.
+    feat = result.get("features") or {}
+    if settings.enable_whois and feat.get("whois_ok") == 0:
+        NETWORK_TIMEOUT.labels(kind="whois").inc()
+    if settings.enable_tls and feat.get("tls_ok") == 0:
+        NETWORK_TIMEOUT.labels(kind="tls").inc()
 
     # Content-based fallback for gray-zone URLs (opt-in, never blocks verdict)
     if (
