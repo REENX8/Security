@@ -22,6 +22,10 @@ engine = create_async_engine(
     settings.database_url,
     echo=False,
     pool_pre_ping=True,
+    # Required for Supabase Supavisor / PgBouncer in Transaction mode.
+    # Safe to set on direct connections too (disables prepared-statement
+    # caching in asyncpg, negligible overhead for this workload).
+    connect_args={"statement_cache_size": 0},
 )
 
 SessionLocal = async_sessionmaker(
