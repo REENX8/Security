@@ -14,10 +14,7 @@ export async function checkUrl(url) {
   try {
     const resp = await fetch(`${settings.endpoint}/api/v1/check`, {
       method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        "X-API-Key": settings.apiKey,
-      },
+      headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ url }),
       signal: controller.signal,
     });
