@@ -1,4 +1,5 @@
-import { NavLink } from "react-router-dom";
+import { NavLink, useNavigate } from "react-router-dom";
+import { clearToken } from "../lib/auth.js";
 
 const NAV = [
   { to: "/", label: "ภาพรวม", icon: "📊", end: true },
@@ -18,6 +19,14 @@ const NAV = [
 ];
 
 export default function Sidebar({ open, onClose }) {
+  const navigate = useNavigate();
+
+  const handleLogout = () => {
+    clearToken();
+    onClose();
+    navigate("/login", { replace: true });
+  };
+
   return (
     <>
       {open && (
@@ -61,9 +70,17 @@ export default function Sidebar({ open, onClose }) {
           ))}
         </nav>
 
-        <div className="absolute bottom-0 w-full border-t border-slate-800 p-4 text-xs text-slate-500">
-          เฝ้าระวังเว็บไซต์ปลอม
-          <br />หน่วยงานราชการ &amp; การศึกษาไทย
+        <div className="absolute bottom-0 w-full border-t border-slate-800 p-4">
+          <button
+            onClick={handleLogout}
+            className="mb-3 flex w-full items-center gap-2 rounded-lg px-3 py-2 text-sm text-slate-400 transition hover:bg-slate-800 hover:text-white"
+          >
+            <span>🚪</span> ออกจากระบบ
+          </button>
+          <p className="text-xs text-slate-600">
+            เฝ้าระวังเว็บไซต์ปลอม
+            <br />หน่วยงานราชการ &amp; การศึกษาไทย
+          </p>
         </div>
       </aside>
     </>
