@@ -43,7 +43,9 @@ async def get_history(
     if label:
         conditions.append(UrlCheck.label == Label(label))
     if search:
-        conditions.append(UrlCheck.url.ilike(f"%{search}%"))
+        # func.lower(...).like(...) is case-insensitive on BOTH Postgres and
+        # SQLite; bare .ilike() degrades to case-sensitive LIKE on SQLite.
+        conditions.append(func.lower(UrlCheck.url).like(f"%{search.lower()}%"))
     if date_from:
         conditions.append(UrlCheck.checked_at >= date_from)
     if date_to:

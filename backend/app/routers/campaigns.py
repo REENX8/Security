@@ -45,7 +45,8 @@ async def list_campaigns(
 ) -> CampaignListResponse:
     base = select(Campaign).where(Campaign.url_count >= min_urls)
     if brand:
-        base = base.where(Campaign.closest_domain.ilike(f"%{brand}%"))
+        # Case-insensitive on both Postgres and SQLite (bare ilike is not).
+        base = base.where(func.lower(Campaign.closest_domain).like(f"%{brand.lower()}%"))
     total = (
         await session.execute(
             select(func.count()).select_from(base.subquery())

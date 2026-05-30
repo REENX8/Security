@@ -121,7 +121,8 @@ async def list_whitelist(
 ) -> WhitelistListResponse:
     base = select(DbWhitelistEntry)
     if search:
-        base = base.where(DbWhitelistEntry.domain.ilike(f"%{search}%"))
+        # Case-insensitive on both Postgres and SQLite (bare ilike is not).
+        base = base.where(func.lower(DbWhitelistEntry.domain).like(f"%{search.lower()}%"))
 
     total = (
         await session.execute(
