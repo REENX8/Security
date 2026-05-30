@@ -1,6 +1,11 @@
 """POST /api/v1/check (single) and /api/v1/check/batch (bulk)."""
 
-from __future__ import annotations
+# NOTE: deliberately NOT using `from __future__ import annotations` here.
+# These endpoints are wrapped by slowapi's `@limiter.limit`, whose wrapper
+# does not carry this module's globals. With stringized annotations FastAPI
+# cannot resolve the `CheckRequest` / `BatchCheckRequest` body params and
+# silently treats them as query params -> every call 422s. Real annotation
+# objects avoid the forward-ref resolution entirely.
 
 import asyncio
 import logging
