@@ -22,6 +22,13 @@ logger = logging.getLogger("phish-detector")
 _TITLE_RE = re.compile(r"<title[^>]*>(.*?)</title>", re.IGNORECASE | re.DOTALL)
 _PASSWORD_RE = re.compile(r"<input[^>]*type=['\"]password['\"]", re.IGNORECASE)
 _THAI_OFFICIAL_RE = re.compile(r"(?:\.go\.th|\.ac\.th|\.or\.th)", re.IGNORECASE)
+_FORM_ACTION_RE = re.compile(
+    r"<form[^>]*\baction=['\"]([^'\"]+)['\"]", re.IGNORECASE
+)
+_META_REFRESH_RE = re.compile(
+    r"<meta[^>]*http-equiv=['\"]refresh['\"][^>]*url=([^'\"> ]+)",
+    re.IGNORECASE,
+)
 
 _PRIVATE_NETS = [
     ipaddress.ip_network(c)
@@ -51,10 +58,13 @@ async def content_score_adjustment(
     brand_labels: frozenset[str],
     timeout: float = 5.0,
 ) -> float:
-    """Return a score adjustment in [-0.20, +0.30] based on page content.
+    """Return a score adjustment in [-0.20, +0.40] based on page content.
 
     Positive means more phishing evidence; negative means safer signal.
-    Returns 0.0 on any fetch error (fail-open — never blocks a verdict).
+    Signals: brand-in-title, password field, login form posting to a foreign
+    host (form-jacking), meta-refresh to a foreign host, and a Thai-official
+    title (reduces suspicion). Returns 0.0 on any fetch error (fail-open —
+    never blocks a verdict).
     """
     host = urlparse(url).netloc.lower().removeprefix("www.")
     if _is_private_host(host):
@@ -91,11 +101,33 @@ async def content_score_adjustment(
             break  # count once even if multiple brands match
 
     # Password field = credential-harvesting attempt
-    if _PASSWORD_RE.search(html):
+    has_password = bool(_PASSWORD_RE.search(html))
+    if has_password:
         adj += 0.10
+
+    # A login form whose action posts to a DIFFERENT host is a classic
+    # credential-exfiltration / form-jacking signal. Only meaningful when the
+    # page is actually collecting a password.
+    if has_password:
+        for action in _FORM_ACTION_RE.findall(html):
+            action_host = urlparse(action.strip()).netloc.lower().removeprefix("www.")
+            if action_host and action_host != host:
+                adj += 0.15
+                logger.debug(
+                    "content_check: form posts to foreign host %s (page %s)",
+                    action_host, host,
+                )
+                break
+
+    # An immediate meta-refresh to another host is a cloaking/redirect trick.
+    refresh = _META_REFRESH_RE.search(html)
+    if refresh:
+        target_host = urlparse(refresh.group(1).strip()).netloc.lower().removeprefix("www.")
+        if target_host and target_host != host:
+            adj += 0.10
 
     # Legitimate Thai official domain strings in the title reduce suspicion
     if _THAI_OFFICIAL_RE.search(title):
         adj -= 0.10
 
-    return max(-0.20, min(0.30, adj))
+    return max(-0.20, min(0.40, adj))

