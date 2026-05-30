@@ -101,12 +101,13 @@ function renderResult(result) {
 
 async function _submitFeedback(result, correctVerdict, comment) {
   const settings = await getSettings();
-  const apiUrl = (settings.apiUrl || "http://localhost:8000").replace(/\/+$/, "");
-  const resp = await fetch(`${apiUrl}/api/v1/feedback`, {
+  // Use the same backend `endpoint` as the check call (see api.js/storage.js).
+  // /api/v1/feedback is public, so no API key is sent.
+  const endpoint = (settings.endpoint || "http://localhost:8000").replace(/\/+$/, "");
+  const resp = await fetch(`${endpoint}/api/v1/feedback`, {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
-      "X-API-Key": settings.apiKey || "",
     },
     body: JSON.stringify({
       url: result.url,

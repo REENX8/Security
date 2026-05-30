@@ -1,12 +1,15 @@
 """POST /api/v1/feedback — user-reported false positives/negatives."""
 
-from __future__ import annotations
+# NOTE: no `from __future__ import annotations` here — create_feedback is
+# wrapped by slowapi's `@limiter.limit`, whose wrapper does not carry this
+# module's globals. Stringized annotations would make FastAPI mis-resolve the
+# `FeedbackCreate` body param (same bug that 422'd /check). Keep them real.
 
 import csv
 import io
 import logging
 
-from fastapi import APIRouter, Depends, Query
+from fastapi import APIRouter, Depends, Query, Request
 from fastapi.responses import StreamingResponse
 from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -14,6 +17,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.database import get_session
 from app.deps import verify_api_key
 from app.models import Feedback, FeedbackSource
+from app.rate_limit import limiter
 from app.schemas import FeedbackCreate, FeedbackListResponse, FeedbackOut
 
 router = APIRouter()
@@ -38,7 +42,9 @@ def _row_to_schema(row: Feedback) -> FeedbackOut:
     status_code=201,
     summary="Report a wrong verdict (false positive / false negative)",
 )
+@limiter.limit("10/minute")
 async def create_feedback(
+    request: Request,
     payload: FeedbackCreate,
     session: AsyncSession = Depends(get_session),
 ) -> FeedbackOut:

@@ -61,7 +61,7 @@ STIX 2.1 (no auth) + **Citizen Report Portal** ไม่ต้อง login
   ระบบจูนเน้น Thai-targeting โดยตั้งใจ recall generic จึงต่ำกว่า Thai holdout
   เป็น in-distribution cross-check ที่ reproduce ได้ offline ด้วย `make evaluate`
 * **CI gate ≥ 0.85** — automated, fail build ถ้า regress
-* **251 automated tests** ผ่านทั้งหมด
+* **258 automated tests** ผ่านทั้งหมด
 
 ### ประโยชน์ (Sustainable Innovation)
 

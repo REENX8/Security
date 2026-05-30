@@ -5,7 +5,7 @@
 [![Schema](https://img.shields.io/badge/feature%20schema-v1.5.0-informational)](phish_features/schema.py)
 [![Thai recall](https://img.shields.io/badge/Thai%20holdout%20recall-100%25%20(378%2F378)-success)](reports/evaluation_summary.json)
 [![Features](https://img.shields.io/badge/features-42-informational)](phish_features/schema.py)
-[![Tests](https://img.shields.io/badge/tests-251%20passing-success)](tests/)
+[![Tests](https://img.shields.io/badge/tests-258%20passing-success)](tests/)
 
 **ผู้พัฒนา:** [REENX8](https://github.com/REENX8) (asdawesdzd22@gmail.com)
 
@@ -114,7 +114,7 @@
 
 **Production-grade observability** — `/health`, `/version`, `/metrics` (Prometheus), structured JSON logs (`LOG_FORMAT=json`), `X-Request-ID` propagation, security response headers ทุก response
 
-**251 automated tests** — feature extraction, rules engine, campaign clustering, scorer, middleware, ทุก API endpoint, golden URLs, Thai seed corpus + holdout split (รวม guard ใหม่ใน v1.3.0 ที่ฟ้องถ้า holdout < 300 rows), feed ingestion, URL unshortener, content check, LINE bot, feedback retrain, generic seed corpus, doc-metric sync, extension store-readiness, TLS helpers
+**258 automated tests** — feature extraction, rules engine, campaign clustering, scorer, middleware, ทุก API endpoint, JWT login + auth, golden URLs, Thai seed corpus + holdout split (รวม guard ใหม่ใน v1.3.0 ที่ฟ้องถ้า holdout < 300 rows), feed ingestion, URL unshortener, content check, LINE bot, feedback retrain, generic seed corpus, doc-metric sync, extension store-readiness, TLS helpers
 
 ---
 
@@ -233,7 +233,7 @@ Security/
 ├── render.yaml                       #  Render Blueprint (one-click deploy)
 ├── LICENSE NOTICE CHANGELOG.md
 ├── SECURITY.md CONTRIBUTING.md
-├── VERSION                           #  single source of truth (1.3.0)
+├── VERSION                           #  single source of truth (1.5.0)
 └── tests/                            #  251 tests
 ```
 
@@ -248,10 +248,10 @@ cp .env.example .env          # แก้ API_KEY (สำคัญ)
 docker compose up -d --build  # PostgreSQL + API
 
 curl http://localhost:8000/version
-# {"backend":"1.3.0","phish_features":"1.1.0","schema":"1.5.0"}
+# {"backend":"1.5.0","phish_features":"1.1.0","schema":"1.5.0"}
 
-curl -H "X-API-Key: $(grep API_KEY .env | cut -d= -f2)" \
-     -X POST http://localhost:8000/api/v1/check \
+# /check เป็น public ตั้งแต่ v1.5 (extension จาก store ใช้ได้เลย ไม่ต้องใช้ key)
+curl -X POST http://localhost:8000/api/v1/check \
      -H "Content-Type: application/json" \
      -d '{"url":"https://secure-update.cc/krungthai/login"}'
 ```
@@ -302,7 +302,9 @@ Retrain ด้วย `python -m ml_pipeline.train` (default) หรือ `pytho
 
 ## Backend API
 
-ทุก route ใต้ `/api/v1/*` ต้องส่ง header `X-API-Key` ยกเว้น `/feedback` (POST), `/feed.*` (public) และ `/health`, `/version`, `/metrics`
+**Authentication (อัปเดตใน v1.5.0):** route จัดการ/อ่านข้อมูล (`/history`, `/stats`, `/admin/*`, `/watchlist`, `/campaigns`, `/domain/*`) รับได้ทั้ง **`X-API-Key`** (สำหรับ extension/CLI/cron) หรือ **JWT Bearer token** (สำหรับ dashboard login — ดู [Authentication & Login](#authentication--login-ใหม่ใน-v15))
+
+route สาธารณะ (ไม่ต้อง auth): **`/check`, `/check/batch`** (เพื่อให้ extension จาก store ใช้ได้), `/feedback` (POST), `/feed.*`, `/impact`, `/learn`, และ meta endpoint `/health`, `/version`, `/metrics` — public route ถูก rate-limit ต่อ IP เพื่อกันการ abuse
 
 ### Core
 
@@ -351,6 +353,40 @@ Retrain ด้วย `python -m ml_pipeline.train` (default) หรือ `pytho
 **Response headers** ทุก response: `X-Request-ID`, `X-Content-Type-Options: nosniff`, `X-Frame-Options: DENY`, `Referrer-Policy: strict-origin-when-cross-origin`, `Permissions-Policy: interest-cohort=()`
 
 **Error responses** มี shape เดียวกัน: `{"error": "...", "code": "..."}` — `422 VALIDATION_ERROR`, `401 INVALID_API_KEY`, `413 BATCH_TOO_LARGE`, `429 RATE_LIMITED`, `503 MODEL_NOT_LOADED`
+
+---
+
+## Authentication & Login (ใหม่ใน v1.5)
+
+v1.5 เพิ่ม **JWT login** สำหรับ dashboard ควบคู่กับ `X-API-Key` เดิม (extension/CLI ยังใช้ key ได้ตามปกติ):
+
+| Method + Path | คำอธิบาย |
+|---------------|----------|
+| `POST /api/v1/auth/login` | ส่ง `{"username", "password"}` → ได้ JWT (`access_token`, `expires_in`) · rate-limit **5/นาที** กัน brute-force |
+
+protected route รับ **อย่างใดอย่างหนึ่ง**: header `X-API-Key: <key>` หรือ `Authorization: Bearer <jwt>`
+
+### ตั้งค่าก่อนใช้ login (จำเป็นสำหรับ dashboard)
+
+```bash
+# 1) สร้าง bcrypt hash ของรหัสผ่าน admin
+python -c "from passlib.context import CryptContext; \
+  print(CryptContext(['bcrypt']).hash('your-strong-password'))"
+
+# 2) สร้าง JWT secret ที่สุ่มจริง (อย่าใช้ค่า default!)
+openssl rand -hex 32
+```
+
+แล้วตั้ง env:
+
+| Variable | ความหมาย | Default |
+|----------|----------|---------|
+| `ADMIN_USERNAME` | ชื่อผู้ใช้สำหรับ login | `admin` |
+| `ADMIN_PASSWORD_HASH` | bcrypt hash จากขั้นที่ 1 — **ถ้าเว้นว่าง login จะปิด (503)** | `""` (ปิด) |
+| `JWT_SECRET` | กุญแจเซ็น JWT | ⚠️ มีค่า default ที่เป็น placeholder — **ต้องเปลี่ยนก่อน production** มิฉะนั้น token ถูกปลอมได้ |
+| `JWT_EXPIRE_MINUTES` | อายุ token | `480` (8 ชม.) |
+
+> ⚠️ ถ้าไม่ตั้ง `ADMIN_PASSWORD_HASH` → `/auth/login` คืน `503` (login ถูกปิดโดยตั้งใจ ไม่ใช่ bug) แต่ route ที่รับ `X-API-Key` ยังทำงานได้ตามปกติ
 
 ---
 
@@ -530,6 +566,8 @@ make dashboard                # → http://localhost:5173
 |----------|----------|---------|
 | `DATABASE_URL` | PostgreSQL หรือ SQLite | `postgresql+asyncpg://phish:phish@db:5432/phishdb` |
 | `API_KEY` | รหัส `X-API-Key` header | `dev-local-key-change-me` ⚠️ **เปลี่ยนก่อน deploy** |
+| `ADMIN_USERNAME` / `ADMIN_PASSWORD_HASH` / `JWT_SECRET` | JWT login สำหรับ dashboard (ดู [Authentication & Login](#authentication--login-ใหม่ใน-v15)) | `admin` / `""` (ปิด) / ⚠️ placeholder |
+| `PUBLIC_CHECK_RATE_LIMIT` | rate-limit ต่อ IP ของ `/check` สาธารณะ | `30/minute` |
 | `CORS_ORIGINS` | origins ที่อนุญาต | localhost dashboard |
 | `RATE_LIMIT` | requests per minute | `100/minute` |
 | `ENABLE_WHOIS` / `ENABLE_TLS` | network lookups | `true` |
@@ -546,7 +584,7 @@ Dashboard: `VITE_API_URL`, `VITE_API_KEY`
 ## Tests
 
 ```bash
-make test                     # 251 tests, ~15 วินาที
+make test                     # 258 tests, ~15 วินาที
 ```
 
 | Suite                  | ครอบคลุม |
