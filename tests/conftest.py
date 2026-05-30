@@ -26,6 +26,7 @@ os.environ["API_KEY"] = "test-key"
 os.environ["ENABLE_WHOIS"] = "false"
 os.environ["ENABLE_TLS"] = "false"
 os.environ["RATE_LIMIT"] = "100000/minute"
+os.environ["PUBLIC_CHECK_RATE_LIMIT"] = "100000/minute"
 os.environ["ENABLE_CACHE"] = "false"
 os.environ["MODEL_DIR"] = str(ROOT / "models")
 os.environ["WHITELIST_PATH"] = str(ROOT / "models" / "whitelist.json")
