@@ -92,21 +92,44 @@ async def get_stats(session: AsyncSession) -> dict:
         {"domain": dom, "count": n} for dom, n in flagged_rows if dom
     ]
 
-    # --- time series (aggregated in Python for DB portability) ---
+    # --- time series (aggregated IN THE DB, not by loading 30 days of rows) ---
+    # func.date()/func.extract work on both SQLite and Postgres. Grouping in
+    # the DB keeps this O(buckets) instead of O(rows) — a full 30-day scan into
+    # Python memory was the old cost and would not scale.
     since = dt.datetime.now(dt.timezone.utc) - dt.timedelta(days=30)
-    recent = (
+
+    day_rows = (
         await session.execute(
-            select(UrlCheck.checked_at, UrlCheck.label)
+            select(
+                func.date(UrlCheck.checked_at).label("day"),
+                UrlCheck.label,
+                func.count(),
+            )
             .where(UrlCheck.checked_at >= since)
+            .group_by(func.date(UrlCheck.checked_at), UrlCheck.label)
+        )
+    ).all()
+
+    hour_rows = (
+        await session.execute(
+            select(
+                func.extract("hour", UrlCheck.checked_at).label("hour"),
+                func.count(),
+            )
+            .where(UrlCheck.checked_at >= since)
+            .group_by(func.extract("hour", UrlCheck.checked_at))
         )
     ).all()
 
     per_day: dict[str, Counter] = defaultdict(Counter)
+    for day, lbl, n in day_rows:
+        # func.date() returns a str on SQLite, a date on Postgres.
+        day_key = day if isinstance(day, str) else day.isoformat()
+        per_day[day_key][lbl.value] += int(n)
+
     by_hour: Counter = Counter()
-    for checked_at, lbl in recent:
-        day = checked_at.date().isoformat()
-        per_day[day][lbl.value] += 1
-        by_hour[checked_at.hour] += 1
+    for hour, n in hour_rows:
+        by_hour[int(hour)] += int(n)
 
     today = dt.datetime.now(dt.timezone.utc).date()
     checks_per_day = []

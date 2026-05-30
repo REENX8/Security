@@ -105,6 +105,30 @@ def test_stats_response_shape(client, headers):
     assert len(body["checks_by_hour"]) == 24
 
 
+def test_stats_time_series_counts_a_check(client):
+    """A check performed now must show up in today's day bucket and an hour
+    bucket — guards the DB-level func.date()/func.extract() aggregation, which
+    behaves differently on SQLite vs Postgres."""
+    before = client.get("/api/v1/stats", headers={"X-API-Key": "test-key"}).json()
+    today_before = before["checks_per_day"][-1]
+    day_total_before = (
+        today_before["safe"] + today_before["suspicious"] + today_before["phishing"]
+    )
+    hour_total_before = sum(h["count"] for h in before["checks_by_hour"])
+
+    client.post("/api/v1/check", json={"url": "http://obec.com/login-verify"})
+
+    after = client.get("/api/v1/stats", headers={"X-API-Key": "test-key"}).json()
+    today_after = after["checks_per_day"][-1]
+    day_total_after = (
+        today_after["safe"] + today_after["suspicious"] + today_after["phishing"]
+    )
+    hour_total_after = sum(h["count"] for h in after["checks_by_hour"])
+
+    assert day_total_after == day_total_before + 1
+    assert hour_total_after == hour_total_before + 1
+
+
 def test_history_pagination_and_search(client, headers):
     # ensure at least one row exists
     client.post("/api/v1/check",
@@ -199,6 +223,41 @@ def test_whitelist_delete_nonexistent(client, headers):
         headers=headers,
     )
     assert resp.status_code == 404
+
+
+def test_whitelist_bulk_import_is_idempotent(client, headers):
+    payload = {
+        "entries": [
+            {"domain": "bulk-a.go.th", "category": "go.th"},
+            {"domain": "bulk-b.ac.th", "category": "ac.th"},
+            {"domain": "BULK-A.go.th"},  # dup of first (case-insensitive)
+        ]
+    }
+    # First import: bulk-a + bulk-b added (the dup collapses on lower()).
+    resp = client.post("/api/v1/admin/whitelist/bulk", json=payload, headers=headers)
+    assert resp.status_code == 201
+    body = resp.json()
+    assert body["added"] == 2
+
+    # Re-running skips everything (idempotent) — nothing added, both skipped.
+    resp2 = client.post("/api/v1/admin/whitelist/bulk", json=payload, headers=headers)
+    assert resp2.status_code == 201
+    body2 = resp2.json()
+    assert body2["added"] == 0
+    assert body2["skipped"] == 2
+    assert set(body2["skipped_domains"]) == {"bulk-a.go.th", "bulk-b.ac.th"}
+
+    # Cleanup so the shared session-scoped client stays clean for other tests.
+    client.delete("/api/v1/admin/whitelist/bulk-a.go.th", headers=headers)
+    client.delete("/api/v1/admin/whitelist/bulk-b.ac.th", headers=headers)
+
+
+def test_whitelist_bulk_requires_auth(client):
+    resp = client.post(
+        "/api/v1/admin/whitelist/bulk",
+        json={"entries": [{"domain": "x.go.th"}]},
+    )
+    assert resp.status_code == 401
 
 
 # --- Feedback endpoints ---

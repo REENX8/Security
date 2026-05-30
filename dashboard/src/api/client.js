@@ -10,15 +10,35 @@ function normalizeBase(raw) {
 
 const BASE_URL = normalizeBase(import.meta.env.VITE_API_URL);
 
-async function request(path, options = {}) {
+const _sleep = (ms) => new Promise((r) => setTimeout(r, ms));
+
+async function request(path, options = {}, { retries = 2 } = {}) {
   const token = getToken();
   const headers = { "Content-Type": "application/json" };
   if (token) headers["Authorization"] = `Bearer ${token}`;
 
-  const resp = await fetch(`${BASE_URL}${path}`, {
-    ...options,
-    headers: { ...headers, ...(options.headers || {}) },
-  });
+  let resp;
+  // Retry only transient failures (network error or 5xx) with exponential
+  // backoff. Never retry 4xx — those are deterministic (auth, validation).
+  for (let attempt = 0; ; attempt++) {
+    try {
+      resp = await fetch(`${BASE_URL}${path}`, {
+        ...options,
+        headers: { ...headers, ...(options.headers || {}) },
+      });
+    } catch (netErr) {
+      if (attempt < retries) {
+        await _sleep(300 * 2 ** attempt);
+        continue;
+      }
+      throw netErr;
+    }
+    if (resp.status >= 500 && resp.status < 600 && attempt < retries) {
+      await _sleep(300 * 2 ** attempt);
+      continue;
+    }
+    break;
+  }
 
   if (resp.status === 401) {
     clearToken();

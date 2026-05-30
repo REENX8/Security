@@ -5,7 +5,7 @@
 [![Schema](https://img.shields.io/badge/feature%20schema-v1.5.0-informational)](phish_features/schema.py)
 [![Thai recall](https://img.shields.io/badge/Thai%20holdout%20recall-100%25%20(378%2F378)-success)](reports/evaluation_summary.json)
 [![Features](https://img.shields.io/badge/features-42-informational)](phish_features/schema.py)
-[![Tests](https://img.shields.io/badge/tests-258%20passing-success)](tests/)
+[![Tests](https://img.shields.io/badge/tests-265%20passing-success)](tests/)
 
 **ผู้พัฒนา:** [REENX8](https://github.com/REENX8) (asdawesdzd22@gmail.com)
 
@@ -114,7 +114,7 @@
 
 **Production-grade observability** — `/health`, `/version`, `/metrics` (Prometheus), structured JSON logs (`LOG_FORMAT=json`), `X-Request-ID` propagation, security response headers ทุก response
 
-**258 automated tests** — feature extraction, rules engine, campaign clustering, scorer, middleware, ทุก API endpoint, JWT login + auth, golden URLs, Thai seed corpus + holdout split (รวม guard ใหม่ใน v1.3.0 ที่ฟ้องถ้า holdout < 300 rows), feed ingestion, URL unshortener, content check, LINE bot, feedback retrain, generic seed corpus, doc-metric sync, extension store-readiness, TLS helpers
+**265 automated tests** — feature extraction, rules engine, campaign clustering, scorer, middleware, ทุก API endpoint, JWT login + auth, golden URLs, Thai seed corpus + holdout split (รวม guard ใหม่ใน v1.3.0 ที่ฟ้องถ้า holdout < 300 rows), feed ingestion, URL unshortener, content check, LINE bot, feedback retrain, generic seed corpus, doc-metric sync, extension store-readiness, TLS helpers
 
 ---
 
@@ -336,6 +336,7 @@ route สาธารณะ (ไม่ต้อง auth): **`/check`, `/check/ba
 | Method + Path | คำอธิบาย |
 |---------------|----------|
 | `GET / POST / DELETE /api/v1/admin/whitelist[/{domain}]` | จัดการ whitelist (hot-reload) |
+| `POST /api/v1/admin/whitelist/bulk` | bulk-import หลาย domain ในครั้งเดียว (idempotent — domain ที่มีอยู่แล้วถูก skip) |
 | `POST /api/v1/feedback` | รายงานผลผิด (ไม่ต้อง API key) |
 | `GET  /api/v1/feedback`, `/api/v1/feedback/export` | ดู + export CSV |
 
@@ -364,7 +365,7 @@ route สาธารณะ (ไม่ต้อง auth): **`/check`, `/check/ba
 |---------------|----------|
 | `GET /health` | model_ready, db_ok, uptime, schema_version, cache size |
 | `GET /version` | `{"backend": ..., "phish_features": ..., "schema": ...}` |
-| `GET /metrics` | Prometheus (checks_total, latency histogram, model_ready gauge, cache size) |
+| `GET /metrics` | Prometheus (checks_total, latency histogram, model_ready gauge, cache size, **`phish_network_timeout_total{kind}`** — WHOIS/TLS lookup ที่ timeout แล้ว fallback เป็น imputed) |
 
 **Response headers** ทุก response: `X-Request-ID`, `X-Content-Type-Options: nosniff`, `X-Frame-Options: DENY`, `Referrer-Policy: strict-origin-when-cross-origin`, `Permissions-Policy: interest-cohort=()`
 
@@ -600,7 +601,7 @@ Dashboard: `VITE_API_URL`, `VITE_API_KEY`
 ## Tests
 
 ```bash
-make test                     # 258 tests, ~15 วินาที
+make test                     # 265 tests, ~15 วินาที
 ```
 
 | Suite                  | ครอบคลุม |

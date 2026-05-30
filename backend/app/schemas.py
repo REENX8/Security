@@ -127,6 +127,17 @@ class WhitelistListResponse(BaseModel):
     items: list[WhitelistEntryOut]
 
 
+class WhitelistBulkIn(BaseModel):
+    entries: list[WhitelistEntryIn] = Field(..., min_length=1, max_length=5000)
+
+
+class WhitelistBulkResult(BaseModel):
+    added: int
+    skipped: int          # already present
+    total_after: int
+    skipped_domains: list[str]
+
+
 # --- Feedback ---
 
 class FeedbackCreate(BaseModel):
