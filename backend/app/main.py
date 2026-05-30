@@ -32,6 +32,7 @@ from app.rate_limit import limiter
 from app.routers import campaigns as campaigns_router
 from app.routers import check, history, stats
 from app.routers import admin as admin_router
+from app.routers import auth as auth_router
 from app.routers import domain as domain_router
 from app.routers import feed as feed_router
 from app.routers import feedback as feedback_router
@@ -287,6 +288,7 @@ async def _rate_limited(_: Request, exc: RateLimitExceeded) -> JSONResponse:
 
 
 # --- routes ---
+app.include_router(auth_router.router, prefix="/api/v1", tags=["auth"])
 app.include_router(check.router, prefix="/api/v1", tags=["check"])
 app.include_router(stats.router, prefix="/api/v1", tags=["stats"])
 app.include_router(history.router, prefix="/api/v1", tags=["history"])

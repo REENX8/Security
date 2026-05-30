@@ -1,4 +1,6 @@
 import { Routes, Route, Navigate } from "react-router-dom";
+import PrivateRoute from "./components/PrivateRoute.jsx";
+import Login from "./pages/Login.jsx";
 import Overview from "./pages/Overview.jsx";
 import History from "./pages/History.jsx";
 import Stats from "./pages/Stats.jsx";
@@ -14,23 +16,28 @@ import Impact from "./pages/Impact.jsx";
 import Learn from "./pages/Learn.jsx";
 import About from "./pages/About.jsx";
 
+function Private({ children }) {
+  return <PrivateRoute>{children}</PrivateRoute>;
+}
+
 export default function App() {
   return (
     <Routes>
-      <Route path="/" element={<Overview />} />
-      <Route path="/bulk" element={<Bulk />} />
-      <Route path="/history" element={<History />} />
-      <Route path="/stats" element={<Stats />} />
-      <Route path="/admin" element={<Admin />} />
-      <Route path="/feedback" element={<Feedback />} />
-      <Route path="/report" element={<Report />} />
-      <Route path="/watchlist" element={<Watchlist />} />
-      <Route path="/campaigns" element={<Campaigns />} />
-      <Route path="/domain" element={<DomainLookup />} />
-      <Route path="/impact" element={<Impact />} />
-      <Route path="/learn" element={<Learn />} />
-      <Route path="/feed" element={<Feed />} />
-      <Route path="/about" element={<About />} />
+      <Route path="/login" element={<Login />} />
+      <Route path="/" element={<Private><Overview /></Private>} />
+      <Route path="/bulk" element={<Private><Bulk /></Private>} />
+      <Route path="/history" element={<Private><History /></Private>} />
+      <Route path="/stats" element={<Private><Stats /></Private>} />
+      <Route path="/admin" element={<Private><Admin /></Private>} />
+      <Route path="/feedback" element={<Private><Feedback /></Private>} />
+      <Route path="/report" element={<Private><Report /></Private>} />
+      <Route path="/watchlist" element={<Private><Watchlist /></Private>} />
+      <Route path="/campaigns" element={<Private><Campaigns /></Private>} />
+      <Route path="/domain" element={<Private><DomainLookup /></Private>} />
+      <Route path="/impact" element={<Private><Impact /></Private>} />
+      <Route path="/learn" element={<Private><Learn /></Private>} />
+      <Route path="/feed" element={<Private><Feed /></Private>} />
+      <Route path="/about" element={<Private><About /></Private>} />
       <Route path="*" element={<Navigate to="/" replace />} />
     </Routes>
   );

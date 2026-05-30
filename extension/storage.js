@@ -1,9 +1,10 @@
 // chrome.storage.local helpers: settings + a last-100 results ring buffer.
 
+// Production URLs — users who install from the store get these automatically.
+// Self-hosters can override via the options page.
 const DEFAULT_SETTINGS = {
-  endpoint: "http://localhost:8000",
-  apiKey: "dev-local-key-change-me",
-  dashboardUrl: "http://localhost:5173",
+  endpoint: "https://phish-backend.onrender.com",
+  dashboardUrl: "https://phish-dashboard.onrender.com",
   notifications: true,
   enabled: true,
   blockPhishing: true,

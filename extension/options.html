@@ -14,19 +14,6 @@
     </header>
 
     <section class="card">
-      <h2>การเชื่อมต่อ API</h2>
-
-      <label for="endpoint">API Endpoint URL</label>
-      <input type="url" id="endpoint" placeholder="http://localhost:8000" />
-
-      <label for="apiKey">API Key</label>
-      <input type="password" id="apiKey" placeholder="API key" />
-
-      <label for="dashboardUrl">Dashboard URL</label>
-      <input type="url" id="dashboardUrl" placeholder="http://localhost:5173" />
-    </section>
-
-    <section class="card">
       <h2>การทำงาน</h2>
 
       <div class="toggle-row">
@@ -68,6 +55,21 @@
       <button id="clear-history" class="btn-danger">ล้างประวัติการตรวจสอบ</button>
       <p class="hint" id="history-count"></p>
     </section>
+
+    <details class="card">
+      <summary style="cursor:pointer; font-weight:600; font-size:0.9rem;">
+        ⚙️ ขั้นสูง — สำหรับผู้ติดตั้งเซิร์ฟเวอร์เอง
+      </summary>
+      <p class="hint" style="margin-top:8px;">
+        ผู้ใช้ทั่วไปไม่จำเป็นต้องแก้ไขส่วนนี้
+      </p>
+
+      <label for="endpoint">API Endpoint URL</label>
+      <input type="url" id="endpoint" placeholder="https://phish-backend.onrender.com" />
+
+      <label for="dashboardUrl">Dashboard URL</label>
+      <input type="url" id="dashboardUrl" placeholder="https://phish-dashboard.onrender.com" />
+    </details>
 
     <div class="actions">
       <button id="save" class="btn-primary">บันทึกการตั้งค่า</button>

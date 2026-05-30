@@ -1,22 +1,14 @@
-# Render Blueprint -- one-click deploy of the backend + Postgres.
+# Render Blueprint — backend + static dashboard.
+# Database is hosted on Supabase (external), so no Render Postgres needed.
+#
 # Usage:
-#   1. Push to GitHub.
-#   2. In Render dashboard: New + > Blueprint > pick this repo.
-#      Render reads this file and provisions both resources.
-#   3. After first deploy, set API_KEY in the web service's "Environment"
-#      tab to a strong secret (overrides the placeholder below).
+#   1. Create a Supabase project and copy the Session Pooler connection string.
+#   2. Push to GitHub.
+#   3. In Render dashboard: New + > Blueprint > pick this repo.
+#   4. After deploy, set the environment variables listed below under
+#      phish-backend in the "Environment" tab.
 #
 # Docs: https://render.com/docs/blueprint-spec
-databases:
-  - name: phish-db
-    plan: free
-    # IMPORTANT: must match the web service region below. Render's
-    # ``connectionString`` resolves an internal hostname that only works
-    # within the same region's private network. A mismatch surfaces as
-    # ``socket.gaierror: Name or service not known`` at app startup.
-    region: singapore
-    databaseName: phishdb
-    user: phish
 
 services:
   - type: web
@@ -25,53 +17,56 @@ services:
     plan: free
     region: singapore
     dockerfilePath: ./backend/Dockerfile
-    # Build context MUST be repo root so the Dockerfile can COPY the shared
-    # phish_features package and the models/ directory.
     dockerContext: .
     healthCheckPath: /health
     autoDeploy: true
     envVars:
-      # asyncpg DSN derived from the managed Postgres add-on. Render sets
-      # DATABASE_URL to "postgres://..." -- the backend rewrites the scheme
-      # to "postgresql+asyncpg://..." in main.py for SQLAlchemy.
-      #
-      # NOTE: The web service and database MUST be in the same region or
-      # the internal hostname returned by ``connectionString`` will not
-      # resolve (``socket.gaierror: Name or service not known``). If you
-      # see that error, delete the database from the dashboard and re-sync
-      # the Blueprint so a fresh DB is created in the right region.
-      #
-      # The backend tolerates DB unreachability at startup: /health and
-      # /check still work, but /history /stats /admin return 503 until
-      # the DB is reachable. To skip Postgres entirely (ephemeral history,
-      # zero setup) override DATABASE_URL in the dashboard to:
-      #   sqlite+aiosqlite:///./phish.db
+      # --- Supabase PostgreSQL ---
+      # Paste the "Session pooler" connection string from:
+      # Supabase dashboard → Project Settings → Database → Connection string → URI
+      # Format: postgresql://postgres.PROJECT_REF:PASSWORD@aws-0-REGION.pooler.supabase.com:5432/postgres
       - key: DATABASE_URL
-        fromDatabase:
-          name: phish-db
-          property: connectionString
-      # API key gating: change this in the dashboard after first deploy.
+        sync: false
+
+      # --- Security ---
+      # Static API key for the browser extension / CLI (X-API-Key header).
       - key: API_KEY
         generateValue: true
-      # WHOIS uses TCP 43 outbound and times out on most PaaS free tiers;
-      # disable so feature extraction stays fast. TLS check uses 443 and
-      # works fine, leave it on.
+
+      # Dashboard JWT auth — set all three before going live.
+      # Generate hash: python -c "from passlib.context import CryptContext; print(CryptContext(['bcrypt']).hash('yourpassword'))"
+      - key: ADMIN_USERNAME
+        value: admin
+      - key: ADMIN_PASSWORD_HASH
+        sync: false
+      # Generate secret: openssl rand -hex 32
+      - key: JWT_SECRET
+        generateValue: true
+      - key: JWT_EXPIRE_MINUTES
+        value: "480"
+
+      # --- LINE Bot (optional — leave blank to disable) ---
+      - key: LINE_CHANNEL_TOKEN
+        sync: false
+      - key: LINE_CHANNEL_SECRET
+        sync: false
+
+      # --- CORS ---
+      # Add the dashboard URL after first deploy (copy from phish-dashboard service).
+      - key: CORS_ORIGINS
+        value: "https://*.onrender.com"
+
+      # --- Performance tweaks for free tier ---
       - key: ENABLE_WHOIS
         value: "false"
       - key: ENABLE_TLS
         value: "true"
       - key: NETWORK_TIMEOUT
         value: "2.0"
-      # CORS: list every origin that should be allowed (dashboard, extension
-      # background page, etc.). Override in dashboard once URLs are known.
-      - key: CORS_ORIGINS
-        value: "https://*.onrender.com"
       - key: RATE_LIMIT
         value: "60/minute"
 
-  # Static dashboard so judges get a public, no-install URL. Vite bakes
-  # VITE_API_URL at build time; we point it at the backend service's host.
-  # client.js prefixes https:// when the value has no scheme.
+  # Static dashboard — Vite bakes VITE_API_URL at build time.
   - type: web
     name: phish-dashboard
     runtime: static
@@ -86,7 +81,6 @@ services:
           type: web
           property: host
     routes:
-      # SPA fallback so client-side routes (/impact, /learn, ...) deep-link.
       - type: rewrite
         source: /*
         destination: /index.html
