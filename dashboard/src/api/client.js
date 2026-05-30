@@ -1,30 +1,36 @@
-// Backend API client.
+// Backend API client — uses JWT Bearer token from localStorage.
+
+import { clearToken, getToken } from "../lib/auth.js";
 
 function normalizeBase(raw) {
   let v = (raw || "http://localhost:8000").replace(/\/+$/, "");
-  // Render's `fromService` injects a bare hostname; add a scheme so fetch works.
   if (v && !/^https?:\/\//i.test(v)) v = `https://${v}`;
   return v;
 }
 
 const BASE_URL = normalizeBase(import.meta.env.VITE_API_URL);
-const API_KEY = import.meta.env.VITE_API_KEY || "dev-local-key-change-me";
 
 async function request(path, options = {}) {
+  const token = getToken();
+  const headers = { "Content-Type": "application/json" };
+  if (token) headers["Authorization"] = `Bearer ${token}`;
+
   const resp = await fetch(`${BASE_URL}${path}`, {
     ...options,
-    headers: {
-      "Content-Type": "application/json",
-      "X-API-Key": API_KEY,
-      ...(options.headers || {}),
-    },
+    headers: { ...headers, ...(options.headers || {}) },
   });
+
+  if (resp.status === 401) {
+    clearToken();
+    window.location.replace("/login");
+    throw new Error("Session expired. Please log in again.");
+  }
 
   if (!resp.ok) {
     let message = `HTTP ${resp.status}`;
     try {
       const body = await resp.json();
-      message = body.error || message;
+      message = body.error || body.detail || message;
     } catch (_) { /* ignore */ }
     throw new Error(message);
   }
@@ -101,8 +107,28 @@ export function submitFeedback(data) {
   });
 }
 
-export function getFeedbackExportUrl() {
-  return `${BASE_URL}/api/v1/feedback/export`;
+export async function exportFeedbackCsv() {
+  const token = getToken();
+  const headers = {};
+  if (token) headers["Authorization"] = `Bearer ${token}`;
+
+  const resp = await fetch(`${BASE_URL}/api/v1/feedback/export`, { headers });
+  if (resp.status === 401) {
+    clearToken();
+    window.location.replace("/login");
+    throw new Error("Session expired.");
+  }
+  if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
+
+  const blob = await resp.blob();
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = "feedback.csv";
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  URL.revokeObjectURL(url);
 }
 
 // --- Brand watchlist ---
@@ -144,7 +170,7 @@ export function getDomainHistory(host) {
   return request(`/api/v1/domain/${encodeURIComponent(host)}/history`);
 }
 
-// --- Public threat feed (no API key required, but our wrapper sends one — harmless) ---
+// --- Public threat feed ---
 
 export function getPublicFeed({ hours = 24, limit = 200 } = {}) {
   const params = new URLSearchParams({ hours, limit });
@@ -155,13 +181,13 @@ export function getPublicFeedUrl(format = "json") {
   return `${BASE_URL}/api/v1/feed.${format}`;
 }
 
-// --- Social / economic impact (no auth required) ---
+// --- Social / economic impact ---
 
 export function getImpact(windowDays = 30) {
   return request(`/api/v1/impact?window_days=${windowDays}`);
 }
 
-// --- Awareness content (no auth required) ---
+// --- Awareness content ---
 
 export function getLearn(audience) {
   const qs = audience ? `?audience=${encodeURIComponent(audience)}` : "";
