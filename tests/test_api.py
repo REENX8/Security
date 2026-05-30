@@ -30,12 +30,13 @@ def test_metrics_endpoint_returns_prometheus(client):
     assert b"phish_model_ready" in resp.content
 
 
-def test_check_requires_api_key(client):
+def test_check_is_public(client):
+    """POST /check requires no credentials — anyone can use it (rate-limited per IP)."""
     resp = client.post("/api/v1/check", json={"url": "https://example.com"})
-    assert resp.status_code == 401
+    assert resp.status_code == 200
     body = resp.json()
-    assert body["code"] == "INVALID_API_KEY"
-    assert body["error"]
+    assert body["label"] in ("safe", "suspicious", "phishing")
+    assert "score" in body
 
 
 def test_check_rejects_invalid_url(client, headers):
