@@ -9,13 +9,10 @@
     <meta property="og:title" content="Thai Phishing Detector" />
     <meta property="og:description" content="ระบบตรวจจับเว็บไซต์ฟิชชิงที่เจาะจงหน่วยงานไทย ด้วย ML และ Rules Engine ที่อธิบายผลได้" />
     <meta property="og:type" content="website" />
-    <!-- National Thai webfont (Sarabun); falls back to Tahoma/Segoe UI offline -->
-    <link rel="preconnect" href="https://fonts.googleapis.com" />
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-    <link
-      href="https://fonts.googleapis.com/css2?family=Sarabun:wght@400;600;700&display=swap"
-      rel="stylesheet"
-    />
+    <!-- Sarabun is self-hosted (see @font-face in src/index.css) so the Thai UI
+         renders without any CDN — important for offline/locked-down demo venues. -->
+    <link rel="preload" href="/fonts/sarabun/sarabun-400-thai.woff2" as="font" type="font/woff2" crossorigin />
+    <link rel="preload" href="/fonts/sarabun/sarabun-400-latin.woff2" as="font" type="font/woff2" crossorigin />
     <title>Thai Phishing Detector — Dashboard</title>
   </head>
   <body>

@@ -68,7 +68,22 @@ log "Seeding a few live demo URLs (legitimate + typosquat + IDN/homoglyph) ..."
 python scripts/seed_demo.py "$API_URL" "$API_KEY"
 
 log "Verifying golden demo URLs ..."
-python scripts/demo_verify.py "$API_URL" "$API_KEY"
+python scripts/demo_verify.py "$API_URL" "$API_KEY" --full
+
+# Start the dashboard so the presenter has the full stack with one command.
+# Disable with START_DASHBOARD=0 (eg. when serving a pre-built static bundle).
+if [ "${START_DASHBOARD:-1}" = "1" ] && [ "$MODE" != "--docker" ]; then
+    if pgrep -f "vite" >/dev/null 2>&1; then
+        ok "dashboard already running at http://localhost:5173"
+    elif command -v npm >/dev/null 2>&1; then
+        log "Starting dashboard (Vite dev) on http://localhost:5173 ..."
+        ( cd dashboard && npm run dev >../demo_dashboard.log 2>&1 ) &
+        sleep 3
+        ok "dashboard started — http://localhost:5173 (log: demo_dashboard.log)"
+    else
+        log "npm not found — start the dashboard manually: cd dashboard && npm run dev"
+    fi
+fi
 
 ok "Demo system ready."
 cat <<EOF
@@ -77,7 +92,7 @@ cat <<EOF
    พร้อมสาธิตที่:
      Backend:     ${API_URL}
      Swagger:     ${API_URL}/docs
-     Dashboard:   เปิด http://localhost:5173 (cd dashboard && npm run dev)
+     Dashboard:   http://localhost:5173
      Threat feed: ${API_URL}/api/v1/feed.json
      Disclaimer:  ${API_URL}/api/v1/disclaimer
   ─────────────────────────────────────────────

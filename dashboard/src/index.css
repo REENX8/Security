@@ -2,6 +2,33 @@
 @tailwind components;
 @tailwind utilities;
 
+/* Self-hosted Sarabun (Thai + Latin) so the UI renders correctly offline —
+   no CDN dependency on demo day. Thai + basic-Latin subsets, 3 weights. */
+@font-face {
+  font-family: "Sarabun";
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+  src: url("/fonts/sarabun/sarabun-400-thai.woff2") format("woff2"),
+       url("/fonts/sarabun/sarabun-400-latin.woff2") format("woff2");
+}
+@font-face {
+  font-family: "Sarabun";
+  font-style: normal;
+  font-weight: 600;
+  font-display: swap;
+  src: url("/fonts/sarabun/sarabun-600-thai.woff2") format("woff2"),
+       url("/fonts/sarabun/sarabun-600-latin.woff2") format("woff2");
+}
+@font-face {
+  font-family: "Sarabun";
+  font-style: normal;
+  font-weight: 700;
+  font-display: swap;
+  src: url("/fonts/sarabun/sarabun-700-thai.woff2") format("woff2"),
+       url("/fonts/sarabun/sarabun-700-latin.woff2") format("woff2");
+}
+
 html, body, #root {
   height: 100%;
 }
