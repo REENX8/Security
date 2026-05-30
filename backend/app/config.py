@@ -59,6 +59,10 @@ class Settings(BaseSettings):
 
     # --- rate limiting ---
     rate_limit: str = Field(default="100/minute")
+    # /check and /check/batch are public (no API key needed for the extension).
+    # Rate-limited per IP to prevent abuse. Set higher than the global limit
+    # because many real users will hit this endpoint simultaneously.
+    public_check_rate_limit: str = Field(default="30/minute")
 
     # --- feature extraction (network lookups) ---
     enable_whois: bool = Field(default=True)

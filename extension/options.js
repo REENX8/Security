@@ -3,7 +3,7 @@
 import { getSettings, saveSettings, getHistory, clearHistory }
   from "./storage.js";
 
-const fields = ["endpoint", "apiKey", "dashboardUrl"];
+const fields = ["endpoint", "dashboardUrl"];
 const toggles = ["enabled", "notifications", "blockPhishing"];
 
 function setStatus(msg, color = "#22c55e") {

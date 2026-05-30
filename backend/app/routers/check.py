@@ -14,10 +14,11 @@ from app.config import settings
 from app.content_check import content_score_adjustment
 from app.crud import insert_check
 from app.database import get_session
-from app.deps import get_scorer, verify_api_key
+from app.deps import get_scorer
 from app.errors import AppError
 from app.metrics import CACHE_SIZE, CHECK_LATENCY, CHECKS_TOTAL
 from app.notifier import maybe_alert
+from app.rate_limit import limiter
 from app.unshorten import unshorten_url
 from app.schemas import (
     BatchCheckRequest,
@@ -127,9 +128,9 @@ async def _score_and_persist(
 @router.post(
     "/check",
     response_model=CheckResponse,
-    dependencies=[Depends(verify_api_key)],
     summary="Analyse a URL and return a phishing verdict",
 )
+@limiter.limit(settings.public_check_rate_limit)
 async def check_url(
     request: Request,
     payload: CheckRequest,
@@ -142,9 +143,9 @@ async def check_url(
 @router.post(
     "/check/batch",
     response_model=BatchCheckResponse,
-    dependencies=[Depends(verify_api_key)],
     summary="Analyse a batch of URLs in one request",
 )
+@limiter.limit(settings.public_check_rate_limit)
 async def check_batch(
     request: Request,
     payload: BatchCheckRequest,
