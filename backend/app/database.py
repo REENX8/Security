@@ -18,14 +18,19 @@ class Base(DeclarativeBase):
     """Declarative base for all ORM models."""
 
 
+# Required for Supabase Supavisor / PgBouncer in Transaction mode, which
+# does not support prepared statements. It is an asyncpg-only connect arg,
+# so we only pass it for PostgreSQL — SQLite (aiosqlite, used by tests and
+# the `make run` quickstart) rejects unknown kwargs with a TypeError.
+_connect_args: dict[str, object] = {}
+if "asyncpg" in settings.database_url:
+    _connect_args["statement_cache_size"] = 0
+
 engine = create_async_engine(
     settings.database_url,
     echo=False,
     pool_pre_ping=True,
-    # Required for Supabase Supavisor / PgBouncer in Transaction mode.
-    # Safe to set on direct connections too (disables prepared-statement
-    # caching in asyncpg, negligible overhead for this workload).
-    connect_args={"statement_cache_size": 0},
+    connect_args=_connect_args,
 )
 
 SessionLocal = async_sessionmaker(
