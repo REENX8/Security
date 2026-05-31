@@ -12,7 +12,33 @@ or mirror it explicitly.
 
 ---
 
-## [Unreleased] — v1.5.0 schema + scale + continuous retraining (2026-05-29)
+## [Unreleased]
+
+## [1.5.0] — schema + scale + continuous retraining + auth hardening (2026-05-30)
+
+### Fixed
+
+- **`/check` + `/check/batch` returned 422 for every request** — combining
+  `from __future__ import annotations` with slowapi's `@limiter.limit` wrapper
+  stopped FastAPI from resolving the request-body models. Dropped the future
+  import in the rate-limited routers (`check`, `auth`, `feedback`).
+- **SQLite backend was broken** — a hard-coded asyncpg-only connect arg
+  (`statement_cache_size=0`) raised `TypeError` on aiosqlite, so the test suite
+  and `make run` quickstart could not reach the DB. Now applied only when the
+  URL targets asyncpg.
+- **Login crashed on a fresh install** — `passlib[bcrypt]==1.7.4` left bcrypt
+  unpinned; a clean install pulled bcrypt 5.x, which passlib 1.7.4 cannot read.
+  Pinned `bcrypt==4.0.1`.
+- **Case-insensitive search broke on SQLite** — `.ilike()` degrades to
+  case-sensitive `LIKE` on SQLite; switched to `func.lower(col).like(...)` in
+  history/whitelist/domain/campaign search so it works on both dialects.
+
+### Security
+
+- **Rate-limited `/api/v1/auth/login`** to 5/minute per IP to resist password
+  brute-forcing.
+- **Rate-limited `POST /api/v1/feedback`** to 10/minute per IP to resist
+  feedback-table spam / model poisoning.
 
 ### Added
 

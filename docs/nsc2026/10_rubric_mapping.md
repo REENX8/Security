@@ -86,7 +86,7 @@ Story Board · เทคนิค · เครื่องมือ · Spec · �
 3 เดือนถัดไปจะเน้น **ขยายผล** (pilot user จริง 2 โรงเรียน + 1 หน่วยงานราชการ,
 retrain ด้วย live feedback telemetry) ไม่ใช่ "เริ่มสร้าง" ความเสี่ยงจึงต่ำมาก
 LINE Bot, URL Unshortening, Content Fallback และ Feedback Auto-retrain
-**พัฒนาและทดสอบเสร็จแล้ว** (v1.2.0, 251 tests ผ่าน)
+**พัฒนาและทดสอบเสร็จแล้ว** (v1.2.0, 265 tests ผ่าน)
 
 ---
 

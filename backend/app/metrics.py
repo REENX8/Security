@@ -48,6 +48,14 @@ FEED_POLL_ERRORS = Counter(
     labelnames=("source",),
     registry=REGISTRY,
 )
+NETWORK_TIMEOUT = Counter(
+    "phish_network_timeout_total",
+    "WHOIS/TLS lookups that timed out or failed and fell back to imputed "
+    "feature defaults. A rising rate means feature quality is silently "
+    "degrading (e.g. the WHOIS provider is blocking this IP).",
+    labelnames=("kind",),  # "whois" | "tls"
+    registry=REGISTRY,
+)
 
 
 def render_metrics() -> tuple[bytes, str]:

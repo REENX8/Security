@@ -1,15 +1,19 @@
 """POST /api/v1/auth/login — issue a short-lived JWT for the dashboard."""
 
-from __future__ import annotations
+# NOTE: no `from __future__ import annotations` here — the login route is
+# wrapped by slowapi's `@limiter.limit`, whose wrapper does not carry this
+# module's globals. Stringized annotations would make FastAPI fail to resolve
+# the `LoginRequest` body param (same bug that 422'd /check). Keep them real.
 
 from datetime import datetime, timedelta, timezone
 
-from fastapi import APIRouter, HTTPException
+from fastapi import APIRouter, HTTPException, Request
 from jose import jwt
 from passlib.context import CryptContext
 from pydantic import BaseModel
 
 from app.config import settings
+from app.rate_limit import limiter
 
 router = APIRouter()
 _pwd = CryptContext(schemes=["bcrypt"], deprecated="auto")
@@ -27,7 +31,8 @@ class TokenResponse(BaseModel):
 
 
 @router.post("/auth/login", response_model=TokenResponse, tags=["auth"])
-async def login(body: LoginRequest) -> TokenResponse:
+@limiter.limit("5/minute")
+async def login(request: Request, body: LoginRequest) -> TokenResponse:
     """Authenticate with username + password and receive a JWT access token.
 
     Set ``ADMIN_USERNAME`` / ``ADMIN_PASSWORD_HASH`` / ``JWT_SECRET`` in the
