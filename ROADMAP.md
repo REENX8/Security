@@ -28,8 +28,9 @@
   - _AC:_ แอป refuse to start ถ้า prod ใช้ secret default และมี test ครอบใน `tests/` ✅ (`tests/test_config_guard.py`)
 - [x] **A2. Liveness vs Readiness probe** — เพิ่ม `/health/ready` (DB + model) และ `/health/live` แยกจาก `/health`;
   อัปเดต healthcheck → `/health/live` ใน `backend/Dockerfile`, readiness ใน `render.yaml` (`tests/test_health_probes.py`)
-- [ ] **A3. DB migrations (Alembic)** — แทนที่ `create_all` ด้วย Alembic เพื่อ migrate ปลอดภัยบน Postgres prod
-  - _AC:_ `alembic upgrade head` สร้าง schema ตรงกับ `backend/app/models.py`; มี baseline migration
+- [x] **A3. DB migrations (Alembic)** — เพิ่ม `backend/alembic.ini` + async `migrations/env.py` + baseline
+  `0001_baseline`; prod รัน `alembic upgrade head` (render preDeployCommand), dev/test ยังใช้ `create_all`
+  - _AC:_ `alembic upgrade head` สร้าง schema ตรงกับ `backend/app/models.py` ✅ (`tests/test_migrations.py`)
 - [ ] **A4. Observability** — JSON log (`LOG_FORMAT=json`) ครบ request-id ทุก request (มี `middleware.py` แล้ว);
   เปิด `/metrics` (`backend/app/metrics.py`) ให้ Prometheus scrape + ตัวอย่าง dashboard/alert rules
 - [ ] **A5. Rate limit แบบ multi-worker** — ตรวจ `backend/app/rate_limit.py` ให้ใช้ Redis backend บน prod

@@ -47,7 +47,14 @@ async def get_session() -> AsyncGenerator[AsyncSession, None]:
 
 
 async def init_db() -> None:
-    """Create tables if they do not exist (idempotent)."""
+    """Create tables if they do not exist (idempotent).
+
+    This is the zero-setup bootstrap for the local SQLite demo, CI and tests.
+    Production uses Alembic instead (``alembic upgrade head``, wired into the
+    Render preDeployCommand) so schema changes migrate safely; running this
+    afterwards is a harmless no-op because ``create_all`` only adds missing
+    tables.
+    """
     from app import models  # noqa: F401 - ensure models are registered
 
     async with engine.begin() as conn:

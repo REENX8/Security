@@ -20,6 +20,9 @@ services:
     dockerContext: .
     # Gate traffic on readiness (model loaded + DB reachable), not bare liveness.
     healthCheckPath: /health/ready
+    # Run DB migrations before each release goes live (image WORKDIR is
+    # /app/backend, where alembic.ini lives).
+    preDeployCommand: alembic upgrade head
     autoDeploy: true
     envVars:
       # --- Deployment mode ---

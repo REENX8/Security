@@ -1,6 +1,7 @@
 .PHONY: help install test lint format run train evaluate evaluate-gate \
         sync-docs sync-docs-check dashboard extension docker clean nsc-bundle \
-        demo-setup demo-reset demo-verify seed-audit tune-threshold
+        demo-setup demo-reset demo-verify seed-audit tune-threshold \
+        migrate migrate-down migration
 
 PY        ?= python
 PIP       ?= $(PY) -m pip
@@ -25,6 +26,15 @@ lint:  ## Ruff check (if installed).
 
 format:  ## Ruff auto-format (if installed).
 	@$(RUFF) format . || echo "(ruff not installed)"
+
+migrate:  ## Apply DB migrations (alembic upgrade head).
+	cd backend && alembic upgrade head
+
+migrate-down:  ## Roll back the last migration (alembic downgrade -1).
+	cd backend && alembic downgrade -1
+
+migration:  ## Autogenerate a revision from model changes: make migration m="msg".
+	cd backend && alembic revision --autogenerate -m "$(m)"
 
 run:  ## Boot the backend on http://localhost:8000 (SQLite, no Docker).
 	cd backend && DATABASE_URL="sqlite+aiosqlite:///./phish.db" \
