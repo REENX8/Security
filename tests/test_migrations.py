@@ -6,10 +6,9 @@ from pathlib import Path
 
 from alembic import command
 from alembic.config import Config
-from sqlalchemy import create_engine, inspect
-
-from app.database import Base
 from app import models  # noqa: F401 - register tables on Base.metadata
+from app.database import Base
+from sqlalchemy import create_engine, inspect
 
 BACKEND = Path(__file__).resolve().parents[1] / "backend"
 

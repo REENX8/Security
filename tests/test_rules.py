@@ -2,18 +2,15 @@
 
 from __future__ import annotations
 
-import pytest
-
 from phish_features.rules import (
-    RuleHit,
     RulesEngine,
     rule_at_trick,
+    rule_cheap_tld_no_https,
     rule_ip_with_login,
     rule_path_brand_impersonation,
     rule_punycode_brand_match,
     rule_typosquat_with_login,
     rule_whitelisted_exact,
-    rule_cheap_tld_no_https,
 )
 
 

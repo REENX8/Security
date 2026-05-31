@@ -14,19 +14,18 @@ Two formats are served:
 
 from __future__ import annotations
 
+import asyncio
 import csv
 import datetime as dt
 import io
 import uuid
-
-import asyncio
 
 from fastapi import APIRouter, Depends, HTTPException, Query, Request
 from fastapi.responses import JSONResponse, StreamingResponse
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.database import SessionLocal, get_session
+from app.database import get_session
 from app.deps import verify_api_key
 from app.models import ExternalFeedSource, Label, UrlCheck
 

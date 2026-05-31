@@ -27,7 +27,7 @@ async def require_auth(
     # --- JWT Bearer path (dashboard) ---
     if credentials:
         try:
-            from jose import JWTError, jwt
+            from jose import jwt
 
             payload = jwt.decode(
                 credentials.credentials,

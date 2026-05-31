@@ -109,7 +109,7 @@ class Whitelist:
 
     # ----- construction -------------------------------------------------
     @classmethod
-    def from_entries(cls, entries: list[WhitelistEntry]) -> "Whitelist":
+    def from_entries(cls, entries: list[WhitelistEntry]) -> Whitelist:
         # Deduplicate by domain, keep deterministic sorted order.
         by_domain: dict[str, WhitelistEntry] = {}
         for e in entries:
@@ -126,7 +126,7 @@ class Whitelist:
         return wl
 
     @classmethod
-    def from_csv(cls, path: str) -> "Whitelist":
+    def from_csv(cls, path: str) -> Whitelist:
         rows: list[WhitelistEntry] = []
         with open(path, newline="", encoding="utf-8") as fh:
             reader = csv.DictReader(fh)
@@ -144,7 +144,7 @@ class Whitelist:
         return cls.from_entries(rows)
 
     @classmethod
-    def from_json(cls, path: str) -> "Whitelist":
+    def from_json(cls, path: str) -> Whitelist:
         with open(path, encoding="utf-8") as fh:
             payload = json.load(fh)
         rows = [
@@ -197,7 +197,7 @@ class Whitelist:
             return (999, None)
         best_dist = 999
         best_dom: str | None = None
-        for label, dom in zip(self._labels, self._domains):
+        for label, dom in zip(self._labels, self._domains, strict=False):
             d = _lev_distance(target, label)
             if d < best_dist:
                 best_dist, best_dom = d, dom
@@ -218,7 +218,7 @@ class Whitelist:
             return (999, None)
         best_dist = 999
         best_dom: str | None = None
-        for label, dom in zip(self._labels, self._domains):
+        for label, dom in zip(self._labels, self._domains, strict=False):
             d = _lev_distance(normalized_label, label)
             if d < best_dist:
                 best_dist, best_dom = d, dom

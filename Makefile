@@ -1,4 +1,4 @@
-.PHONY: help install test lint format run train evaluate evaluate-gate \
+.PHONY: help install test cov lint typecheck format run train evaluate evaluate-gate \
         sync-docs sync-docs-check dashboard extension docker clean nsc-bundle \
         demo-setup demo-reset demo-verify seed-audit tune-threshold \
         migrate migrate-down migration
@@ -12,20 +12,28 @@ help:  ## Show this help.
 	@grep -E '^[a-zA-Z_-]+:.*?## ' $(MAKEFILE_LIST) \
 	  | awk 'BEGIN {FS = ":.*?## "}; {printf "\033[36m%-15s\033[0m %s\n", $$1, $$2}'
 
-install:  ## Install Python deps for backend + ML.
+install:  ## Install Python deps for backend + ML + dev tooling.
 	$(PIP) install -e .
 	$(PIP) install -r backend/requirements.txt
 	$(PIP) install -r ml_pipeline/requirements.txt
-	$(PIP) install "pytest==8.3.4" "httpx==0.28.1" "pytest-asyncio>=0.23"
+	$(PIP) install "pytest==8.3.4" "httpx==0.28.1" "pytest-asyncio>=0.23" \
+	               "pytest-cov==5.0.0" "ruff==0.8.4" "mypy==1.13.0"
 
 test:  ## Run the full pytest suite.
 	$(PYTEST) -ra
 
-lint:  ## Ruff check (if installed).
-	@$(RUFF) check . || echo "(ruff not installed; pip install ruff to enable)"
+cov:  ## Run tests with the coverage gate (matches CI: fail under 75%).
+	$(PYTEST) -ra --cov=backend/app --cov=phish_features \
+	  --cov-report=term-missing --cov-fail-under=75
 
-format:  ## Ruff auto-format (if installed).
-	@$(RUFF) format . || echo "(ruff not installed)"
+lint:  ## Ruff lint (matches the CI blocking gate).
+	$(RUFF) check backend phish_features ml_pipeline scripts tests
+
+typecheck:  ## Mypy type check (informational).
+	@$(PY) -m mypy backend/app phish_features || true
+
+format:  ## Ruff auto-format the repo.
+	@$(RUFF) format .
 
 migrate:  ## Apply DB migrations (alembic upgrade head).
 	cd backend && alembic upgrade head

@@ -5,10 +5,7 @@ import base64
 import hashlib
 import hmac
 
-import pytest
-
 from app.routers.line_bot import _build_reply, _verify_signature
-
 
 # ---------------------------------------------------------------------------
 # Signature verification

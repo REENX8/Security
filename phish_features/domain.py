@@ -10,7 +10,8 @@ trained to treat that as "unknown".
 from __future__ import annotations
 
 import datetime as _dt
-from concurrent.futures import ThreadPoolExecutor, TimeoutError as _FutureTimeout
+from concurrent.futures import ThreadPoolExecutor
+from concurrent.futures import TimeoutError as _FutureTimeout
 
 from .schema import IMPUTED_DEFAULTS, KNOWN_THAI_REGISTRARS
 

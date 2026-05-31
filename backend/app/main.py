@@ -5,7 +5,6 @@ from __future__ import annotations
 import asyncio
 import datetime as _dt
 import logging
-import time
 from contextlib import asynccontextmanager, suppress
 
 from fastapi import FastAPI, Request
@@ -15,24 +14,21 @@ from slowapi.errors import RateLimitExceeded
 from slowapi.middleware import SlowAPIMiddleware
 from sqlalchemy import func, select
 
-from phish_features import FEATURE_SCHEMA_VERSION
-from phish_features import __version__ as features_version
-
 from app import __version__
 from app.cache import build_cache
 from app.config import settings
 from app.database import SessionLocal, init_db
 from app.errors import register_error_handlers
-from app.metrics import CACHE_SIZE, MODEL_READY, render_metrics
+from app.feed_ingestion import FeedPoller
+from app.metrics import MODEL_READY, render_metrics
 from app.middleware import RequestContextMiddleware
 from app.ml.loader import ModelLoadError, load_scorer
-from app.feed_ingestion import FeedPoller
 from app.models import DbWhitelistEntry, ExternalFeedSource, ExternalFeedSourceType, UrlCheck
 from app.rate_limit import limiter
-from app.routers import campaigns as campaigns_router
-from app.routers import check, history, stats
 from app.routers import admin as admin_router
 from app.routers import auth as auth_router
+from app.routers import campaigns as campaigns_router
+from app.routers import check, history, stats
 from app.routers import domain as domain_router
 from app.routers import feed as feed_router
 from app.routers import feedback as feedback_router
@@ -40,6 +36,8 @@ from app.routers import impact as impact_router
 from app.routers import learn as learn_router
 from app.routers import line_bot as line_bot_router
 from app.routers import watchlist as watchlist_router
+from phish_features import FEATURE_SCHEMA_VERSION
+from phish_features import __version__ as features_version
 
 logging.basicConfig(
     level=logging.INFO,
@@ -50,7 +48,8 @@ logger = logging.getLogger("phish-detector")
 
 async def _seed_whitelist_from_json() -> None:
     """Migrate whitelist.json → DB on first startup (idempotent)."""
-    import json, os
+    import json
+    import os
     path = settings.whitelist_path
     if not os.path.exists(path):
         return

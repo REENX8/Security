@@ -14,6 +14,7 @@ from fastapi.responses import StreamingResponse
 from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from app.config import settings
 from app.database import get_session
 from app.deps import verify_api_key
 from app.models import Feedback, FeedbackSource
@@ -42,7 +43,7 @@ def _row_to_schema(row: Feedback) -> FeedbackOut:
     status_code=201,
     summary="Report a wrong verdict (false positive / false negative)",
 )
-@limiter.limit("10/minute")
+@limiter.limit(settings.report_rate_limit)
 async def create_feedback(
     request: Request,
     payload: FeedbackCreate,

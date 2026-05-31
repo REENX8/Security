@@ -31,14 +31,14 @@
 - [x] **A3. DB migrations (Alembic)** — เพิ่ม `backend/alembic.ini` + async `migrations/env.py` + baseline
   `0001_baseline`; prod รัน `alembic upgrade head` (render preDeployCommand), dev/test ยังใช้ `create_all`
   - _AC:_ `alembic upgrade head` สร้าง schema ตรงกับ `backend/app/models.py` ✅ (`tests/test_migrations.py`)
-- [ ] **A4. Observability** — JSON log (`LOG_FORMAT=json`) ครบ request-id ทุก request (มี `middleware.py` แล้ว);
-  เปิด `/metrics` (`backend/app/metrics.py`) ให้ Prometheus scrape + ตัวอย่าง dashboard/alert rules
-- [ ] **A5. Rate limit แบบ multi-worker** — ตรวจ `backend/app/rate_limit.py` ให้ใช้ Redis backend บน prod
-  (ไม่ใช่ in-memory); เพิ่ม per-IP limit สำหรับ public `/api/v1/check` และ portal `/report`
+- [x] **A4. Observability** — JSON log + request-id (มีอยู่); เพิ่ม Prometheus scrape config + alert rules
+  + Grafana dashboard ใน `deploy/observability/` และ runbook ใน `docs/DEPLOY.md`
+- [x] **A5. Rate limit แบบ multi-worker** — `rate_limit.py` ใช้ Redis storage เมื่อ `REDIS_URL` ตั้ง (fallback in-memory),
+  per-IP limit `/check` + `/feedback` (`report_rate_limit`) (`tests/test_rate_limit_storage.py`)
 - [x] **A6. CORS & security headers** — เพิ่ม HSTS (prod), CSP, X-Content-Type-Options ใน `backend/app/middleware.py`;
   จำกัด `CORS_ORIGINS` แบบ explicit (ห้าม wildcard) ใน prod ผ่าน config guard (`tests/test_health_probes.py`)
-- [ ] **A7. Staging deploy playbook** — เอกสาร step-by-step deploy Render + Supabase จริง,
-  smoke test หลัง deploy (`/health`, `/api/v1/check`, `/metrics`), และ rollback plan
+- [x] **A7. Staging deploy playbook** — `docs/DEPLOY.md`: step-by-step Render + Supabase,
+  smoke test หลัง deploy (`/health/ready`, `/api/v1/check`, `/metrics`, security headers), และ rollback plan
 - [ ] **A8. Backup & retention policy** — นโยบาย backup Postgres + retention ตาราง `url_checks`,
   `webhook_delivery`, `campaigns` (เอกสารระบุว่าโตไม่จำกัด ยังไม่มี retention)
 - [ ] **A9. Load test** — ยืนยัน p95 < 250 ms ตามที่เอกสารอ้าง ด้วย locust/k6 บน staging
@@ -70,10 +70,10 @@
 
 ## หมวด C — คุณภาพโค้ด / ระบบ / ML 🟢
 
-- [ ] **C1. Coverage gate** — เพิ่ม `pytest-cov` + เกณฑ์ขั้นต่ำใน `.github/workflows/ci.yml`;
-  เติมเทสต์ส่วนที่ยังบาง (`unshorten.py`, `notifier.py`, `content_check.py`)
-- [ ] **C2. Lint / format / type** — ตั้ง `ruff` + `black` + `mypy` เป็น CI gate (มี `pyproject.toml` แล้ว);
-  เพิ่ม eslint check ใน job `dashboard-build`
+- [x] **C1. Coverage gate** — `pytest-cov` + `--cov-fail-under=75` ใน CI (`backend-tests`); เติมเทสต์
+  `notifier.py`, `unshorten.py`, `content_check.py`, `net_guard`, rate-limit (cov รวม 78%)
+- [x] **C2. Lint / format / type** — `ruff` config + blocking CI job `lint-type`, `mypy` (informational),
+  eslint flat config + `npm run lint` ใน `dashboard-build` (ruff/eslint ผ่านสะอาด)
 - [ ] **C3. ML accuracy — ลด miss generic** — ทบทวน 4 URLs ใน `reports/missed_generic_urls.csv`:
   ปรับ `min_edit_distance` ใน `phish_features`, ขยาย whitelist/seed, re-run `ml_pipeline` แล้วอัปเดต `reports/*.json`
 - [ ] **C4. Model drift monitoring** — log distribution ของ feature/score ใน prod + alert เมื่อ drift;

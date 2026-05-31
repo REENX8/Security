@@ -24,13 +24,13 @@ from app.errors import AppError
 from app.metrics import CACHE_SIZE, CHECK_LATENCY, CHECKS_TOTAL, NETWORK_TIMEOUT
 from app.notifier import maybe_alert
 from app.rate_limit import limiter
-from app.unshorten import unshorten_url
 from app.schemas import (
     BatchCheckRequest,
     BatchCheckResponse,
     CheckRequest,
     CheckResponse,
 )
+from app.unshorten import unshorten_url
 
 router = APIRouter()
 

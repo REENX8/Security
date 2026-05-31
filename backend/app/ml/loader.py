@@ -7,11 +7,10 @@ import os
 
 import joblib
 
-from phish_features import FEATURE_SCHEMA_VERSION, ORDERED_FEATURES
-
 from app.config import settings
 from app.ml.extractor import build_extractor
 from app.ml.scorer import Scorer
+from phish_features import FEATURE_SCHEMA_VERSION, ORDERED_FEATURES
 
 
 class ModelLoadError(RuntimeError):

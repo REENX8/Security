@@ -31,8 +31,8 @@ os.environ["ENABLE_CACHE"] = "false"
 os.environ["MODEL_DIR"] = str(ROOT / "models")
 os.environ["WHITELIST_PATH"] = str(ROOT / "models" / "whitelist.json")
 
-from fastapi.testclient import TestClient  # noqa: E402
 from app.main import app  # noqa: E402
+from fastapi.testclient import TestClient  # noqa: E402
 
 
 @pytest.fixture(scope="session")

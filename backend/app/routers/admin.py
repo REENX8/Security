@@ -9,9 +9,6 @@ from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 from starlette.concurrency import run_in_threadpool
 
-from phish_features import Whitelist
-from phish_features.whitelist import WhitelistEntry as PhishWhitelistEntry
-
 from app.config import settings
 from app.database import get_session
 from app.deps import verify_api_key
@@ -23,6 +20,8 @@ from app.schemas import (
     WhitelistEntryOut,
     WhitelistListResponse,
 )
+from phish_features import Whitelist
+from phish_features.whitelist import WhitelistEntry as PhishWhitelistEntry
 
 router = APIRouter()
 logger = logging.getLogger("phish-detector")

@@ -21,20 +21,13 @@ import json
 
 import joblib
 import sklearn
+import xgboost
 from sklearn.calibration import CalibratedClassifierCV
 from sklearn.ensemble import RandomForestClassifier, VotingClassifier
 from sklearn.metrics import accuracy_score, f1_score
 from sklearn.model_selection import cross_val_score, train_test_split
 from sklearn.preprocessing import StandardScaler
 from xgboost import XGBClassifier
-import xgboost
-
-from phish_features import (
-    FEATURE_SCHEMA_VERSION,
-    IMPUTED_DEFAULTS,
-    ORDERED_FEATURES,
-    TLD_TYPE_MAP,
-)
 
 from ml_pipeline.config import (
     DATA_DIR,
@@ -47,6 +40,12 @@ from ml_pipeline.config import (
     ensure_dirs,
 )
 from ml_pipeline.feature_engineering import build_feature_frame
+from phish_features import (
+    FEATURE_SCHEMA_VERSION,
+    IMPUTED_DEFAULTS,
+    ORDERED_FEATURES,
+    TLD_TYPE_MAP,
+)
 
 TEST_SPLIT_CSV = f"{DATA_DIR}/test_split.csv"
 BEST_HP_JSON = f"{REPORTS_DIR}/best_hyperparams.json"

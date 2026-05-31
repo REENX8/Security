@@ -163,7 +163,7 @@ LOGIN_KEYWORDS: frozenset[str] = frozenset({
 # heavily on these compared to .com base rates. A 1/0 flag is enough --
 # the model decides the weight.
 SUSPICIOUS_TLDS: frozenset[str] = frozenset({
-    "xyz", "top", "icu", "buzz", "click", "click", "loan",
+    "xyz", "top", "icu", "buzz", "click", "loan",
     "online", "site", "store", "shop", "vip", "live", "work",
     "fit", "lol", "rest", "cfd", "sbs", "bond", "monster",
     "cc", "tk", "ml", "ga", "cf", "gq",

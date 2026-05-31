@@ -10,9 +10,8 @@ from __future__ import annotations
 
 import pandas as pd
 
-from phish_features import FeatureExtractor, ORDERED_FEATURES, Whitelist
-
 from ml_pipeline.config import DATASET_CSV, WHITELIST_JSON
+from phish_features import ORDERED_FEATURES, FeatureExtractor, Whitelist
 
 # Columns in dataset.csv that carry simulated WHOIS/TLS values.
 _NETWORK_COLS = [

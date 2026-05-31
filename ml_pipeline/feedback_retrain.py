@@ -41,11 +41,10 @@ logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s %(mess
 async def _export(since_days: int) -> list[dict]:
     """Pull confirmed feedback rows from the DB; returns [] if DB unavailable."""
     try:
-        from sqlalchemy import select
-        from sqlalchemy.ext.asyncio import AsyncSession, create_async_engine
-
         from app.config import settings
         from app.models import Feedback
+        from sqlalchemy import select
+        from sqlalchemy.ext.asyncio import AsyncSession, create_async_engine
     except ImportError as exc:
         logger.warning("app imports unavailable: %s", exc)
         return []

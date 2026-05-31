@@ -72,6 +72,10 @@ class Settings(BaseSettings):
     # Rate-limited per IP to prevent abuse. Set higher than the global limit
     # because many real users will hit this endpoint simultaneously.
     public_check_rate_limit: str = Field(default="30/minute")
+    # Per-IP limit for the public report/feedback endpoint (no API key). Lower
+    # than /check because legitimate users report far less often than they
+    # browse, and it is a cheap abuse target.
+    report_rate_limit: str = Field(default="10/minute")
 
     # --- feature extraction (network lookups) ---
     enable_whois: bool = Field(default=True)
@@ -199,7 +203,7 @@ class Settings(BaseSettings):
         return problems
 
     @model_validator(mode="after")
-    def _guard_production_secrets(self) -> "Settings":
+    def _guard_production_secrets(self) -> Settings:
         if not self.is_production:
             return self
         problems = self.production_config_problems()

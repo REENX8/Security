@@ -2,10 +2,7 @@
 from __future__ import annotations
 
 import csv
-from pathlib import Path
 from unittest.mock import AsyncMock, patch
-
-import pytest
 
 from ml_pipeline.feedback_retrain import (
     MIN_ROWS_FOR_RETRAIN,

@@ -10,10 +10,9 @@ from __future__ import annotations
 import datetime as dt
 
 import pytest
+from app.config import settings
 from jose import jwt
 from passlib.context import CryptContext
-
-from app.config import settings
 
 _PWD = CryptContext(schemes=["bcrypt"], deprecated="auto")
 _TEST_PASSWORD = "s3cret-pw"

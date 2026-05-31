@@ -21,7 +21,7 @@ import collections
 import csv
 import os
 import sys
-from typing import Iterable
+from collections.abc import Iterable
 from urllib.parse import urlparse
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
@@ -94,7 +94,7 @@ def main() -> int:
     tlds = [_registrable_tld(r["url"]) for r in rows]
     patterns = [_classify_pattern(r["url"]) for r in rows]
 
-    distinct_brands = sorted(set(b for b in brands if b))
+    distinct_brands = sorted({b for b in brands if b})
 
     print("=" * 60)
     print("  Thai-targeting phishing seed corpus -- coverage audit")
