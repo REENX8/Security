@@ -168,7 +168,7 @@ brand ราชการที่ประชาชนไว้ใจ — สร
 | ความแม่นยำ | Thai-targeting recall ≥ 95% | ✅ 100% (378/378) |
 | ความครอบคลุม | Whitelist ราชการ/การศึกษา/ธนาคารไทย ≥ 500 โดเมน | ✅ 500+ โดเมน |
 | ความใช้งานได้จริง | Extension รองรับ Chrome/Edge/Firefox/Brave/Opera | ✅ MV3 ปล่อยใช้ได้ |
-| ความยั่งยืนของโค้ด | Test coverage + CI gate | ✅ 251 tests, recall ≥ 0.85 gate |
+| ความยั่งยืนของโค้ด | Test coverage + CI gate | ✅ 265 tests, recall ≥ 0.85 gate |
 | ผลกระทบทางสังคม | Portal แจ้งฟิชชิงไม่ต้อง login | ✅ `/report` พร้อมใช้งาน |
 | Latency | p95 ตรวจ 1 URL ≤ 250 ms | ✅ ~30 ms CPU inference |
 
@@ -342,7 +342,7 @@ URL ที่ fingerprint ตรงกันถือเป็น campaign เ�
 | Frontend framework | React 18, Vite 5, TailwindCSS 3, TanStack Query, Recharts |
 | Browser extension | Manifest V3, chrome.webNavigation API, service worker |
 | Database | PostgreSQL 16 (production) / SQLite (dev/demo) |
-| Testing | pytest 8.3, httpx 0.28 (TestClient) — 251 cases |
+| Testing | pytest 8.3, httpx 0.28 (TestClient) — 265 cases |
 | CI/CD | GitHub Actions, Docker, ruff, recall-gate check |
 | Deploy | Docker, Docker Compose, Render Blueprint |
 | IDE | VS Code |

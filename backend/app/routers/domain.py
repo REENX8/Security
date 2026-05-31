@@ -8,7 +8,7 @@ from urllib.parse import urlparse
 
 from fastapi import APIRouter, Depends, HTTPException
 from pydantic import BaseModel
-from sqlalchemy import select
+from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.database import get_session
@@ -61,7 +61,7 @@ async def domain_history(
     rows = (
         await session.execute(
             select(UrlCheck)
-            .where(UrlCheck.url.ilike(f"%{host}%"))
+            .where(func.lower(UrlCheck.url).like(f"%{host.lower()}%"))
             .where(UrlCheck.checked_at >= since)
             .order_by(UrlCheck.checked_at.desc())
         )
