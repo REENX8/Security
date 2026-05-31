@@ -664,7 +664,7 @@ GitHub Actions รัน test suite + dashboard build + Docker build + extension
 
 [Apache 2.0](LICENSE) · เห็นรายการ third-party dependencies ที่ [`NOTICE`](NOTICE)
 
-ดู [`CHANGELOG.md`](CHANGELOG.md) สำหรับการเปลี่ยนแปลงทุกเวอร์ชัน, [`SECURITY.md`](SECURITY.md) สำหรับ vulnerability disclosure, และ [`CONTRIBUTING.md`](CONTRIBUTING.md) สำหรับการมีส่วนร่วม
+ดู [`CHANGELOG.md`](CHANGELOG.md) สำหรับการเปลี่ยนแปลงทุกเวอร์ชัน, [`ROADMAP.md`](ROADMAP.md) สำหรับ todo list / แผนพัฒนา, [`SECURITY.md`](SECURITY.md) สำหรับ vulnerability disclosure, และ [`CONTRIBUTING.md`](CONTRIBUTING.md) สำหรับการมีส่วนร่วม
 
 ---
 
