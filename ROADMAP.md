@@ -49,14 +49,14 @@
 
 ต่อยอดคุณค่าและการเข้าถึงผู้ใช้
 
-- [ ] **B1. LINE Official Account Bot** — ทำ `backend/app/routers/line_bot.py` ให้สมบูรณ์:
-  webhook signature verify, ผู้ใช้พิมพ์ URL → ตอบผลตรวจ, rich message ภาษาไทย; เอกสารตั้งค่า channel
-  - _AC:_ test mock LINE webhook ใน `tests/test_line_bot.py` ครอบ flow ตรวจ URL จริง
+- [x] **B1. LINE Official Account Bot** — `line_bot.py` สมบูรณ์: signature verify, URL → ตอบผลตรวจภาษาไทย,
+  unshorten ก่อน score (parity กับ `/check`); เอกสารตั้งค่า channel ใน docstring
+  - _AC:_ mock LINE webhook flow ครอบการตรวจ URL จริง ✅ (`tests/test_line_bot.py`)
 - [ ] **B2. SMS Report Gateway** — รับรายงาน phishing ผ่าน SMS (ผู้ไม่มี smartphone) ผ่าน provider → เข้าคิว `/report`
 - [ ] **B3. Government Integration** — pluggable connector เชื่อม ETDA 1212 / ตำรวจไซเบอร์ 1441
   (ส่งต่อรายงาน + ดึง blocklist)
-- [ ] **B4. TAXII 2.1 Server** — ยกระดับจาก STIX bundle export เป็น TAXII 2.1 collection เต็มรูปแบบ
-  ใน `backend/app/routers/feed.py`
+- [x] **B4. TAXII 2.1 Server** — `routers/taxii.py` read-only: discovery / api-root / collections /
+  objects (envelope) / manifest, STIX indicators ผ่าน `app/stix.py` (deterministic id) (`tests/test_taxii.py`)
 - [ ] **B5. Federated Learning** — รวม signal หลายหน่วยงานโดยไม่แชร์ raw URL (aggregate counts);
   ออกแบบ protocol + privacy review ก่อน implement
 - [ ] **B6. Visual Fingerprinting** — เทียบ screenshot (headless browser) กับ template หน่วยงานจริง

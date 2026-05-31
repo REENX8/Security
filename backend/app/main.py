@@ -35,6 +35,7 @@ from app.routers import feedback as feedback_router
 from app.routers import impact as impact_router
 from app.routers import learn as learn_router
 from app.routers import line_bot as line_bot_router
+from app.routers import taxii as taxii_router
 from app.routers import watchlist as watchlist_router
 from phish_features import FEATURE_SCHEMA_VERSION
 from phish_features import __version__ as features_version
@@ -308,6 +309,7 @@ app.include_router(impact_router.router, prefix="/api/v1", tags=["impact"])
 app.include_router(learn_router.router, prefix="/api/v1", tags=["learn"])
 if settings.enable_public_feed:
     app.include_router(feed_router.router, prefix="/api/v1", tags=["feed"])
+    app.include_router(taxii_router.router, prefix="/api/v1", tags=["taxii"])
 if settings.line_channel_token or settings.line_channel_secret:
     app.include_router(line_bot_router.router, prefix="/api/v1", tags=["line"])
 
@@ -432,6 +434,7 @@ async def root() -> dict:
             "GET  /api/v1/feed.json",
             "GET  /api/v1/feed.csv",
             "GET  /api/v1/feed.stix",
+            "GET  /api/v1/taxii2/",
             "GET  /api/v1/impact",
             "GET  /api/v1/learn",
             "GET  /api/v1/learn/{card_id}",
