@@ -48,8 +48,13 @@ You can wipe `history` and `tabResults` at any time via the
 | `webNavigation`         | To observe top-level page navigations so a URL can be checked *before* you interact with the page. |
 | `notifications`         | To raise a desktop alert when a phishing page is detected. |
 | `storage`               | To remember your settings and last-100 history client-side. |
-| `tabs` + `activeTab`    | To redirect the current tab to the warning interstitial when a phishing URL is detected, and to read the active tab in the popup. |
-| `host_permissions: *`   | To allow the extension's content layer to act on URLs the user navigates to (URLs are not fetched by the extension itself). |
+| `host_permissions: *`   | Required by `webNavigation` to *report the URL* of pages you visit so they can be checked. The extension never injects scripts into pages or reads page content; it only reads the navigated URL. |
+
+> Minimised in v1.2.1: the `tabs` and `activeTab` permissions were **removed**.
+> The popup needs only the active tab's id (which requires no permission), and
+> redirecting to the warning page uses `tabs.update`/`tabs.create`, which also
+> need no permission. The only broad grant left is `host_permissions`, which
+> `webNavigation` cannot function without.
 
 ## Third-party services
 The extension talks to **only one server**: the API endpoint you configure on

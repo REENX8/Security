@@ -114,7 +114,7 @@
 
 **Production-grade observability** — `/health`, `/version`, `/metrics` (Prometheus), structured JSON logs (`LOG_FORMAT=json`), `X-Request-ID` propagation, security response headers ทุก response
 
-**265 automated tests** — feature extraction, rules engine, campaign clustering, scorer, middleware, ทุก API endpoint, JWT login + auth, golden URLs, Thai seed corpus + holdout split (รวม guard ใหม่ใน v1.3.0 ที่ฟ้องถ้า holdout < 300 rows), feed ingestion, URL unshortener, content check, LINE bot, feedback retrain, generic seed corpus, doc-metric sync, extension store-readiness, TLS helpers
+**331 automated tests** — feature extraction, rules engine, campaign clustering + SIEM export, scorer, middleware + security headers, liveness/readiness probes, ทุก API endpoint, JWT login + auth, golden URLs, Thai seed corpus + holdout split (รวม guard ใหม่ใน v1.3.0 ที่ฟ้องถ้า holdout < 300 rows), feed ingestion, TAXII 2.1 server, SSRF net guard, config production guard, Alembic migrations, URL unshortener, content check, LINE bot webhook, feedback retrain + auto-trigger, threshold A/B telemetry, data retention, generic seed corpus, doc-metric sync, extension store-readiness + manifest hardening, TLS helpers
 
 ---
 
@@ -347,10 +347,13 @@ route สาธารณะ (ไม่ต้อง auth): **`/check`, `/check/ba
 | `GET / POST / DELETE /api/v1/watchlist[/{brand}]` | brand watch + webhook |
 | `GET  /api/v1/watchlist/deliveries` | ดู delivery log ของ webhook (success/error) |
 | `GET  /api/v1/campaigns` | campaign clusters (filter ด้วย brand, min_urls) |
+| `GET  /api/v1/campaigns/export.json`, `/api/v1/campaigns/export.stix` | SIEM/SOAR export ของ campaigns (flat JSON / STIX grouping; admin) |
 | `GET  /api/v1/domain/{host}/history` | reputation timeline ของ host |
 | `GET  /api/v1/feed.json` | public phishing feed (no auth) |
 | `GET  /api/v1/feed.csv`  | spreadsheet-friendly |
 | `GET  /api/v1/feed.stix` | STIX 2.1 bundle (indicators only) |
+| `GET  /api/v1/taxii2/` | TAXII 2.1 server (discovery → collections → objects/manifest) |
+| `GET  /health/live`, `/health/ready` | liveness / readiness probes (A2) |
 | `GET  /api/v1/feed/sources` | รายการ external feed sources (admin) |
 | `POST /api/v1/feed/sources/{id}/poll` | trigger poll ทันที (admin) |
 | `GET  /api/v1/impact` | ยอดเสียหายที่ป้องกัน คำนวณ ฿7,800 × blocked count เรียลไทม์ (no auth) |
@@ -601,7 +604,7 @@ Dashboard: `VITE_API_URL`, `VITE_API_KEY`
 ## Tests
 
 ```bash
-make test                     # 265 tests, ~15 วินาที
+make test                     # 331 tests, ~15 วินาที
 ```
 
 | Suite                  | ครอบคลุม |
@@ -665,6 +668,8 @@ GitHub Actions รัน test suite + dashboard build + Docker build + extension
 [Apache 2.0](LICENSE) · เห็นรายการ third-party dependencies ที่ [`NOTICE`](NOTICE)
 
 ดู [`CHANGELOG.md`](CHANGELOG.md) สำหรับการเปลี่ยนแปลงทุกเวอร์ชัน, [`ROADMAP.md`](ROADMAP.md) สำหรับ todo list / แผนพัฒนา, [`SECURITY.md`](SECURITY.md) สำหรับ vulnerability disclosure, และ [`CONTRIBUTING.md`](CONTRIBUTING.md) สำหรับการมีส่วนร่วม
+
+เอกสาร operations เพิ่มเติม: [`docs/DEPLOY.md`](docs/DEPLOY.md) (staging deploy + smoke test + backup/retention + load test), [`docs/ML_OPS.md`](docs/ML_OPS.md) (drift monitoring, retrain cadence, threshold A/B, seed refresh), [`docs/SECURITY_REVIEW.md`](docs/SECURITY_REVIEW.md) (SSRF/injection/authz review), และ [`deploy/observability/`](deploy/observability) (Prometheus + Grafana)
 
 ---
 
