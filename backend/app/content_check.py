@@ -5,17 +5,20 @@ Fetches the HTML of a URL and looks for brand impersonation signals
 browser.  Only called when the ML score falls in the suspicious–phishing
 gray zone (between threshold_suspicious and threshold_phishing).
 
-SSRF protection: private-IP ranges and localhost are rejected before
-any HTTP connection is made.
+SSRF protection: the hostname is resolved and rejected before any HTTP
+connection is made if it points at a private / loopback / link-local /
+reserved address (see :mod:`app.net_guard`). Redirects are NOT followed,
+so a 30x response cannot bounce the fetch to an internal address.
 """
 from __future__ import annotations
 
-import ipaddress
 import logging
 import re
 from urllib.parse import urlparse
 
 import httpx
+
+from app.net_guard import url_is_safe_async
 
 logger = logging.getLogger("phish-detector")
 
@@ -29,29 +32,6 @@ _META_REFRESH_RE = re.compile(
     r"<meta[^>]*http-equiv=['\"]refresh['\"][^>]*url=([^'\"> ]+)",
     re.IGNORECASE,
 )
-
-_PRIVATE_NETS = [
-    ipaddress.ip_network(c)
-    for c in (
-        "10.0.0.0/8",
-        "172.16.0.0/12",
-        "192.168.0.0/16",
-        "127.0.0.0/8",
-        "169.254.0.0/16",
-        "::1/128",
-    )
-]
-
-
-def _is_private_host(host: str) -> bool:
-    if host in ("localhost", "localtest.me"):
-        return True
-    try:
-        addr = ipaddress.ip_address(host)
-        return any(addr in net for net in _PRIVATE_NETS)
-    except ValueError:
-        return False
-
 
 async def content_score_adjustment(
     url: str,
@@ -67,15 +47,15 @@ async def content_score_adjustment(
     never blocks a verdict).
     """
     host = urlparse(url).netloc.lower().removeprefix("www.")
-    if _is_private_host(host):
+    # SSRF guard: resolve the host and bail on any non-public address.
+    if not await url_is_safe_async(url):
         return 0.0
 
     try:
         async with httpx.AsyncClient(
-            follow_redirects=True,
+            follow_redirects=False,
             timeout=timeout,
             headers={"User-Agent": "Mozilla/5.0 (compatible; PhishBot/1.0)"},
-            max_redirects=3,
         ) as client:
             resp = await client.get(url)
             if resp.status_code not in range(200, 300):

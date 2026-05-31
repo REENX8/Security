@@ -258,6 +258,9 @@ async def disclaimer() -> dict:
     }
 
 # --- middleware (added last = outermost) ---
+# In production the config guard (config.py) has already rejected a wildcard
+# CORS policy, so allow_origins here is an explicit allowlist. The chrome
+# extension origin is matched separately by regex.
 app.state.limiter = limiter
 app.add_middleware(SlowAPIMiddleware)
 app.add_middleware(
@@ -269,7 +272,12 @@ app.add_middleware(
     allow_headers=["*"],
     expose_headers=["X-Request-ID"],
 )
-app.add_middleware(RequestContextMiddleware, log_format=settings.log_format)
+app.add_middleware(
+    RequestContextMiddleware,
+    log_format=settings.log_format,
+    hsts=settings.hsts_enabled or settings.is_production,
+    hsts_max_age=settings.hsts_max_age,
+)
 
 
 # --- error handlers ---
@@ -341,6 +349,47 @@ async def health(request: Request) -> dict:
     }
 
 
+@app.get("/health/live", tags=["meta"])
+async def liveness() -> dict:
+    """Liveness probe: the process is up and the event loop is responsive.
+
+    Deliberately does NO I/O so an orchestrator (k8s, Render) never restarts a
+    healthy container just because Postgres or the model is briefly unavailable.
+    Use /health/ready to gate traffic instead.
+    """
+    return {"status": "alive"}
+
+
+@app.get("/health/ready", tags=["meta"])
+async def readiness(request: Request) -> JSONResponse:
+    """Readiness probe: the model is loaded AND the database is reachable.
+
+    Returns 503 (not ready) when a dependency is down so a load balancer stops
+    routing traffic to this replica until it recovers. This is the path a
+    production deploy should point its health check at.
+    """
+    scorer = getattr(request.app.state, "scorer", None)
+    model_ready = scorer is not None
+
+    db_ready = True
+    try:
+        async with SessionLocal() as session:
+            await session.execute(select(func.count()).select_from(UrlCheck))
+    except Exception as exc:  # noqa: BLE001
+        db_ready = False
+        logger.warning("readiness: DB check failed: %s", exc)
+
+    ready = model_ready and db_ready
+    return JSONResponse(
+        status_code=200 if ready else 503,
+        content={
+            "status": "ready" if ready else "not_ready",
+            "model_ready": model_ready,
+            "db_ready": db_ready,
+        },
+    )
+
+
 @app.get("/metrics", tags=["meta"], include_in_schema=False)
 async def metrics_endpoint() -> Response:
     body, content_type = render_metrics()
@@ -388,6 +437,8 @@ async def root() -> dict:
             "GET  /api/v1/learn",
             "GET  /api/v1/learn/{card_id}",
             "GET  /health",
+            "GET  /health/live",
+            "GET  /health/ready",
             "GET  /version",
             "GET  /metrics",
         ],

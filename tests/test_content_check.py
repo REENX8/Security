@@ -1,35 +1,23 @@
-"""Tests for content-based gray-zone fallback check."""
+"""Tests for content-based gray-zone fallback check.
+
+The SSRF guard (``url_is_safe_async``) is patched to True in the HTML-signal
+tests so they exercise the scoring logic without a real DNS lookup; a dedicated
+test covers the guard rejecting a non-public host.
+"""
 from __future__ import annotations
 
 from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
 
-from app.content_check import _is_private_host, content_score_adjustment
-
-
-def test_private_host_loopback():
-    assert _is_private_host("127.0.0.1")
-    assert _is_private_host("::1")
-    assert _is_private_host("localhost")
-    assert _is_private_host("localtest.me")
-
-
-def test_private_host_rfc1918():
-    assert _is_private_host("192.168.1.100")
-    assert _is_private_host("10.0.0.1")
-    assert _is_private_host("172.16.0.1")
-    assert _is_private_host("172.31.255.255")
-
-
-def test_public_host_not_private():
-    assert not _is_private_host("8.8.8.8")
-    assert not _is_private_host("phishing.xyz")
+from app.content_check import content_score_adjustment
 
 
 @pytest.mark.asyncio
-async def test_private_host_returns_zero_no_fetch():
-    with patch("app.content_check.httpx.AsyncClient") as mock:
+async def test_unsafe_host_returns_zero_no_fetch():
+    """When the SSRF guard rejects the URL, no HTTP call is made."""
+    with patch("app.content_check.url_is_safe_async", AsyncMock(return_value=False)), \
+            patch("app.content_check.httpx.AsyncClient") as mock:
         result = await content_score_adjustment(
             "http://192.168.1.1/phish", frozenset({"krungthai"})
         )
@@ -42,7 +30,9 @@ async def test_brand_in_title_raises_score():
     # Brand appears in page title but the host has no relation to it
     # (path-brand-bait pattern: random host + brand content)
     html = "<html><title>krungthai ลงชื่อเข้าใช้</title></html>"
-    with patch("app.content_check.httpx.AsyncClient", return_value=_make_mock_client(html)):
+    with _safe_guard(), patch(
+        "app.content_check.httpx.AsyncClient", return_value=_make_mock_client(html)
+    ):
         adj = await content_score_adjustment(
             "https://random-abc123.xyz/login",
             frozenset({"krungthai"}),
@@ -53,7 +43,9 @@ async def test_brand_in_title_raises_score():
 @pytest.mark.asyncio
 async def test_password_field_raises_score():
     html = "<html><title>ระบบ</title><input type='password' name='pass'/></html>"
-    with patch("app.content_check.httpx.AsyncClient", return_value=_make_mock_client(html)):
+    with _safe_guard(), patch(
+        "app.content_check.httpx.AsyncClient", return_value=_make_mock_client(html)
+    ):
         adj = await content_score_adjustment(
             "https://somesite.xyz/login",
             frozenset(),
@@ -64,7 +56,9 @@ async def test_password_field_raises_score():
 @pytest.mark.asyncio
 async def test_thai_official_in_title_lowers_score():
     html = "<html><title>portal.moph.go.th ระบบ</title></html>"
-    with patch("app.content_check.httpx.AsyncClient", return_value=_make_mock_client(html)):
+    with _safe_guard(), patch(
+        "app.content_check.httpx.AsyncClient", return_value=_make_mock_client(html)
+    ):
         adj = await content_score_adjustment(
             "https://legit.moph.go.th/system",
             frozenset(),
@@ -80,7 +74,9 @@ async def test_login_form_posting_to_foreign_host_raises_score():
         "<form action='https://evil-collector.top/grab'>"
         "<input type='password' name='pw'/></form></html>"
     )
-    with patch("app.content_check.httpx.AsyncClient", return_value=_make_mock_client(html)):
+    with _safe_guard(), patch(
+        "app.content_check.httpx.AsyncClient", return_value=_make_mock_client(html)
+    ):
         adj = await content_score_adjustment(
             "https://bank-login.xyz/signin", frozenset()
         )
@@ -95,7 +91,9 @@ async def test_same_host_form_action_no_extra_penalty():
         "<form action='https://bank-login.xyz/submit'>"
         "<input type='password' name='pw'/></form></html>"
     )
-    with patch("app.content_check.httpx.AsyncClient", return_value=_make_mock_client(html)):
+    with _safe_guard(), patch(
+        "app.content_check.httpx.AsyncClient", return_value=_make_mock_client(html)
+    ):
         adj = await content_score_adjustment(
             "https://bank-login.xyz/signin", frozenset()
         )
@@ -109,7 +107,9 @@ async def test_meta_refresh_to_foreign_host_raises_score():
         "<html><head><meta http-equiv='refresh' "
         "content='0;url=https://elsewhere.top/landing'></head></html>"
     )
-    with patch("app.content_check.httpx.AsyncClient", return_value=_make_mock_client(html)):
+    with _safe_guard(), patch(
+        "app.content_check.httpx.AsyncClient", return_value=_make_mock_client(html)
+    ):
         adj = await content_score_adjustment(
             "https://cloaked.xyz/", frozenset()
         )
@@ -120,7 +120,9 @@ async def test_meta_refresh_to_foreign_host_raises_score():
 async def test_fetch_error_returns_zero():
     mock_client = AsyncMock()
     mock_client.__aenter__ = AsyncMock(side_effect=Exception("timeout"))
-    with patch("app.content_check.httpx.AsyncClient", return_value=mock_client):
+    with _safe_guard(), patch(
+        "app.content_check.httpx.AsyncClient", return_value=mock_client
+    ):
         adj = await content_score_adjustment(
             "https://safe.obec.go.th", frozenset({"obec"})
         )
@@ -129,9 +131,16 @@ async def test_fetch_error_returns_zero():
 
 @pytest.mark.asyncio
 async def test_non_200_returns_zero():
-    with patch("app.content_check.httpx.AsyncClient", return_value=_make_mock_client("", 404)):
+    with _safe_guard(), patch(
+        "app.content_check.httpx.AsyncClient", return_value=_make_mock_client("", 404)
+    ):
         adj = await content_score_adjustment("https://example.xyz", frozenset())
     assert adj == 0.0
+
+
+def _safe_guard():
+    """Patch the SSRF guard to allow the fetch (host treated as public)."""
+    return patch("app.content_check.url_is_safe_async", AsyncMock(return_value=True))
 
 
 def _make_mock_client(html: str, status: int = 200):
@@ -144,7 +153,3 @@ def _make_mock_client(html: str, status: int = 200):
     mock_client.__aexit__ = AsyncMock(return_value=None)
     mock_client.get = AsyncMock(return_value=mock_resp)
     return mock_client
-
-
-def _make_mock_fetch(html: str, status: int = 200):
-    pass  # helper kept for readability — actual mock built inline

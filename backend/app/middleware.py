@@ -33,15 +33,36 @@ _SECURITY_HEADERS: dict[str, str] = {
     "Permissions-Policy": "interest-cohort=()",
     "X-Frame-Options": "DENY",
     "Cross-Origin-Opener-Policy": "same-origin",
+    # This service is a JSON API (Swagger UI excepted, see below). A locked-down
+    # CSP means that even if a response were ever reflected as HTML it could not
+    # load scripts or be framed. `/docs` and `/redoc` need a looser policy to
+    # run their bundled UI, so they are exempted in dispatch().
+    "Content-Security-Policy": (
+        "default-src 'none'; frame-ancestors 'none'; base-uri 'none'"
+    ),
 }
+
+# Swagger UI / ReDoc load their assets from a CDN and run inline scripts, so the
+# strict API CSP above would blank the page. These paths get no CSP header.
+_CSP_EXEMPT_PREFIXES = ("/docs", "/redoc", "/openapi.json")
 
 
 class RequestContextMiddleware(BaseHTTPMiddleware):
     """Stamp every request with a stable id + security headers + access log."""
 
-    def __init__(self, app, *, log_format: str = "text") -> None:
+    def __init__(
+        self,
+        app,
+        *,
+        log_format: str = "text",
+        hsts: bool = False,
+        hsts_max_age: int = 63072000,
+    ) -> None:
         super().__init__(app)
         self._json_logs = log_format.lower() == "json"
+        self._hsts_value = (
+            f"max-age={hsts_max_age}; includeSubDomains" if hsts else None
+        )
         self._log = logging.getLogger("phish-detector.access")
 
     async def dispatch(self, request: Request, call_next):
@@ -63,8 +84,15 @@ class RequestContextMiddleware(BaseHTTPMiddleware):
 
         elapsed_ms = (time.perf_counter() - start) * 1000
         response.headers[REQUEST_ID_HEADER] = req_id
+        csp_exempt = request.url.path.startswith(_CSP_EXEMPT_PREFIXES)
         for k, v in _SECURITY_HEADERS.items():
+            if k == "Content-Security-Policy" and csp_exempt:
+                continue
             response.headers.setdefault(k, v)
+        if self._hsts_value is not None:
+            response.headers.setdefault(
+                "Strict-Transport-Security", self._hsts_value
+            )
         self._emit(request, status=response.status_code,
                    elapsed_ms=elapsed_ms, req_id=req_id)
         return response

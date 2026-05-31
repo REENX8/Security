@@ -4,11 +4,20 @@ from __future__ import annotations
 
 from pathlib import Path
 
-from pydantic import Field, field_validator
+from pydantic import Field, field_validator, model_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 # Repo root = <root>/backend/app/config.py -> parents[2].
 ROOT = Path(__file__).resolve().parents[2]
+
+# Built-in placeholder secrets shipped for the zero-setup local demo. They MUST
+# never reach a public deployment, so the production guard below refuses to
+# start when any of them is still in place (see A1 in ROADMAP.md).
+_INSECURE_API_KEYS = frozenset({"", "dev-local-key-change-me", "change-this"})
+_INSECURE_JWT_SECRETS = frozenset(
+    {"", "change-this-secret-in-production-use-openssl-rand-hex-32"}
+)
+_PROD_ENV_NAMES = frozenset({"production", "prod", "live"})
 
 
 class Settings(BaseSettings):
@@ -87,6 +96,14 @@ class Settings(BaseSettings):
     # --- server ---
     app_name: str = Field(default="Thai Phishing URL Detector")
     log_format: str = Field(default="text")  # "text" or "json"
+    # Deployment environment. When set to "production" (APP_ENV=production) the
+    # startup guard below refuses to run with placeholder secrets or a wildcard
+    # CORS policy. Leave as "development" for the local demo / CI.
+    app_env: str = Field(default="development")
+    # Send HTTP Strict-Transport-Security. Only safe behind HTTPS (Render,
+    # a reverse proxy with TLS), so it is opt-in and forced on in production.
+    hsts_enabled: bool = Field(default=False)
+    hsts_max_age: int = Field(default=63072000)  # 2 years (seconds)
 
     # --- public threat feed ---
     enable_public_feed: bool = Field(default=True)
@@ -139,6 +156,62 @@ class Settings(BaseSettings):
     @property
     def cors_origin_list(self) -> list[str]:
         return [o.strip() for o in self.cors_origins.split(",") if o.strip()]
+
+    @property
+    def is_production(self) -> bool:
+        return self.app_env.strip().lower() in _PROD_ENV_NAMES
+
+    def production_config_problems(self) -> list[str]:
+        """Return a list of insecure-config problems for a production run.
+
+        Empty list means the configuration is safe to expose publicly. This is
+        split out from the validator so it can be unit-tested directly and
+        reused by the readiness probe.
+        """
+        problems: list[str] = []
+        if self.api_key in _INSECURE_API_KEYS:
+            problems.append(
+                "API_KEY is unset or still the built-in demo value -- "
+                "set a strong random key."
+            )
+        if (
+            self.jwt_secret in _INSECURE_JWT_SECRETS
+            or "change-this" in self.jwt_secret.lower()
+            or len(self.jwt_secret) < 16
+        ):
+            problems.append(
+                "JWT_SECRET is unset/placeholder/too short -- "
+                "generate one with `openssl rand -hex 32`."
+            )
+        if not self.admin_password_hash.strip():
+            problems.append(
+                "ADMIN_PASSWORD_HASH is empty -- dashboard login would be "
+                "disabled or insecure."
+            )
+        # A wildcard CORS policy lets any site call the credential-bearing
+        # admin endpoints from a victim's browser. Forbid it in production.
+        for origin in self.cors_origin_list:
+            if "*" in origin:
+                problems.append(
+                    f"CORS_ORIGINS contains a wildcard ('{origin}') -- list "
+                    "explicit origins in production."
+                )
+        return problems
+
+    @model_validator(mode="after")
+    def _guard_production_secrets(self) -> "Settings":
+        if not self.is_production:
+            return self
+        problems = self.production_config_problems()
+        if problems:
+            bullet = "\n  - ".join(problems)
+            raise ValueError(
+                "Refusing to start in production (APP_ENV=production) with an "
+                f"insecure configuration:\n  - {bullet}\n"
+                "Fix the variables above or set APP_ENV=development for local "
+                "use."
+            )
+        return self
 
 
 settings = Settings()

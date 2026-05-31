@@ -22,20 +22,20 @@
 
 ด่านที่ต้องผ่านก่อนเปิดใช้งานจริงสู่สาธารณะ
 
-- [ ] **A1. Secrets & config hardening** — เพิ่ม startup guard ใน `backend/app/config.py` ปฏิเสธค่า default
+- [x] **A1. Secrets & config hardening** — เพิ่ม startup guard ใน `backend/app/config.py` ปฏิเสธค่า default
   (`change-this-*`, `dev-local-key-change-me`) เมื่อรันโหมด production; บังคับตั้ง `JWT_SECRET`, `API_KEY`,
   `ADMIN_PASSWORD_HASH`
-  - _AC:_ แอป refuse to start ถ้า prod ใช้ secret default และมี test ครอบใน `tests/`
-- [ ] **A2. Liveness vs Readiness probe** — เพิ่ม `/health/ready` ตรวจ DB + model loaded แยกจาก `/health`;
-  อัปเดต healthcheck ใน `render.yaml`, `docker-compose.yml`, `backend/Dockerfile`
+  - _AC:_ แอป refuse to start ถ้า prod ใช้ secret default และมี test ครอบใน `tests/` ✅ (`tests/test_config_guard.py`)
+- [x] **A2. Liveness vs Readiness probe** — เพิ่ม `/health/ready` (DB + model) และ `/health/live` แยกจาก `/health`;
+  อัปเดต healthcheck → `/health/live` ใน `backend/Dockerfile`, readiness ใน `render.yaml` (`tests/test_health_probes.py`)
 - [ ] **A3. DB migrations (Alembic)** — แทนที่ `create_all` ด้วย Alembic เพื่อ migrate ปลอดภัยบน Postgres prod
   - _AC:_ `alembic upgrade head` สร้าง schema ตรงกับ `backend/app/models.py`; มี baseline migration
 - [ ] **A4. Observability** — JSON log (`LOG_FORMAT=json`) ครบ request-id ทุก request (มี `middleware.py` แล้ว);
   เปิด `/metrics` (`backend/app/metrics.py`) ให้ Prometheus scrape + ตัวอย่าง dashboard/alert rules
 - [ ] **A5. Rate limit แบบ multi-worker** — ตรวจ `backend/app/rate_limit.py` ให้ใช้ Redis backend บน prod
   (ไม่ใช่ in-memory); เพิ่ม per-IP limit สำหรับ public `/api/v1/check` และ portal `/report`
-- [ ] **A6. CORS & security headers** — เพิ่ม HSTS, X-Content-Type-Options, CSP ใน `backend/app/middleware.py`;
-  จำกัด `CORS_ORIGINS` แบบ explicit (ห้าม wildcard) ใน prod
+- [x] **A6. CORS & security headers** — เพิ่ม HSTS (prod), CSP, X-Content-Type-Options ใน `backend/app/middleware.py`;
+  จำกัด `CORS_ORIGINS` แบบ explicit (ห้าม wildcard) ใน prod ผ่าน config guard (`tests/test_health_probes.py`)
 - [ ] **A7. Staging deploy playbook** — เอกสาร step-by-step deploy Render + Supabase จริง,
   smoke test หลัง deploy (`/health`, `/api/v1/check`, `/metrics`), และ rollback plan
 - [ ] **A8. Backup & retention policy** — นโยบาย backup Postgres + retention ตาราง `url_checks`,
@@ -79,8 +79,8 @@
   เอกสาร retrain cadence ผูกกับ `backend/app/routers/feedback.py`, `learn.py`
 - [ ] **C5. Extension hardening** — เพิ่มเทสต์ฝั่ง extension, ลด MV3 permissions ให้น้อยที่สุด
   (ปัจจุบันขอ `<all_urls>`), จัดการ offline/error state ของ API call
-- [ ] **C6. Security review** — รัน skill `security-review` กับ diff; ตรวจ SSRF ใน `unshorten.py` /
-  `content_check.py` (fetch URL ภายนอก), injection ใน `domain.py` (WHOIS/TLS), authz ของ admin routes
+- [x] **C6. Security review** — SSRF guard กลาง `app/net_guard.py` ใช้ใน `unshorten.py` / `content_check.py`
+  (block private/loopback/link-local + DNS-rebinding), review injection/authz → `docs/SECURITY_REVIEW.md`
 - [ ] **C7. API versioning & error contract** — รวม error shape ผ่าน `errors.py` ให้สม่ำเสมอ,
   เอกสาร OpenAPI ครบทุก endpoint, ปักหมุด schema version check
 - [ ] **C8. Docs sync** — รักษา metrics ใน `docs/nsc2026` ให้ตรง CI (`tests/test_sync_docs.py`, `scripts/`),

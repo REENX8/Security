@@ -18,9 +18,15 @@ services:
     region: singapore
     dockerfilePath: ./backend/Dockerfile
     dockerContext: .
-    healthCheckPath: /health
+    # Gate traffic on readiness (model loaded + DB reachable), not bare liveness.
+    healthCheckPath: /health/ready
     autoDeploy: true
     envVars:
+      # --- Deployment mode ---
+      # Turns on the production config guard (rejects placeholder secrets /
+      # wildcard CORS) and forces HSTS. See backend/app/config.py.
+      - key: APP_ENV
+        value: production
       # --- Supabase PostgreSQL ---
       # Paste the "Session pooler" connection string from:
       # Supabase dashboard → Project Settings → Database → Connection string → URI
@@ -52,9 +58,12 @@ services:
         sync: false
 
       # --- CORS ---
-      # Add the dashboard URL after first deploy (copy from phish-dashboard service).
+      # Must be an EXPLICIT origin in production (no wildcards — the config
+      # guard rejects them). After the first deploy, copy the dashboard URL
+      # from the phish-dashboard service and set it here, e.g.
+      #   https://phish-dashboard.onrender.com
       - key: CORS_ORIGINS
-        value: "https://*.onrender.com"
+        sync: false
 
       # --- Performance tweaks for free tier ---
       - key: ENABLE_WHOIS
