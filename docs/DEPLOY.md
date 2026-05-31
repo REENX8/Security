@@ -94,7 +94,40 @@ the `X-Request-ID` response header).
    add a new revision (`make migration m="..."`) for changes.
 3. **Verify** with the step-4 smoke test after any rollback.
 
-## 7. Local parity (docker-compose)
+## 7. Backup & retention (A8)
+
+**Backup** (Supabase Postgres):
+- Supabase runs automated daily backups on paid tiers; on the free tier take a
+  logical backup on a schedule: `pg_dump "$DATABASE_URL" | gzip > backup-$(date +%F).sql.gz`.
+- Store backups off-platform (S3/GCS) with ≥30-day retention. Test a restore
+  quarterly: `gunzip -c backup.sql.gz | psql "$RESTORE_URL"`.
+
+**Retention** (keep the DB bounded): the observability tables (`url_checks`,
+`webhook_delivery`, `feed_ingestion_records`) grow without limit. Prune them on
+a schedule:
+
+```bash
+RETENTION_DAYS=90 python -m scripts.retention          # or: make retention DAYS=90
+python -m scripts.retention --days 90 --dry-run        # preview counts first
+```
+
+Set `RETENTION_DAYS` and run `scripts/retention.py` as a Render cron job (e.g.
+daily). Configuration tables (whitelist, brand watch, feed sources) and campaign
+clusters are never pruned.
+
+## 8. Load test (A9)
+
+Validate the documented p95 < 250 ms SLO before going live — see
+`deploy/loadtest/` (locust + k6) and run against **staging**, never production
+data. Example:
+
+```bash
+k6 run -e HOST=https://$HOST -e API_KEY=$KEY deploy/loadtest/k6_check.js
+# or
+locust -f deploy/loadtest/locustfile.py --host https://$HOST
+```
+
+## 9. Local parity (docker-compose)
 
 `docker-compose up` runs the same image with Postgres + Redis. It defaults to
 `APP_ENV` unset (development) so the demo secrets work; set `APP_ENV=production`

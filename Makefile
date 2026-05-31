@@ -1,7 +1,7 @@
 .PHONY: help install test cov lint typecheck format run train evaluate evaluate-gate \
         sync-docs sync-docs-check dashboard extension docker clean nsc-bundle \
         demo-setup demo-reset demo-verify seed-audit seed-refresh tune-threshold \
-        migrate migrate-down migration
+        migrate migrate-down migration retention
 
 PY        ?= python
 PIP       ?= $(PY) -m pip
@@ -34,6 +34,9 @@ typecheck:  ## Mypy type check (informational).
 
 format:  ## Ruff auto-format the repo.
 	@$(RUFF) format .
+
+retention:  ## Prune observability rows older than DAYS (A8). Usage: make retention DAYS=90
+	$(PY) -m scripts.retention --days $(or $(DAYS),$(RETENTION_DAYS))
 
 migrate:  ## Apply DB migrations (alembic upgrade head).
 	cd backend && alembic upgrade head

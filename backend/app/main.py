@@ -150,6 +150,17 @@ async def lifespan(app: FastAPI):
             meta.get("trained_at"),
             meta.get("metrics", {}).get("test_f1"),
         )
+        # Pin the feature-schema contract: warn loudly if the trained model's
+        # schema version disagrees with the code's. A mismatch means features
+        # are computed differently than the model was trained on (silent
+        # accuracy loss), and is the first thing to check on a bad deploy.
+        model_schema = meta.get("schema_version")
+        if model_schema and model_schema != FEATURE_SCHEMA_VERSION:
+            logger.warning(
+                "SCHEMA MISMATCH: model trained on schema %s but code is %s -- "
+                "retrain or pin phish_features to match",
+                model_schema, FEATURE_SCHEMA_VERSION,
+            )
     except ModelLoadError as exc:
         app.state.scorer = None
         MODEL_READY.set(0)
@@ -225,6 +236,56 @@ app = FastAPI(
 )
 
 
+def _custom_openapi() -> dict:
+    """Document the single error envelope ({error, code}) on every operation.
+
+    All handlers fail through errors.py, so rather than annotate each route we
+    inject a shared ``Error`` schema and attach it as the default response for
+    the error status codes, keeping the OpenAPI contract consistent (C7).
+    """
+    if app.openapi_schema:
+        return app.openapi_schema
+    from fastapi.openapi.utils import get_openapi
+
+    schema = get_openapi(
+        title=app.title,
+        version=app.version,
+        description=app.description,
+        routes=app.routes,
+    )
+    schema.setdefault("components", {}).setdefault("schemas", {})["Error"] = {
+        "type": "object",
+        "properties": {
+            "error": {"type": "string", "description": "Human-readable message"},
+            "code": {"type": "string", "description": "Stable machine code"},
+        },
+        "required": ["error", "code"],
+    }
+    err_ref = {"application/json": {"schema": {"$ref": "#/components/schemas/Error"}}}
+    error_codes = {
+        "401": "Authentication required",
+        "404": "Not found",
+        "422": "Validation error",
+        "429": "Rate limit exceeded",
+        "500": "Internal error",
+        "503": "Service unavailable (model/DB not ready)",
+    }
+    for path_item in schema.get("paths", {}).values():
+        for operation in path_item.values():
+            if not isinstance(operation, dict):
+                continue
+            responses = operation.setdefault("responses", {})
+            for status_code, desc in error_codes.items():
+                responses.setdefault(
+                    status_code, {"description": desc, "content": err_ref}
+                )
+    app.openapi_schema = schema
+    return schema
+
+
+app.openapi = _custom_openapi
+
+
 @app.get("/api/v1/disclaimer", tags=["meta"], include_in_schema=True)
 async def disclaimer() -> dict:
     """ข้อตกลงในการใช้ซอฟต์แวร์ตามข้อกำหนด NSC (booklet หน้า 44)."""
@@ -280,6 +341,7 @@ app.add_middleware(
     log_format=settings.log_format,
     hsts=settings.hsts_enabled or settings.is_production,
     hsts_max_age=settings.hsts_max_age,
+    schema_version=FEATURE_SCHEMA_VERSION,
 )
 
 

@@ -57,12 +57,14 @@ class RequestContextMiddleware(BaseHTTPMiddleware):
         log_format: str = "text",
         hsts: bool = False,
         hsts_max_age: int = 63072000,
+        schema_version: str | None = None,
     ) -> None:
         super().__init__(app)
         self._json_logs = log_format.lower() == "json"
         self._hsts_value = (
             f"max-age={hsts_max_age}; includeSubDomains" if hsts else None
         )
+        self._schema_version = schema_version
         self._log = logging.getLogger("phish-detector.access")
 
     async def dispatch(self, request: Request, call_next):
@@ -93,6 +95,9 @@ class RequestContextMiddleware(BaseHTTPMiddleware):
             response.headers.setdefault(
                 "Strict-Transport-Security", self._hsts_value
             )
+        if self._schema_version is not None:
+            # Lets clients pin/verify the feature-schema contract they expect.
+            response.headers.setdefault("X-Schema-Version", self._schema_version)
         self._emit(request, status=response.status_code,
                    elapsed_ms=elapsed_ms, req_id=req_id)
         return response

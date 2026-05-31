@@ -39,9 +39,9 @@
   จำกัด `CORS_ORIGINS` แบบ explicit (ห้าม wildcard) ใน prod ผ่าน config guard (`tests/test_health_probes.py`)
 - [x] **A7. Staging deploy playbook** — `docs/DEPLOY.md`: step-by-step Render + Supabase,
   smoke test หลัง deploy (`/health/ready`, `/api/v1/check`, `/metrics`, security headers), และ rollback plan
-- [ ] **A8. Backup & retention policy** — นโยบาย backup Postgres + retention ตาราง `url_checks`,
-  `webhook_delivery`, `campaigns` (เอกสารระบุว่าโตไม่จำกัด ยังไม่มี retention)
-- [ ] **A9. Load test** — ยืนยัน p95 < 250 ms ตามที่เอกสารอ้าง ด้วย locust/k6 บน staging
+- [x] **A8. Backup & retention policy** — `app/retention.py` + `scripts/retention.py` (prune `url_checks`,
+  `webhook_delivery`, `feed_ingestion_records` ตาม `RETENTION_DAYS`) + backup/restore playbook ใน `docs/DEPLOY.md` (`tests/test_retention.py`)
+- [x] **A9. Load test** — `deploy/loadtest/` (locust + k6) ยืนยัน p95 < 250 ms (k6 threshold gate) บน staging + README
 
 ---
 
@@ -61,8 +61,8 @@
   ออกแบบ protocol + privacy review ก่อน implement
 - [ ] **B6. Visual Fingerprinting** — เทียบ screenshot (headless browser) กับ template หน่วยงานจริง
   เพื่อจับ clone page; เป็น optional feature flag (latency สูง)
-- [ ] **B7. SIEM/SOAR export ของ campaigns** — feed สาธารณะมีแล้ว แต่ campaign clusters ยังไม่ export;
-  เพิ่ม endpoint/connector ส่ง campaign ไป SIEM/SOAR
+- [x] **B7. SIEM/SOAR export ของ campaigns** — `GET /campaigns/export.json` (flat SIEM schema) + `/campaigns/export.stix`
+  (STIX grouping SDOs, deterministic id) (`tests/test_campaign_export.py`)
 - [ ] **B8. IP/ASN-level reputation** — ปัจจุบันตรวจระดับ URL เท่านั้น; ต่อยอด `DomainReputation` model
   ให้รองรับ reputation ระดับ IP/ASN
 
@@ -83,8 +83,8 @@
   (ปัจจุบันขอ `<all_urls>`), จัดการ offline/error state ของ API call
 - [x] **C6. Security review** — SSRF guard กลาง `app/net_guard.py` ใช้ใน `unshorten.py` / `content_check.py`
   (block private/loopback/link-local + DNS-rebinding), review injection/authz → `docs/SECURITY_REVIEW.md`
-- [ ] **C7. API versioning & error contract** — รวม error shape ผ่าน `errors.py` ให้สม่ำเสมอ,
-  เอกสาร OpenAPI ครบทุก endpoint, ปักหมุด schema version check
+- [x] **C7. API versioning & error contract** — error envelope `{error,code}` เอกสารใน OpenAPI ทุก operation
+  (custom openapi), `X-Schema-Version` header + startup schema-mismatch check (`tests/test_error_contract.py`)
 - [ ] **C8. Docs sync** — รักษา metrics ใน `docs/nsc2026` ให้ตรง CI (`tests/test_sync_docs.py`, `scripts/`),
   อัปเดต README สถาปัตยกรรมเมื่อเพิ่มฟีเจอร์ B*
 - [x] **C9. Auto feedback → retrain loop** — `app/retrain_trigger.py`: volume-based trigger จาก `POST /feedback`

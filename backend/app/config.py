@@ -117,6 +117,12 @@ class Settings(BaseSettings):
     hsts_enabled: bool = Field(default=False)
     hsts_max_age: int = Field(default=63072000)  # 2 years (seconds)
 
+    # --- data retention (A8) ---
+    # Days to keep observability rows (url_checks, webhook_delivery,
+    # feed_ingestion_records) before the retention job prunes them. 0 = keep
+    # forever (the default; opt in by setting RETENTION_DAYS).
+    retention_days: int = Field(default=0)
+
     # --- public threat feed ---
     enable_public_feed: bool = Field(default=True)
 
