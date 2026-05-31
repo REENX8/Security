@@ -505,7 +505,7 @@ cross-check ไม่ใช่การทดสอบ phishing แปลกใ�
 
 ### Automated Test Suite
 
-**206 pytest cases** ครอบคลุม (เพิ่ม 29 tests สำหรับ URL unshortener, content check, LINE bot, feedback retrain):
+**265 pytest cases** ครอบคลุม (รวม tests สำหรับ URL unshortener, content check, LINE bot, feedback retrain, threshold analysis, bulk whitelist):
 * Feature extraction (`test_lexical.py`, `test_homoglyph.py`, `test_extractor.py`)
 * Whitelist + typosquat (`test_whitelist.py`)
 * Scoring (`test_scorer.py`)
