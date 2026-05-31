@@ -360,6 +360,7 @@ route สาธารณะ (ไม่ต้อง auth): **`/check`, `/check/ba
 | `GET  /api/v1/learn` | รายการ phishing-awareness card ทั้งหมด (no auth) |
 | `GET  /api/v1/learn/{card_id}` | เนื้อหา card เดี่ยว (no auth) |
 | `POST /api/v1/line/webhook` | LINE Messaging API webhook — ตรวจ URL ที่ส่งใน LINE chat (HMAC-SHA256) |
+| `POST /api/v1/sms/inbound` | SMS report gateway — ตรวจ URL ที่ส่งทาง SMS (provider webhook + shared secret) |
 | `POST /api/v1/admin/retrain` | trigger staged retrain → eval-gate → hot-swap scorer (API key required) |
 
 ### Observability

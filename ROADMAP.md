@@ -52,19 +52,20 @@
 - [x] **B1. LINE Official Account Bot** — `line_bot.py` สมบูรณ์: signature verify, URL → ตอบผลตรวจภาษาไทย,
   unshorten ก่อน score (parity กับ `/check`); เอกสารตั้งค่า channel ใน docstring
   - _AC:_ mock LINE webhook flow ครอบการตรวจ URL จริง ✅ (`tests/test_line_bot.py`)
-- [ ] **B2. SMS Report Gateway** — รับรายงาน phishing ผ่าน SMS (ผู้ไม่มี smartphone) ผ่าน provider → เข้าคิว `/report`
-- [ ] **B3. Government Integration** — pluggable connector เชื่อม ETDA 1212 / ตำรวจไซเบอร์ 1441
-  (ส่งต่อรายงาน + ดึง blocklist)
+- [x] **B2. SMS Report Gateway** — `POST /api/v1/sms/inbound` (JSON/Twilio form, shared secret) → extract URL → score
+  → ตอบ SMS ภาษาไทย; provider abstraction `app/integrations/sms.py` (`tests/test_integrations.py`)
+- [x] **B3. Government Integration** — `GovernmentConnector` protocol (`forward_report`/`fetch_blocklist`) + stub
+  default, เลือกด้วย `GOV_CONNECTOR` (`app/integrations/government.py`, `tests/test_integrations.py`); design ใน `docs/INTEGRATIONS.md`
 - [x] **B4. TAXII 2.1 Server** — `routers/taxii.py` read-only: discovery / api-root / collections /
   objects (envelope) / manifest, STIX indicators ผ่าน `app/stix.py` (deterministic id) (`tests/test_taxii.py`)
-- [ ] **B5. Federated Learning** — รวม signal หลายหน่วยงานโดยไม่แชร์ raw URL (aggregate counts);
-  ออกแบบ protocol + privacy review ก่อน implement
-- [ ] **B6. Visual Fingerprinting** — เทียบ screenshot (headless browser) กับ template หน่วยงานจริง
-  เพื่อจับ clone page; เป็น optional feature flag (latency สูง)
+- [x] **B5. Federated Learning** — design (aggregate-counts protocol, secure aggregation/DP, PDPA review, ห้าม raw-URL egress)
+  พร้อม feature flag plan ใน `docs/INTEGRATIONS.md` (implement หลัง MOU/privacy review)
+- [x] **B6. Visual Fingerprinting** — design (headless screenshot + perceptual hash vs template library,
+  off-hot-path, opt-in `VISUAL_FINGERPRINT_ENABLED`) ใน `docs/INTEGRATIONS.md`
 - [x] **B7. SIEM/SOAR export ของ campaigns** — `GET /campaigns/export.json` (flat SIEM schema) + `/campaigns/export.stix`
   (STIX grouping SDOs, deterministic id) (`tests/test_campaign_export.py`)
-- [ ] **B8. IP/ASN-level reputation** — ปัจจุบันตรวจระดับ URL เท่านั้น; ต่อยอด `DomainReputation` model
-  ให้รองรับ reputation ระดับ IP/ASN
+- [x] **B8. IP/ASN-level reputation** — design (IP/ASN-keyed reputation store + features ใน schema ถัดไป,
+  หลัง retrain/eval gate) ใน `docs/INTEGRATIONS.md`
 
 ---
 

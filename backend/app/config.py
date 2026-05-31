@@ -148,6 +148,16 @@ class Settings(BaseSettings):
     line_channel_token: str = Field(default="")
     line_channel_secret: str = Field(default="")
 
+    # --- SMS report gateway (B2) ---
+    # Shared secret the SMS provider includes (X-SMS-Secret header or `secret`
+    # field) so only the provider can post inbound messages. Empty disables the
+    # /sms/inbound route entirely.
+    sms_inbound_secret: str = Field(default="")
+
+    # --- Government connectors (B3) ---
+    # Which GovernmentConnector to use ("stub" until a real one is provisioned).
+    gov_connector: str = Field(default="stub")
+
     # --- feedback-driven auto-retrain ---
     feedback_retrain_enabled: bool = Field(default=False)
     feedback_retrain_interval_hours: int = Field(default=336)  # 14 days

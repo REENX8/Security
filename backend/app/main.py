@@ -375,6 +375,10 @@ app.include_router(learn_router.router, prefix="/api/v1", tags=["learn"])
 if settings.enable_public_feed:
     app.include_router(feed_router.router, prefix="/api/v1", tags=["feed"])
     app.include_router(taxii_router.router, prefix="/api/v1", tags=["taxii"])
+if settings.sms_inbound_secret:
+    from app.routers import integrations as integrations_router
+
+    app.include_router(integrations_router.router, prefix="/api/v1", tags=["sms"])
 if settings.line_channel_token or settings.line_channel_secret:
     app.include_router(line_bot_router.router, prefix="/api/v1", tags=["line"])
 
