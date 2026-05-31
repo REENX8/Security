@@ -117,6 +117,9 @@ async def _seed_external_feed_sources() -> None:
 async def lifespan(app: FastAPI):
     app.state.started_at = _dt.datetime.now(_dt.timezone.utc)
     app.state.cache = build_cache(settings)
+    # Volume-based auto-retrain bookkeeping (see app/retrain_trigger.py).
+    app.state.retrain_in_progress = False
+    app.state.retrain_baseline_count = 0
 
     # The core URL scorer does not need the database -- history, stats and
     # admin endpoints do. Tolerate a missing/unreachable DB at startup so

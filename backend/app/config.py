@@ -85,6 +85,14 @@ class Settings(BaseSettings):
     # --- scoring thresholds ---
     threshold_suspicious: float = Field(default=0.3)
     threshold_phishing: float = Field(default=0.7)
+    # --- threshold A/B (shadow) ---
+    # Candidate ("B") thresholds evaluated in shadow against live traffic. The
+    # served verdict always uses the A thresholds above; B only feeds telemetry
+    # (phish_threshold_ab_total) so a proposed threshold can be assessed on real
+    # score distributions before promotion. Defaults equal A = no-op.
+    enable_threshold_ab: bool = Field(default=False)
+    threshold_suspicious_candidate: float = Field(default=0.3)
+    threshold_phishing_candidate: float = Field(default=0.7)
 
     # --- caching / batch ---
     enable_cache: bool = Field(default=True)

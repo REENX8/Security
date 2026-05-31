@@ -19,6 +19,7 @@ from app.database import get_session
 from app.deps import verify_api_key
 from app.models import Feedback, FeedbackSource
 from app.rate_limit import limiter
+from app.retrain_trigger import maybe_trigger_retrain
 from app.schemas import FeedbackCreate, FeedbackListResponse, FeedbackOut
 
 router = APIRouter()
@@ -63,6 +64,12 @@ async def create_feedback(
         "feedback: %s given=%s correct=%s",
         payload.url, payload.verdict_given, payload.correct_verdict,
     )
+    # Fire a volume-based auto-retrain if enough new feedback has accumulated
+    # (no-op unless FEEDBACK_RETRAIN_ENABLED=true). Never blocks the response.
+    try:
+        await maybe_trigger_retrain(request.app.state, session)
+    except Exception as exc:  # noqa: BLE001 - submission must still succeed
+        logger.warning("auto-retrain check skipped: %s", exc)
     return _row_to_schema(row)
 
 

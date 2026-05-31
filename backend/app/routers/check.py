@@ -30,6 +30,7 @@ from app.schemas import (
     CheckRequest,
     CheckResponse,
 )
+from app.threshold_ab import record_score_telemetry
 from app.unshorten import unshorten_url
 
 router = APIRouter()
@@ -87,6 +88,8 @@ async def _score_url(request: Request, url: str) -> dict:
         cache.set(url, result)
         CACHE_SIZE.set(len(cache))
     CHECKS_TOTAL.labels(label=result["label"], cached="false").inc()
+    # Record the served score for drift watch + shadow threshold A/B (C10).
+    record_score_telemetry(result.get("score", 0.0))
     return {**result, "cached": False}
 
 

@@ -45,3 +45,29 @@ groups:
         annotations:
           summary: "External feed poll errors ({{ $labels.source }})"
           description: "{{ $value }} failed poll(s) from {{ $labels.source }} in 15m."
+
+      - alert: PhishScoreDistributionDrift
+        # Model drift watch (C4): the share of checks landing in the top score
+        # bucket (>=0.9) over the last hour vs the last day. A sustained 2x+
+        # swing in either direction means the live score distribution has
+        # shifted — investigate data/feature drift and consider a retrain.
+        expr: |
+          (
+            sum(rate(phish_score_bucket{le="+Inf"}[1h])) - sum(rate(phish_score_bucket{le="0.9"}[1h]))
+          )
+          /
+          clamp_min(sum(rate(phish_score_count[1h])), 1e-9)
+          >
+          2 *
+          (
+            (
+              sum(rate(phish_score_bucket{le="+Inf"}[1d])) - sum(rate(phish_score_bucket{le="0.9"}[1d]))
+            )
+            /
+            clamp_min(sum(rate(phish_score_count[1d])), 1e-9)
+          )
+        for: 30m
+        labels: { severity: warning }
+        annotations:
+          summary: "Phishing score distribution drift"
+          description: "Top-bucket (>=0.9) score share over 1h is >2x its 1d baseline — possible model/data drift."

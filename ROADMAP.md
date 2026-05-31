@@ -74,10 +74,11 @@
   `notifier.py`, `unshorten.py`, `content_check.py`, `net_guard`, rate-limit (cov รวม 78%)
 - [x] **C2. Lint / format / type** — `ruff` config + blocking CI job `lint-type`, `mypy` (informational),
   eslint flat config + `npm run lint` ใน `dashboard-build` (ruff/eslint ผ่านสะอาด)
-- [ ] **C3. ML accuracy — ลด miss generic** — ทบทวน 4 URLs ใน `reports/missed_generic_urls.csv`:
-  ปรับ `min_edit_distance` ใน `phish_features`, ขยาย whitelist/seed, re-run `ml_pipeline` แล้วอัปเดต `reports/*.json`
-- [ ] **C4. Model drift monitoring** — log distribution ของ feature/score ใน prod + alert เมื่อ drift;
-  เอกสาร retrain cadence ผูกกับ `backend/app/routers/feedback.py`, `learn.py`
+- [x] **C3. ML accuracy — ลด miss generic** — review 4 URLs → 3 out-of-scope (generic/crypto), 1 borderline
+  (`lnsta.fr`~nstda); สรุป: ไม่ใช่ปัญหา `min_edit_distance` → route case ที่ in-scope เข้า seed→gated-retrain
+  (`reports/missed_generic_analysis.md`). ไม่ regenerate model ในแพตช์นี้เพื่อกัน drift (ทำผ่าน ml-gate/retrain เท่านั้น)
+- [x] **C4. Model drift monitoring** — `phish_score` histogram (live score distribution) + `PhishScoreDistributionDrift`
+  alert + WHOIS/TLS fallback metric; retrain cadence ผูก feedback/learn ใน `docs/ML_OPS.md`
 - [ ] **C5. Extension hardening** — เพิ่มเทสต์ฝั่ง extension, ลด MV3 permissions ให้น้อยที่สุด
   (ปัจจุบันขอ `<all_urls>`), จัดการ offline/error state ของ API call
 - [x] **C6. Security review** — SSRF guard กลาง `app/net_guard.py` ใช้ใน `unshorten.py` / `content_check.py`
@@ -86,12 +87,12 @@
   เอกสาร OpenAPI ครบทุก endpoint, ปักหมุด schema version check
 - [ ] **C8. Docs sync** — รักษา metrics ใน `docs/nsc2026` ให้ตรง CI (`tests/test_sync_docs.py`, `scripts/`),
   อัปเดต README สถาปัตยกรรมเมื่อเพิ่มฟีเจอร์ B*
-- [ ] **C9. Auto feedback → retrain loop** — ปัจจุบัน retrain เป็น manual (`POST /api/v1/admin/retrain`);
-  เพิ่ม trigger อัตโนมัติเมื่อ feedback ที่ยืนยันถึงเกณฑ์ (ผูก `ml_pipeline/feedback_retrain.py` + staged eval gate)
-- [ ] **C10. Threshold A/B + live telemetry tuning** — holdout score polarized มาก จึงควรจูน threshold
-  จาก telemetry จริง; เพิ่ม framework A/B test threshold + บันทึก score distribution
-- [ ] **C11. Seed corpus refresh cadence** — กำหนดรอบ refresh `data/thai_phishing_seed.csv`
-  ผ่าน `scripts/collect_thai_phishing_seed.py` ให้ทันแบรนด์/รูปแบบใหม่
+- [x] **C9. Auto feedback → retrain loop** — `app/retrain_trigger.py`: volume-based trigger จาก `POST /feedback`
+  เมื่อ confirmed feedback ถึง threshold (debounced + staged eval gate) (`tests/test_retrain_trigger.py`)
+- [x] **C10. Threshold A/B + live telemetry tuning** — `app/threshold_ab.py`: บันทึก score distribution (`phish_score`)
+  + shadow A/B counter (`phish_threshold_ab_total{variant,label}`) เทียบ candidate threshold (`tests/test_threshold_ab.py`)
+- [x] **C11. Seed corpus refresh cadence** — `.github/workflows/seed-refresh.yml` (รายเดือน + manual) รัน
+  `scripts/collect_thai_phishing_seed.py` + audit แล้วเปิด PR ให้ review; `make seed-refresh` (`docs/ML_OPS.md`)
 
 ---
 

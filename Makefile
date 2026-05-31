@@ -1,6 +1,6 @@
 .PHONY: help install test cov lint typecheck format run train evaluate evaluate-gate \
         sync-docs sync-docs-check dashboard extension docker clean nsc-bundle \
-        demo-setup demo-reset demo-verify seed-audit tune-threshold \
+        demo-setup demo-reset demo-verify seed-audit seed-refresh tune-threshold \
         migrate migrate-down migration
 
 PY        ?= python
@@ -70,6 +70,10 @@ sync-docs-check:  ## Fail if docs metrics drift from evaluation_summary.json (CI
 	$(PY) scripts/sync_docs_metrics.py --check
 
 seed-audit:  ## Print brand / TLD / pattern coverage of the Thai seed corpus.
+	$(PY) scripts/audit_seed_coverage.py
+
+seed-refresh:  ## Regenerate the Thai phishing seed (live fetch) — see C11 cadence.
+	$(PY) scripts/collect_thai_phishing_seed.py
 	$(PY) scripts/audit_seed_coverage.py
 
 dashboard:  ## Start the Vite dev server for the dashboard.
