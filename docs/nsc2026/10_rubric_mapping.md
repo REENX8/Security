@@ -76,7 +76,7 @@ Story Board · เทคนิค · เครื่องมือ · Spec · �
 
 ✅ **ระบบทำงานได้แล้ว ณ ตอนส่งข้อเสนอ:**
 
-* 206 automated tests ผ่านทั้งหมด
+* 265 automated tests ผ่านทั้งหมด
 * CI gate Thai recall ≥ 0.85 → ปัจจุบัน 100% (378/378) (PASS)
 * Docker image build PASS
 * Dashboard build PASS
@@ -134,7 +134,7 @@ Extension, Train, Deploy, ตรวจสอบ, Troubleshooting
 
 ### Technique (20)
 
-✅ 37-feature schema + IDN defense + Rules Engine + Campaign clustering + External Feed Ingestion
+✅ 42-feature schema + IDN defense + Rules Engine + Campaign clustering + External Feed Ingestion
 ✅ URL Unshortener (async HEAD, 18 providers, fail-open)
 ✅ Content-based Fallback (HTML fetch + SSRF protection + gray-zone score adjustment)
 ✅ Feedback Auto-retrain pipeline (min-rows gate, dry-run mode, background loop)
