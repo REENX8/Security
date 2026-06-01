@@ -1,57 +1,31 @@
-// Backend API client — uses JWT Bearer token from localStorage.
-
-import { clearToken, getToken } from "../lib/auth.js";
+// Backend API client.
 
 function normalizeBase(raw) {
   let v = (raw || "http://localhost:8000").replace(/\/+$/, "");
+  // Render's `fromService` injects a bare hostname; add a scheme so fetch works.
   if (v && !/^https?:\/\//i.test(v)) v = `https://${v}`;
   return v;
 }
 
 const BASE_URL = normalizeBase(import.meta.env.VITE_API_URL);
+const API_KEY = import.meta.env.VITE_API_KEY || "dev-local-key-change-me";
 
-const _sleep = (ms) => new Promise((r) => setTimeout(r, ms));
-
-async function request(path, options = {}, { retries = 2 } = {}) {
-  const token = getToken();
-  const headers = { "Content-Type": "application/json" };
-  if (token) headers["Authorization"] = `Bearer ${token}`;
-
-  let resp;
-  // Retry only transient failures (network error or 5xx) with exponential
-  // backoff. Never retry 4xx — those are deterministic (auth, validation).
-  for (let attempt = 0; ; attempt++) {
-    try {
-      resp = await fetch(`${BASE_URL}${path}`, {
-        ...options,
-        headers: { ...headers, ...(options.headers || {}) },
-      });
-    } catch (netErr) {
-      if (attempt < retries) {
-        await _sleep(300 * 2 ** attempt);
-        continue;
-      }
-      throw netErr;
-    }
-    if (resp.status >= 500 && resp.status < 600 && attempt < retries) {
-      await _sleep(300 * 2 ** attempt);
-      continue;
-    }
-    break;
-  }
-
-  if (resp.status === 401) {
-    clearToken();
-    window.location.replace("/login");
-    throw new Error("Session expired. Please log in again.");
-  }
+async function request(path, options = {}) {
+  const resp = await fetch(`${BASE_URL}${path}`, {
+    ...options,
+    headers: {
+      "Content-Type": "application/json",
+      "X-API-Key": API_KEY,
+      ...(options.headers || {}),
+    },
+  });
 
   if (!resp.ok) {
     let message = `HTTP ${resp.status}`;
     try {
       const body = await resp.json();
-      message = body.error || body.detail || message;
-    } catch { /* ignore non-JSON error bodies */ }
+      message = body.error || message;
+    } catch (_) { /* ignore */ }
     throw new Error(message);
   }
   return resp.json();
@@ -127,28 +101,8 @@ export function submitFeedback(data) {
   });
 }
 
-export async function exportFeedbackCsv() {
-  const token = getToken();
-  const headers = {};
-  if (token) headers["Authorization"] = `Bearer ${token}`;
-
-  const resp = await fetch(`${BASE_URL}/api/v1/feedback/export`, { headers });
-  if (resp.status === 401) {
-    clearToken();
-    window.location.replace("/login");
-    throw new Error("Session expired.");
-  }
-  if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
-
-  const blob = await resp.blob();
-  const url = URL.createObjectURL(blob);
-  const a = document.createElement("a");
-  a.href = url;
-  a.download = "feedback.csv";
-  document.body.appendChild(a);
-  a.click();
-  document.body.removeChild(a);
-  URL.revokeObjectURL(url);
+export function getFeedbackExportUrl() {
+  return `${BASE_URL}/api/v1/feedback/export`;
 }
 
 // --- Brand watchlist ---
@@ -190,7 +144,7 @@ export function getDomainHistory(host) {
   return request(`/api/v1/domain/${encodeURIComponent(host)}/history`);
 }
 
-// --- Public threat feed ---
+// --- Public threat feed (no API key required, but our wrapper sends one — harmless) ---
 
 export function getPublicFeed({ hours = 24, limit = 200 } = {}) {
   const params = new URLSearchParams({ hours, limit });
@@ -201,13 +155,13 @@ export function getPublicFeedUrl(format = "json") {
   return `${BASE_URL}/api/v1/feed.${format}`;
 }
 
-// --- Social / economic impact ---
+// --- Social / economic impact (no auth required) ---
 
 export function getImpact(windowDays = 30) {
   return request(`/api/v1/impact?window_days=${windowDays}`);
 }
 
-// --- Awareness content ---
+// --- Awareness content (no auth required) ---
 
 export function getLearn(audience) {
   const qs = audience ? `?audience=${encodeURIComponent(audience)}` : "";

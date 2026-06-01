@@ -2,7 +2,7 @@ import { useState } from "react";
 import Layout from "../components/Layout.jsx";
 import { Skeleton } from "../components/Skeleton.jsx";
 import { useFeedback } from "../api/queries.js";
-import { exportFeedbackCsv } from "../api/client.js";
+import { getFeedbackExportUrl } from "../api/client.js";
 import LabelBadge from "../components/LabelBadge.jsx";
 
 const LIMIT = 50;
@@ -37,16 +37,7 @@ export default function Feedback() {
   const total = data?.total ?? 0;
   const items = data?.items ?? [];
 
-  const [exportError, setExportError] = useState("");
-
-  const handleExport = async () => {
-    setExportError("");
-    try {
-      await exportFeedbackCsv();
-    } catch (err) {
-      setExportError(err.message);
-    }
-  };
+  const exportUrl = `${getFeedbackExportUrl()}?x-api-key=${import.meta.env.VITE_API_KEY || "dev-local-key-change-me"}`;
 
   return (
     <Layout title="รายงานผลผิดพลาด">
@@ -79,15 +70,13 @@ export default function Feedback() {
           </div>
           <div className="ml-auto flex items-center gap-2">
             <span className="text-xs text-slate-500">ทั้งหมด {total} รายการ</span>
-            {exportError && (
-              <span className="text-xs text-red-400">{exportError}</span>
-            )}
-            <button
-              onClick={handleExport}
+            <a
+              href={exportUrl}
+              download="feedback.csv"
               className="rounded-lg border border-slate-700 px-3 py-2 text-xs font-medium text-slate-300 hover:bg-slate-800"
             >
               Export CSV
-            </button>
+            </a>
           </div>
         </div>
       </div>
