@@ -108,6 +108,96 @@ def test_stub_connector_forwards_and_records():
     assert conn.fetch_blocklist() == []
 
 
+def test_stub_connector_batch_forward():
+    conn = StubGovernmentConnector()
+    ok = conn.forward_reports(
+        [GovReport(url="http://a", score=0.9), GovReport(url="http://b", score=0.8)]
+    )
+    assert ok is True
+    assert len(conn.forwarded) == 2
+
+
 def test_get_connector_falls_back_to_stub():
     conn = get_connector("does-not-exist")
     assert conn.name == "stub"
+
+
+# --- Email intake connector (B3) -----------------------------------------
+
+from types import SimpleNamespace  # noqa: E402
+from unittest.mock import MagicMock  # noqa: E402
+
+from app.integrations.government import (  # noqa: E402
+    EmailIntakeConnector,
+    reports_to_csv,
+)
+
+
+def _email_settings(**over):
+    base = dict(
+        gov_email_smtp_host="smtp.example.com",
+        gov_email_smtp_port=587,
+        gov_email_smtp_user="bot@example.com",
+        gov_email_smtp_password="pw",
+        gov_email_use_tls=True,
+        gov_email_from="bot@example.com",
+        gov_email_to="intake@etda.or.th, cyber@police.go.th",
+    )
+    base.update(over)
+    return SimpleNamespace(**base)
+
+
+def test_reports_to_csv_has_header_and_rows():
+    csv_text = reports_to_csv(
+        [GovReport(url="http://x", score=0.91, closest_domain="obec.go.th", reason="typo")]
+    )
+    assert csv_text.splitlines()[0] == "url,score,closest_domain,reason"
+    assert "http://x" in csv_text
+    assert "0.9100" in csv_text
+
+
+def test_email_connector_not_configured_returns_false():
+    conn = EmailIntakeConnector.from_settings(_email_settings(gov_email_smtp_host=""))
+    assert conn.is_configured() is False
+    assert conn.forward_reports([GovReport(url="http://x", score=0.9)]) is False
+
+
+def test_email_connector_sends_csv_attachment(monkeypatch):
+    conn = EmailIntakeConnector.from_settings(_email_settings())
+    assert conn.is_configured() is True
+    assert conn.recipients == ("intake@etda.or.th", "cyber@police.go.th")
+
+    smtp = MagicMock()
+    smtp_cm = MagicMock()
+    smtp_cm.__enter__.return_value = smtp
+    smtp_cm.__exit__.return_value = False
+    monkeypatch.setattr(
+        "app.integrations.government.smtplib.SMTP", MagicMock(return_value=smtp_cm)
+    )
+
+    ok = conn.forward_reports([GovReport(url="http://phish.xyz", score=0.95)])
+    assert ok is True
+    smtp.starttls.assert_called_once()
+    smtp.login.assert_called_once_with("bot@example.com", "pw")
+    smtp.send_message.assert_called_once()
+    msg = smtp.send_message.call_args.args[0]
+    assert msg["To"] == "intake@etda.or.th, cyber@police.go.th"
+    # The CSV is attached.
+    attachments = [p for p in msg.iter_attachments()]
+    assert len(attachments) == 1
+    assert "phish.xyz" in attachments[0].get_content()
+
+
+def test_email_connector_send_failure_returns_false(monkeypatch):
+    conn = EmailIntakeConnector.from_settings(_email_settings())
+    monkeypatch.setattr(
+        "app.integrations.government.smtplib.SMTP",
+        MagicMock(side_effect=OSError("connection refused")),
+    )
+    assert conn.forward_reports([GovReport(url="http://x", score=0.9)]) is False
+
+
+def test_get_connector_email_built_from_settings():
+    conn = get_connector("email", _email_settings())
+    assert isinstance(conn, EmailIntakeConnector)
+    assert conn.smtp_host == "smtp.example.com"

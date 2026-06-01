@@ -1,7 +1,7 @@
 .PHONY: help install test cov lint typecheck format run train evaluate evaluate-gate \
         sync-docs sync-docs-check dashboard extension docker clean nsc-bundle \
         demo-setup demo-reset demo-verify seed-audit seed-refresh tune-threshold \
-        migrate migrate-down migration retention
+        migrate migrate-down migration retention gov-forward
 
 PY        ?= python
 PIP       ?= $(PY) -m pip
@@ -37,6 +37,9 @@ format:  ## Ruff auto-format the repo.
 
 retention:  ## Prune observability rows older than DAYS (A8). Usage: make retention DAYS=90
 	$(PY) -m scripts.retention --days $(or $(DAYS),$(RETENTION_DAYS))
+
+gov-forward:  ## Forward recent confirmed phishing to GOV_CONNECTOR (B3). Add DRY=1 to preview.
+	$(PY) -m scripts.gov_forward --since-days $(or $(DAYS),1) $(if $(DRY),--dry-run,)
 
 migrate:  ## Apply DB migrations (alembic upgrade head).
 	cd backend && alembic upgrade head
