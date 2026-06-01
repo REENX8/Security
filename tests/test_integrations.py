@@ -134,15 +134,15 @@ from app.integrations.government import (  # noqa: E402
 
 
 def _email_settings(**over):
-   base = {
-    "gov_email_smtp_host": "smtp.example.com",
-    "gov_email_smtp_port": 587,
-    "gov_email_smtp_user": "bot@example.com",
-    "gov_email_smtp_password": "pw",
-    "gov_email_use_tls": True,
-    "gov_email_from": "bot@example.com",
-    "gov_email_to": "intake@etda.or.th, cyber@police.go.th",
-}
+    base = {
+        "gov_email_smtp_host": "smtp.example.com",
+        "gov_email_smtp_port": 587,
+        "gov_email_smtp_user": "bot@example.com",
+        "gov_email_smtp_password": "pw",
+        "gov_email_use_tls": True,
+        "gov_email_from": "bot@example.com",
+        "gov_email_to": "intake@etda.or.th, cyber@police.go.th",
+    }
     base.update(over)
     return SimpleNamespace(**base)
 

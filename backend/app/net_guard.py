@@ -61,7 +61,7 @@ def host_is_safe(host: str) -> bool:
         return False  # cannot resolve -> do not connect
     if not infos:
         return False
-    return all(not _addr_is_blocked(info[4][0]) for info in infos)
+    return all(not _addr_is_blocked(str(info[4][0])) for info in infos)
 
 
 def url_is_safe(url: str) -> bool:
