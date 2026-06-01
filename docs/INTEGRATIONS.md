@@ -20,17 +20,28 @@ People without the app can text a suspicious URL and get a verdict back.
 Provider setup: point your SMS provider's inbound webhook at
 `https://<host>/api/v1/sms/inbound` and configure it to send `SMS_INBOUND_SECRET`.
 
-## ✅ B3 — Government connector interface (implemented, stub default)
+## ✅ B3 — Government connector (email/CSV intake implemented)
 
-Pluggable connectors to forward confirmed phishing to, and pull blocklists from,
-ETDA 1212 / Cyber Police 1441.
+Forward confirmed phishing to ETDA 1212 / Cyber Police 1441. Neither exposes a
+public submission API, so the working channel is **email**: a CSV digest is
+mailed to the agency's intake mailbox.
 
-- `GovernmentConnector` protocol with `forward_report()` and `fetch_blocklist()`
-  (`app/integrations/government.py`). `StubGovernmentConnector` is the default
-  (logs + empty blocklist) selected via `GOV_CONNECTOR`.
-- A real connector implements the protocol against each agency's intake API and
-  registers in `_CONNECTORS`. Reports flow from confirmed feedback/campaigns;
-  fetched blocklists can seed the whitelist's deny side / feed ingestion.
+- `GovernmentConnector` protocol: `forward_report()`, `forward_reports()` (batch),
+  `fetch_blocklist()` (`app/integrations/government.py`). Selected via
+  `GOV_CONNECTOR` — `stub` (default, logs only) or `email`.
+- **`EmailIntakeConnector`** builds an `EmailMessage` with a CSV attachment
+  (`url,score,closest_domain,reason`) and sends it via SMTP (STARTTLS + login).
+  Configured by `GOV_EMAIL_*` (host/port/user/password/from/to); returns False
+  (logs a warning) when not fully configured, and never throws into the caller.
+- **Forwarding job**: `python -m scripts.gov_forward --since-days 1` (or
+  `make gov-forward`) collects recent phishing verdicts (deduped by URL) and
+  hands them to the connector. Schedule it daily (cron / Render cron job).
+  Preview without sending: `--dry-run`.
+- `fetch_blocklist()` returns `[]` for email (push-only); a future HTTP/API
+  connector can implement the same protocol and pull a blocklist into feed
+  ingestion / the whitelist deny side.
+- **Before going live**: an MOU with the agency, a PDPA review of what is sent,
+  and an audit log of forwarded batches.
 - Tests: `tests/test_integrations.py`.
 
 ## 🔜 B5 — Federated learning (design)

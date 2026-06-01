@@ -155,8 +155,18 @@ class Settings(BaseSettings):
     sms_inbound_secret: str = Field(default="")
 
     # --- Government connectors (B3) ---
-    # Which GovernmentConnector to use ("stub" until a real one is provisioned).
+    # Which GovernmentConnector to use: "stub" (default), or "email" to forward
+    # confirmed phishing as a CSV email to an agency intake mailbox.
     gov_connector: str = Field(default="stub")
+    # SMTP settings for the "email" connector (ETDA 1212 / police 1441 intake).
+    gov_email_smtp_host: str = Field(default="")
+    gov_email_smtp_port: int = Field(default=587)
+    gov_email_smtp_user: str = Field(default="")
+    gov_email_smtp_password: str = Field(default="")
+    gov_email_use_tls: bool = Field(default=True)
+    gov_email_from: str = Field(default="")
+    # Comma-separated recipient mailboxes (the agency intake address).
+    gov_email_to: str = Field(default="")
 
     # --- feedback-driven auto-retrain ---
     feedback_retrain_enabled: bool = Field(default=False)
