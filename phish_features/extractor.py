@@ -239,7 +239,7 @@ class FeatureExtractor:
     def extract_batch(
         self,
         urls: list[str],
-        overrides: list[dict] | None = None,
+        overrides: list[dict | None] | None = None,
     ) -> list[list[float]]:
         """Vectorise a list of URLs (used by the training pipeline)."""
         overrides = overrides or [None] * len(urls)

@@ -137,7 +137,7 @@ def _retrain(enforce_gate: bool = True) -> bool:
         "PHISH_REPORTS_DIR": str(STAGING_REPORTS_DIR),
     }
 
-    eval_args = ("ml_pipeline.evaluate",)
+    eval_args: tuple[str, ...] = ("ml_pipeline.evaluate",)
     if enforce_gate:
         eval_args = ("ml_pipeline.evaluate", "--enforce-threshold")
     steps = (

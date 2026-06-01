@@ -65,12 +65,12 @@ def _cert_validity_days(cert: dict) -> int:
     not_before = cert.get("notBefore")
     not_after = cert.get("notAfter")
     if not (not_before and not_after):
-        return IMPUTED_DEFAULTS["cert_validity_days"]
+        return int(IMPUTED_DEFAULTS["cert_validity_days"])
     try:
-        start = _dt.datetime.strptime(not_before, _CERT_DATE_FMT)
-        end = _dt.datetime.strptime(not_after, _CERT_DATE_FMT)
+        start = _dt.datetime.strptime(str(not_before), _CERT_DATE_FMT)
+        end = _dt.datetime.strptime(str(not_after), _CERT_DATE_FMT)
     except ValueError:
-        return IMPUTED_DEFAULTS["cert_validity_days"]
+        return int(IMPUTED_DEFAULTS["cert_validity_days"])
     return max((end - start).days, 0)
 
 
@@ -78,11 +78,11 @@ def _cert_san_count(cert: dict) -> int:
     """Number of subjectAltName entries, or the imputed default if absent."""
     san = cert.get("subjectAltName")
     if not san:
-        return IMPUTED_DEFAULTS["cert_san_count"]
+        return int(IMPUTED_DEFAULTS["cert_san_count"])
     try:
         return len(san)
     except TypeError:
-        return IMPUTED_DEFAULTS["cert_san_count"]
+        return int(IMPUTED_DEFAULTS["cert_san_count"])
 
 
 def _probe_valid(host: str, port: int) -> dict:
@@ -95,7 +95,7 @@ def _probe_valid(host: str, port: int) -> dict:
     not_before = cert.get("notBefore")
     if not_before:
         try:
-            issued = _dt.datetime.strptime(not_before, _CERT_DATE_FMT)
+            issued = _dt.datetime.strptime(str(not_before), _CERT_DATE_FMT)
             age_days = max((_dt.datetime.utcnow() - issued).days, 0)
         except ValueError:
             pass

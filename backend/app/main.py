@@ -6,6 +6,7 @@ import asyncio
 import datetime as _dt
 import logging
 from contextlib import asynccontextmanager, suppress
+from typing import Any
 
 from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
@@ -85,7 +86,7 @@ async def _seed_whitelist_from_json() -> None:
 
 async def _seed_external_feed_sources() -> None:
     """Insert default OpenPhish and PhishTank source rows if not present (idempotent)."""
-    defaults = [
+    defaults: list[dict[str, Any]] = [
         {
             "name": "openphish",
             "source_type": ExternalFeedSourceType.openphish,
