@@ -30,3 +30,45 @@ ml = [
 
 [tool.setuptools]
 packages = ["phish_features"]
+
+# ---------------------------------------------------------------------------
+# Tooling (C2: lint / format / type gate, C1: coverage gate)
+# ---------------------------------------------------------------------------
+[tool.ruff]
+line-length = 100
+target-version = "py310"
+extend-exclude = ["graphify-out", "dashboard", "models", "data", "backend/migrations"]
+
+[tool.ruff.lint]
+# E/W pycodestyle, F pyflakes, I import-sort, UP pyupgrade, B bugbear, C4 comprehensions.
+select = ["E", "W", "F", "I", "UP", "B", "C4"]
+ignore = [
+    "E501",  # line length is enforced loosely; long URLs/Thai strings abound
+    "B008",  # FastAPI/slowapi inject via `= Depends(...)` in arg defaults
+    "B904",  # `raise ... from` not required for our AppError re-raises
+    "UP038", # isinstance tuple form is clearer here
+]
+
+[tool.ruff.lint.per-file-ignores]
+"tests/*" = ["E402"]          # tests configure env before importing app
+"tests/conftest.py" = ["E402"]
+"backend/app/main.py" = ["E402"]
+
+[tool.mypy]
+python_version = "3.10"
+ignore_missing_imports = true
+# Pragmatic gate: catch obvious type errors without forcing full annotations
+# on an existing codebase. Tighten module-by-module over time.
+check_untyped_defs = false
+warn_redundant_casts = true
+warn_unused_ignores = false
+exclude = "(graphify-out|dashboard|models|data|backend/migrations|tests)"
+
+[tool.coverage.run]
+source = ["backend/app", "phish_features"]
+branch = true
+omit = ["*/__init__.py", "backend/migrations/*"]
+
+[tool.coverage.report]
+show_missing = true
+skip_covered = false

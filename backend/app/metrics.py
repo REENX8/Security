@@ -56,6 +56,20 @@ NETWORK_TIMEOUT = Counter(
     labelnames=("kind",),  # "whois" | "tls"
     registry=REGISTRY,
 )
+SCORE_DISTRIBUTION = Histogram(
+    "phish_score",
+    "Distribution of model phishing scores served by /check. Use this to spot "
+    "drift (e.g. the histogram shifting) and to tune thresholds from live data.",
+    buckets=(0.0, 0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1.0),
+    registry=REGISTRY,
+)
+THRESHOLD_AB = Counter(
+    "phish_threshold_ab_total",
+    "Verdict counts under the live (A) vs candidate (B) thresholds, in shadow. "
+    "Compare label mixes to evaluate a proposed threshold before promoting it.",
+    labelnames=("variant", "label"),  # variant: "a" | "b"
+    registry=REGISTRY,
+)
 
 
 def render_metrics() -> tuple[bytes, str]:

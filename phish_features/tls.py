@@ -9,7 +9,8 @@ from __future__ import annotations
 import datetime as _dt
 import socket
 import ssl
-from concurrent.futures import ThreadPoolExecutor, TimeoutError as _FutureTimeout
+from concurrent.futures import ThreadPoolExecutor
+from concurrent.futures import TimeoutError as _FutureTimeout
 
 from .schema import IMPUTED_DEFAULTS
 

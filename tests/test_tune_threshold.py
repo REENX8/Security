@@ -12,7 +12,6 @@ import os
 import pytest
 
 from ml_pipeline.config import (
-    GENERIC_HOLDOUT_CSV,
     MODEL_PATH,
     THAI_HOLDOUT_CSV,
 )

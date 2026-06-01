@@ -9,7 +9,7 @@ from __future__ import annotations
 import math
 import re
 from collections import Counter
-from urllib.parse import urlparse, unquote
+from urllib.parse import unquote, urlparse
 
 _DIGIT_RUN_RE = re.compile(r"\d+")
 _HOST_TOKEN_RE = re.compile(r"[^.\-]+")  # split hostname on dots and hyphens
@@ -86,7 +86,7 @@ def count_subdomains(host: str) -> int:
     """Depth of subdomains in front of the registrable domain."""
     if not host or host_is_ip(host):
         return 0
-    labels = [l for l in host.split(".") if l]
+    labels = [label for label in host.split(".") if label]
     extra = len(labels) - registrable_suffix_len(host)
     return max(extra, 0)
 

@@ -8,7 +8,6 @@ changes do not flake the suite.
 from __future__ import annotations
 
 import pytest
-
 from app.ml.loader import load_scorer
 
 scorer = load_scorer()

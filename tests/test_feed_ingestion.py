@@ -7,11 +7,8 @@ from types import SimpleNamespace
 from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
-import pytest_asyncio
-
 from app.feed_ingestion import FeedPoller, _url_hash
-from app.models import ExternalFeedSource, ExternalFeedSourceType, FeedIngestionRecord
-
+from app.models import ExternalFeedSource, ExternalFeedSourceType
 
 # ---------------------------------------------------------------------------
 # Helpers
@@ -333,10 +330,6 @@ async def test_source_stats_updated(client):
     poller = FeedPoller(state)
 
     async with SessionLocal() as session:
-        src_row = (await session.execute(
-            __import__("sqlalchemy", fromlist=["select"]).select(ExternalFeedSource)
-            .where(ExternalFeedSource.id == src_id)
-        )).scalar_one()
         await poller._update_source_stats(src_id, 5, None, session)
 
     async with SessionLocal() as session:

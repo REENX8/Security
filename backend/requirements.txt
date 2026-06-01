@@ -5,6 +5,7 @@ uvicorn[standard]==0.32.1
 pydantic==2.10.3
 pydantic-settings==2.6.1
 SQLAlchemy==2.0.36
+alembic==1.13.3  # DB migrations (alembic upgrade head) — see backend/migrations
 asyncpg==0.30.0
 aiosqlite==0.20.0
 slowapi==0.1.9

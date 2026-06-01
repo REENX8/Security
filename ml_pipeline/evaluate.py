@@ -31,13 +31,12 @@ from sklearn.model_selection import StratifiedKFold, cross_val_score
 from sklearn.pipeline import Pipeline
 from sklearn.preprocessing import StandardScaler as _CVScaler
 
-from phish_features import ORDERED_FEATURES
-
 from ml_pipeline.config import (
     EVALUATION_SUMMARY_JSON,
     GENERIC_HOLDOUT_CSV,
     METRICS_JSON,
     MODEL_PATH,
+    RANDOM_SEED,
     REAL_HOLDOUT_CSV,
     REAL_HOLDOUT_METRICS_JSON,
     REPORTS_DIR,
@@ -47,9 +46,9 @@ from ml_pipeline.config import (
     THAI_RECALL_MIN_THRESHOLD,
     ensure_dirs,
 )
-from ml_pipeline.config import DATASET_CSV, RANDOM_SEED
 from ml_pipeline.feature_engineering import build_feature_frame
 from ml_pipeline.train import TEST_SPLIT_CSV, build_ensemble
+from phish_features import ORDERED_FEATURES
 
 
 def wilson_ci(k: int, n: int, z: float = 1.96) -> tuple[float, float]:
@@ -363,7 +362,7 @@ def _plot_alignment(
     ax.set_ylim(0, 100)
     ax.set_ylabel("Recall at score ≥ 0.7 (%)")
     ax.set_title("Holdout recall — Thai-targeting vs generic phishing")
-    for bar, val in zip(bars, values):
+    for bar, val in zip(bars, values, strict=False):
         ax.text(
             bar.get_x() + bar.get_width() / 2, val + 1,
             f"{val:.1f}%", ha="center", va="bottom", fontsize=10,
@@ -379,9 +378,9 @@ def _plot_alignment(
 
 def write_evaluation_summary(
     synthetic_metrics: dict,
-    real_holdout_metrics: "dict | None",
-    thai_holdout_metrics: "dict | None",
-    cv_metrics: "dict | None" = None,
+    real_holdout_metrics: dict | None,
+    thai_holdout_metrics: dict | None,
+    cv_metrics: dict | None = None,
 ) -> None:
     """Write a consolidated evaluation_summary.json that makes grader intent clear.
 

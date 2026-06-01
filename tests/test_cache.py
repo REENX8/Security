@@ -5,8 +5,6 @@ from __future__ import annotations
 import fnmatch
 import time
 
-import pytest
-
 from app.cache import RedisCache, TTLCache, build_cache
 
 
@@ -74,9 +72,12 @@ def test_expired_entry_is_evicted():
 
 def test_maxsize_evicts_oldest():
     c = TTLCache(ttl=10, maxsize=3)
-    c.set("a", 1); time.sleep(0.01)
-    c.set("b", 2); time.sleep(0.01)
-    c.set("c", 3); time.sleep(0.01)
+    c.set("a", 1)
+    time.sleep(0.01)
+    c.set("b", 2)
+    time.sleep(0.01)
+    c.set("c", 3)
+    time.sleep(0.01)
     assert len(c) == 3
     c.set("d", 4)
     assert len(c) == 3
@@ -86,7 +87,8 @@ def test_maxsize_evicts_oldest():
 
 def test_clear():
     c = TTLCache(ttl=10)
-    c.set("a", 1); c.set("b", 2)
+    c.set("a", 1)
+    c.set("b", 2)
     assert len(c) == 2
     c.clear()
     assert len(c) == 0
@@ -112,7 +114,8 @@ def test_redis_missing_key_returns_none():
 
 def test_redis_clear_and_len():
     c = _redis_cache()
-    c.set("a", 1); c.set("b", 2)
+    c.set("a", 1)
+    c.set("b", 2)
     assert len(c) == 2
     c.clear()
     assert len(c) == 0

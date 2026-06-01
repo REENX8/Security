@@ -25,7 +25,7 @@ import csv
 import os
 import re
 import sys
-from typing import Iterable
+from collections.abc import Iterable
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 CSV_PATH = os.path.join(ROOT, "data", "thai_gov_domains.csv")

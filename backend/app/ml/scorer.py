@@ -4,9 +4,8 @@ from __future__ import annotations
 
 import datetime as dt
 
-from phish_features import FeatureExtractor, ORDERED_FEATURES, RulesEngine
-
 from app.config import settings
+from phish_features import ORDERED_FEATURES, FeatureExtractor, RulesEngine
 
 
 def label_from_score(score: float) -> str:

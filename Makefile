@@ -1,6 +1,7 @@
-.PHONY: help install test lint format run train evaluate evaluate-gate \
+.PHONY: help install test cov lint typecheck format run train evaluate evaluate-gate \
         sync-docs sync-docs-check dashboard extension docker clean nsc-bundle \
-        demo-setup demo-reset demo-verify seed-audit tune-threshold
+        demo-setup demo-reset demo-verify seed-audit seed-refresh tune-threshold \
+        migrate migrate-down migration retention
 
 PY        ?= python
 PIP       ?= $(PY) -m pip
@@ -11,20 +12,40 @@ help:  ## Show this help.
 	@grep -E '^[a-zA-Z_-]+:.*?## ' $(MAKEFILE_LIST) \
 	  | awk 'BEGIN {FS = ":.*?## "}; {printf "\033[36m%-15s\033[0m %s\n", $$1, $$2}'
 
-install:  ## Install Python deps for backend + ML.
+install:  ## Install Python deps for backend + ML + dev tooling.
 	$(PIP) install -e .
 	$(PIP) install -r backend/requirements.txt
 	$(PIP) install -r ml_pipeline/requirements.txt
-	$(PIP) install "pytest==8.3.4" "httpx==0.28.1" "pytest-asyncio>=0.23"
+	$(PIP) install "pytest==8.3.4" "httpx==0.28.1" "pytest-asyncio>=0.23" \
+	               "pytest-cov==5.0.0" "ruff==0.8.4" "mypy==1.13.0"
 
 test:  ## Run the full pytest suite.
 	$(PYTEST) -ra
 
-lint:  ## Ruff check (if installed).
-	@$(RUFF) check . || echo "(ruff not installed; pip install ruff to enable)"
+cov:  ## Run tests with the coverage gate (matches CI: fail under 75%).
+	$(PYTEST) -ra --cov=backend/app --cov=phish_features \
+	  --cov-report=term-missing --cov-fail-under=75
 
-format:  ## Ruff auto-format (if installed).
-	@$(RUFF) format . || echo "(ruff not installed)"
+lint:  ## Ruff lint (matches the CI blocking gate).
+	$(RUFF) check backend phish_features ml_pipeline scripts tests
+
+typecheck:  ## Mypy type check (informational).
+	@$(PY) -m mypy backend/app phish_features || true
+
+format:  ## Ruff auto-format the repo.
+	@$(RUFF) format .
+
+retention:  ## Prune observability rows older than DAYS (A8). Usage: make retention DAYS=90
+	$(PY) -m scripts.retention --days $(or $(DAYS),$(RETENTION_DAYS))
+
+migrate:  ## Apply DB migrations (alembic upgrade head).
+	cd backend && alembic upgrade head
+
+migrate-down:  ## Roll back the last migration (alembic downgrade -1).
+	cd backend && alembic downgrade -1
+
+migration:  ## Autogenerate a revision from model changes: make migration m="msg".
+	cd backend && alembic revision --autogenerate -m "$(m)"
 
 run:  ## Boot the backend on http://localhost:8000 (SQLite, no Docker).
 	cd backend && DATABASE_URL="sqlite+aiosqlite:///./phish.db" \
@@ -52,6 +73,10 @@ sync-docs-check:  ## Fail if docs metrics drift from evaluation_summary.json (CI
 	$(PY) scripts/sync_docs_metrics.py --check
 
 seed-audit:  ## Print brand / TLD / pattern coverage of the Thai seed corpus.
+	$(PY) scripts/audit_seed_coverage.py
+
+seed-refresh:  ## Regenerate the Thai phishing seed (live fetch) — see C11 cadence.
+	$(PY) scripts/collect_thai_phishing_seed.py
 	$(PY) scripts/audit_seed_coverage.py
 
 dashboard:  ## Start the Vite dev server for the dashboard.

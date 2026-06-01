@@ -29,7 +29,7 @@ import datetime as dt
 import os
 import re
 import sys
-from typing import Iterable
+from collections.abc import Iterable
 from urllib.parse import urlparse
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
