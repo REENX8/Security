@@ -47,3 +47,7 @@ Thumbs.db
 
 # NOTE: trained model artifacts in models/ and reports/ ARE committed
 # so the system is ready to run without retraining.
+
+# Coverage
+.coverage
+htmlcov/

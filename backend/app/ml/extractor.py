@@ -6,9 +6,8 @@ with the exact same code the training pipeline used.
 
 from __future__ import annotations
 
-from phish_features import FeatureExtractor, Whitelist
-
 from app.config import settings
+from phish_features import FeatureExtractor, Whitelist
 
 
 def build_extractor() -> FeatureExtractor:

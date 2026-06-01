@@ -8,9 +8,8 @@ are optional and degrade to imputed defaults.
 
 from __future__ import annotations
 
-from urllib.parse import urlparse
-
 import re
+from urllib.parse import urlparse
 
 from .domain import whois_features
 from .homoglyph import has_mixed_script, has_punycode
@@ -246,7 +245,7 @@ class FeatureExtractor:
         overrides = overrides or [None] * len(urls)
         return [
             self.extract_vector(u, network_overrides=o)
-            for u, o in zip(urls, overrides)
+            for u, o in zip(urls, overrides, strict=False)
         ]
 
 

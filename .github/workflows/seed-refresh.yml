@@ -1,0 +1,57 @@
+name: Seed corpus refresh
+
+# C11: keep data/thai_phishing_seed.csv current with new brands/patterns on a
+# fixed cadence. Runs monthly (and on demand), regenerates the seed with a live
+# OpenPhish/URLhaus fetch, audits coverage, and opens a PR for human review —
+# the corpus is never auto-merged, since each row should be eyeballed.
+
+on:
+  schedule:
+    # 03:00 UTC on the 1st of every month.
+    - cron: "0 3 1 * *"
+  workflow_dispatch: {}
+
+permissions:
+  contents: write
+  pull-requests: write
+
+jobs:
+  refresh-seed:
+    name: Regenerate Thai phishing seed + open PR
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+          cache: pip
+
+      - name: Install
+        run: |
+          python -m pip install --upgrade pip
+          pip install -e .
+
+      - name: Regenerate seed (with live fetch)
+        run: python scripts/collect_thai_phishing_seed.py
+
+      - name: Audit coverage (informational)
+        run: python scripts/audit_seed_coverage.py || true
+
+      - name: Open PR if the seed changed
+        uses: peter-evans/create-pull-request@v7
+        with:
+          branch: chore/seed-refresh
+          title: "chore: monthly Thai phishing seed refresh"
+          commit-message: "chore: refresh data/thai_phishing_seed.csv (scheduled)"
+          body: |
+            Automated monthly refresh of the Thai-targeting phishing seed corpus
+            (C11). Review the diff before merging — new rows feed both the
+            training augmentation set and the Thai holdout. The ML gate (Thai
+            recall ≥ 0.85) runs on this PR via the normal CI.
+          labels: |
+            data
+            automated
+          add-paths: |
+            data/thai_phishing_seed.csv

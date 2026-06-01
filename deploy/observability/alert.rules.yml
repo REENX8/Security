@@ -1,0 +1,73 @@
+# Prometheus alerting rules for the phishing-detector backend.
+# Metric names match app/metrics.py.
+groups:
+  - name: phish-backend.rules
+    rules:
+      - alert: PhishBackendDown
+        expr: up{job="phish-backend"} == 0
+        for: 2m
+        labels: { severity: critical }
+        annotations:
+          summary: "phish-backend target is down"
+          description: "Prometheus cannot scrape {{ $labels.instance }} for 2m."
+
+      - alert: PhishModelNotReady
+        expr: phish_model_ready == 0
+        for: 2m
+        labels: { severity: critical }
+        annotations:
+          summary: "Detection model not loaded"
+          description: "phish_model_ready=0 — /check is returning 503. Check model artifacts in models/."
+
+      - alert: PhishCheckLatencyP95High
+        # SLO from the docs: p95 < 250 ms for /check.
+        expr: histogram_quantile(0.95, sum(rate(phish_check_latency_seconds_bucket[5m])) by (le)) > 0.25
+        for: 5m
+        labels: { severity: warning }
+        annotations:
+          summary: "/check p95 latency above 250 ms SLO"
+          description: "p95 = {{ $value | humanizeDuration }} over the last 5m."
+
+      - alert: PhishNetworkLookupDegraded
+        # WHOIS/TLS lookups silently falling back to imputed defaults degrades
+        # feature quality. Alert when the failure rate is sustained.
+        expr: sum(rate(phish_network_timeout_total[10m])) by (kind) > 0.5
+        for: 10m
+        labels: { severity: warning }
+        annotations:
+          summary: "{{ $labels.kind }} lookups failing/timing out"
+          description: "Feature quality degrading: {{ $labels.kind }} fallback rate is high."
+
+      - alert: PhishFeedPollErrors
+        expr: increase(phish_feed_poll_errors_total[15m]) > 0
+        for: 0m
+        labels: { severity: warning }
+        annotations:
+          summary: "External feed poll errors ({{ $labels.source }})"
+          description: "{{ $value }} failed poll(s) from {{ $labels.source }} in 15m."
+
+      - alert: PhishScoreDistributionDrift
+        # Model drift watch (C4): the share of checks landing in the top score
+        # bucket (>=0.9) over the last hour vs the last day. A sustained 2x+
+        # swing in either direction means the live score distribution has
+        # shifted — investigate data/feature drift and consider a retrain.
+        expr: |
+          (
+            sum(rate(phish_score_bucket{le="+Inf"}[1h])) - sum(rate(phish_score_bucket{le="0.9"}[1h]))
+          )
+          /
+          clamp_min(sum(rate(phish_score_count[1h])), 1e-9)
+          >
+          2 *
+          (
+            (
+              sum(rate(phish_score_bucket{le="+Inf"}[1d])) - sum(rate(phish_score_bucket{le="0.9"}[1d]))
+            )
+            /
+            clamp_min(sum(rate(phish_score_count[1d])), 1e-9)
+          )
+        for: 30m
+        labels: { severity: warning }
+        annotations:
+          summary: "Phishing score distribution drift"
+          description: "Top-bucket (>=0.9) score share over 1h is >2x its 1d baseline — possible model/data drift."

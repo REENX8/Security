@@ -32,8 +32,6 @@ import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
 
-from phish_features import ORDERED_FEATURES
-
 from ml_pipeline.config import (
     GENERIC_HOLDOUT_CSV,
     MODEL_PATH,
@@ -44,6 +42,7 @@ from ml_pipeline.config import (
     ensure_dirs,
 )
 from ml_pipeline.feature_engineering import build_feature_frame
+from phish_features import ORDERED_FEATURES
 
 THRESHOLD_ANALYSIS_JSON = os.path.join(REPORTS_DIR, "threshold_analysis.json")
 THRESHOLD_ANALYSIS_PNG = os.path.join(REPORTS_DIR, "threshold_analysis.png")

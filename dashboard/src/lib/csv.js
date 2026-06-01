@@ -19,8 +19,8 @@ export function toCsv(rows, headers) {
 }
 
 export function downloadCsv(filename, content) {
-  // ﻿ BOM so Excel reads Thai (UTF-8) correctly.
-  const blob = new Blob(["﻿" + content], { type: "text/csv;charset=utf-8" });
+  // Prepend a UTF-8 BOM so Excel reads Thai correctly.
+  const blob = new Blob(["\ufeff" + content], { type: "text/csv;charset=utf-8" });
   const url = URL.createObjectURL(blob);
   const a = document.createElement("a");
   a.href = url;

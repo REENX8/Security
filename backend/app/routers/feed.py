@@ -14,21 +14,21 @@ Two formats are served:
 
 from __future__ import annotations
 
+import asyncio
 import csv
 import datetime as dt
 import io
 import uuid
-
-import asyncio
 
 from fastapi import APIRouter, Depends, HTTPException, Query, Request
 from fastapi.responses import JSONResponse, StreamingResponse
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.database import SessionLocal, get_session
+from app.database import get_session
 from app.deps import verify_api_key
 from app.models import ExternalFeedSource, Label, UrlCheck
+from app.stix import build_indicator
 
 router = APIRouter()
 
@@ -138,22 +138,8 @@ async def feed_stix(
     """
     rows = await _recent_phishing(session, hours, limit)
     bundle_id = f"bundle--{uuid.uuid4()}"
-    objects = []
     now_iso = dt.datetime.now(dt.timezone.utc).isoformat().replace("+00:00", "Z")
-    for r in rows:
-        objects.append({
-            "type": "indicator",
-            "spec_version": "2.1",
-            "id": f"indicator--{uuid.uuid4()}",
-            "created": r.checked_at.isoformat().replace("+00:00", "Z"),
-            "modified": r.checked_at.isoformat().replace("+00:00", "Z"),
-            "name": f"Phishing URL targeting {r.closest_domain or 'unknown'}",
-            "indicator_types": ["malicious-activity"],
-            "pattern_type": "stix",
-            "pattern": f"[url:value = '{r.url}']",
-            "valid_from": r.checked_at.isoformat().replace("+00:00", "Z"),
-            "confidence": int(round(float(r.score) * 100)),
-        })
+    objects = [build_indicator(r) for r in rows]
     body = {
         "type": "bundle",
         "id": bundle_id,

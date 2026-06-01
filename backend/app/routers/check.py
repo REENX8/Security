@@ -24,13 +24,14 @@ from app.errors import AppError
 from app.metrics import CACHE_SIZE, CHECK_LATENCY, CHECKS_TOTAL, NETWORK_TIMEOUT
 from app.notifier import maybe_alert
 from app.rate_limit import limiter
-from app.unshorten import unshorten_url
 from app.schemas import (
     BatchCheckRequest,
     BatchCheckResponse,
     CheckRequest,
     CheckResponse,
 )
+from app.threshold_ab import record_score_telemetry
+from app.unshorten import unshorten_url
 
 router = APIRouter()
 
@@ -87,6 +88,8 @@ async def _score_url(request: Request, url: str) -> dict:
         cache.set(url, result)
         CACHE_SIZE.set(len(cache))
     CHECKS_TOTAL.labels(label=result["label"], cached="false").inc()
+    # Record the served score for drift watch + shadow threshold A/B (C10).
+    record_score_telemetry(result.get("score", 0.0))
     return {**result, "cached": False}
 
 

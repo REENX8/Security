@@ -7,9 +7,8 @@ identical edit-distance computations on both sides.
 
 from __future__ import annotations
 
-from phish_features import Whitelist
-
 from ml_pipeline.config import WHITELIST_CSV, WHITELIST_JSON, ensure_dirs
+from phish_features import Whitelist
 
 
 def main() -> None:

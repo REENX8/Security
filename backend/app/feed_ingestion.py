@@ -146,7 +146,7 @@ class FeedPoller:
                 result = await asyncio.get_event_loop().run_in_executor(
                     None, scorer.score, url
                 )
-                row = await insert_check(session, result)
+                await insert_check(session, result)
 
                 if settings.enable_campaign_tracking and result.get("label") == "phishing":
                     await record_campaign(

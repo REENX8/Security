@@ -5,7 +5,6 @@ from __future__ import annotations
 import asyncio
 import datetime as _dt
 import logging
-import time
 from contextlib import asynccontextmanager, suppress
 
 from fastapi import FastAPI, Request
@@ -15,31 +14,31 @@ from slowapi.errors import RateLimitExceeded
 from slowapi.middleware import SlowAPIMiddleware
 from sqlalchemy import func, select
 
-from phish_features import FEATURE_SCHEMA_VERSION
-from phish_features import __version__ as features_version
-
 from app import __version__
 from app.cache import build_cache
 from app.config import settings
 from app.database import SessionLocal, init_db
 from app.errors import register_error_handlers
-from app.metrics import CACHE_SIZE, MODEL_READY, render_metrics
+from app.feed_ingestion import FeedPoller
+from app.metrics import MODEL_READY, render_metrics
 from app.middleware import RequestContextMiddleware
 from app.ml.loader import ModelLoadError, load_scorer
-from app.feed_ingestion import FeedPoller
 from app.models import DbWhitelistEntry, ExternalFeedSource, ExternalFeedSourceType, UrlCheck
 from app.rate_limit import limiter
-from app.routers import campaigns as campaigns_router
-from app.routers import check, history, stats
 from app.routers import admin as admin_router
 from app.routers import auth as auth_router
+from app.routers import campaigns as campaigns_router
+from app.routers import check, history, stats
 from app.routers import domain as domain_router
 from app.routers import feed as feed_router
 from app.routers import feedback as feedback_router
 from app.routers import impact as impact_router
 from app.routers import learn as learn_router
 from app.routers import line_bot as line_bot_router
+from app.routers import taxii as taxii_router
 from app.routers import watchlist as watchlist_router
+from phish_features import FEATURE_SCHEMA_VERSION
+from phish_features import __version__ as features_version
 
 logging.basicConfig(
     level=logging.INFO,
@@ -50,7 +49,8 @@ logger = logging.getLogger("phish-detector")
 
 async def _seed_whitelist_from_json() -> None:
     """Migrate whitelist.json → DB on first startup (idempotent)."""
-    import json, os
+    import json
+    import os
     path = settings.whitelist_path
     if not os.path.exists(path):
         return
@@ -117,6 +117,9 @@ async def _seed_external_feed_sources() -> None:
 async def lifespan(app: FastAPI):
     app.state.started_at = _dt.datetime.now(_dt.timezone.utc)
     app.state.cache = build_cache(settings)
+    # Volume-based auto-retrain bookkeeping (see app/retrain_trigger.py).
+    app.state.retrain_in_progress = False
+    app.state.retrain_baseline_count = 0
 
     # The core URL scorer does not need the database -- history, stats and
     # admin endpoints do. Tolerate a missing/unreachable DB at startup so
@@ -147,6 +150,17 @@ async def lifespan(app: FastAPI):
             meta.get("trained_at"),
             meta.get("metrics", {}).get("test_f1"),
         )
+        # Pin the feature-schema contract: warn loudly if the trained model's
+        # schema version disagrees with the code's. A mismatch means features
+        # are computed differently than the model was trained on (silent
+        # accuracy loss), and is the first thing to check on a bad deploy.
+        model_schema = meta.get("schema_version")
+        if model_schema and model_schema != FEATURE_SCHEMA_VERSION:
+            logger.warning(
+                "SCHEMA MISMATCH: model trained on schema %s but code is %s -- "
+                "retrain or pin phish_features to match",
+                model_schema, FEATURE_SCHEMA_VERSION,
+            )
     except ModelLoadError as exc:
         app.state.scorer = None
         MODEL_READY.set(0)
@@ -222,6 +236,56 @@ app = FastAPI(
 )
 
 
+def _custom_openapi() -> dict:
+    """Document the single error envelope ({error, code}) on every operation.
+
+    All handlers fail through errors.py, so rather than annotate each route we
+    inject a shared ``Error`` schema and attach it as the default response for
+    the error status codes, keeping the OpenAPI contract consistent (C7).
+    """
+    if app.openapi_schema:
+        return app.openapi_schema
+    from fastapi.openapi.utils import get_openapi
+
+    schema = get_openapi(
+        title=app.title,
+        version=app.version,
+        description=app.description,
+        routes=app.routes,
+    )
+    schema.setdefault("components", {}).setdefault("schemas", {})["Error"] = {
+        "type": "object",
+        "properties": {
+            "error": {"type": "string", "description": "Human-readable message"},
+            "code": {"type": "string", "description": "Stable machine code"},
+        },
+        "required": ["error", "code"],
+    }
+    err_ref = {"application/json": {"schema": {"$ref": "#/components/schemas/Error"}}}
+    error_codes = {
+        "401": "Authentication required",
+        "404": "Not found",
+        "422": "Validation error",
+        "429": "Rate limit exceeded",
+        "500": "Internal error",
+        "503": "Service unavailable (model/DB not ready)",
+    }
+    for path_item in schema.get("paths", {}).values():
+        for operation in path_item.values():
+            if not isinstance(operation, dict):
+                continue
+            responses = operation.setdefault("responses", {})
+            for status_code, desc in error_codes.items():
+                responses.setdefault(
+                    status_code, {"description": desc, "content": err_ref}
+                )
+    app.openapi_schema = schema
+    return schema
+
+
+app.openapi = _custom_openapi
+
+
 @app.get("/api/v1/disclaimer", tags=["meta"], include_in_schema=True)
 async def disclaimer() -> dict:
     """ข้อตกลงในการใช้ซอฟต์แวร์ตามข้อกำหนด NSC (booklet หน้า 44)."""
@@ -258,6 +322,9 @@ async def disclaimer() -> dict:
     }
 
 # --- middleware (added last = outermost) ---
+# In production the config guard (config.py) has already rejected a wildcard
+# CORS policy, so allow_origins here is an explicit allowlist. The chrome
+# extension origin is matched separately by regex.
 app.state.limiter = limiter
 app.add_middleware(SlowAPIMiddleware)
 app.add_middleware(
@@ -269,7 +336,13 @@ app.add_middleware(
     allow_headers=["*"],
     expose_headers=["X-Request-ID"],
 )
-app.add_middleware(RequestContextMiddleware, log_format=settings.log_format)
+app.add_middleware(
+    RequestContextMiddleware,
+    log_format=settings.log_format,
+    hsts=settings.hsts_enabled or settings.is_production,
+    hsts_max_age=settings.hsts_max_age,
+    schema_version=FEATURE_SCHEMA_VERSION,
+)
 
 
 # --- error handlers ---
@@ -301,6 +374,11 @@ app.include_router(impact_router.router, prefix="/api/v1", tags=["impact"])
 app.include_router(learn_router.router, prefix="/api/v1", tags=["learn"])
 if settings.enable_public_feed:
     app.include_router(feed_router.router, prefix="/api/v1", tags=["feed"])
+    app.include_router(taxii_router.router, prefix="/api/v1", tags=["taxii"])
+if settings.sms_inbound_secret:
+    from app.routers import integrations as integrations_router
+
+    app.include_router(integrations_router.router, prefix="/api/v1", tags=["sms"])
 if settings.line_channel_token or settings.line_channel_secret:
     app.include_router(line_bot_router.router, prefix="/api/v1", tags=["line"])
 
@@ -339,6 +417,47 @@ async def health(request: Request) -> dict:
         "cache_size": len(cache) if cache is not None else None,
         "uptime_seconds": round(uptime, 1) if uptime is not None else None,
     }
+
+
+@app.get("/health/live", tags=["meta"])
+async def liveness() -> dict:
+    """Liveness probe: the process is up and the event loop is responsive.
+
+    Deliberately does NO I/O so an orchestrator (k8s, Render) never restarts a
+    healthy container just because Postgres or the model is briefly unavailable.
+    Use /health/ready to gate traffic instead.
+    """
+    return {"status": "alive"}
+
+
+@app.get("/health/ready", tags=["meta"])
+async def readiness(request: Request) -> JSONResponse:
+    """Readiness probe: the model is loaded AND the database is reachable.
+
+    Returns 503 (not ready) when a dependency is down so a load balancer stops
+    routing traffic to this replica until it recovers. This is the path a
+    production deploy should point its health check at.
+    """
+    scorer = getattr(request.app.state, "scorer", None)
+    model_ready = scorer is not None
+
+    db_ready = True
+    try:
+        async with SessionLocal() as session:
+            await session.execute(select(func.count()).select_from(UrlCheck))
+    except Exception as exc:  # noqa: BLE001
+        db_ready = False
+        logger.warning("readiness: DB check failed: %s", exc)
+
+    ready = model_ready and db_ready
+    return JSONResponse(
+        status_code=200 if ready else 503,
+        content={
+            "status": "ready" if ready else "not_ready",
+            "model_ready": model_ready,
+            "db_ready": db_ready,
+        },
+    )
 
 
 @app.get("/metrics", tags=["meta"], include_in_schema=False)
@@ -384,10 +503,13 @@ async def root() -> dict:
             "GET  /api/v1/feed.json",
             "GET  /api/v1/feed.csv",
             "GET  /api/v1/feed.stix",
+            "GET  /api/v1/taxii2/",
             "GET  /api/v1/impact",
             "GET  /api/v1/learn",
             "GET  /api/v1/learn/{card_id}",
             "GET  /health",
+            "GET  /health/live",
+            "GET  /health/ready",
             "GET  /version",
             "GET  /metrics",
         ],

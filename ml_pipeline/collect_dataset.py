@@ -18,12 +18,10 @@ from __future__ import annotations
 import csv
 import os
 
-from phish_features import Whitelist
-
 from ml_pipeline.config import (
     DATASET_CSV,
-    FEEDBACK_CSV,
     FEED_TIMEOUT,
+    FEEDBACK_CSV,
     GENERIC_HOLDOUT_CSV,
     GENERIC_PHISH_SEED_CSV,
     GENERIC_SEED_TRAIN_FRACTION,
@@ -34,15 +32,16 @@ from ml_pipeline.config import (
     RAW_DIR,
     REAL_HOLDOUT_CSV,
     REAL_HOLDOUT_FRACTION,
+    TARGET_ROWS,
     THAI_HOLDOUT_CSV,
     THAI_PHISH_SEED_CSV,
     THAI_SEED_TRAIN_FRACTION,
-    TARGET_ROWS,
     URLHAUS_URL,
     WHITELIST_CSV,
     ensure_dirs,
 )
 from ml_pipeline.synthetic_generator import SyntheticGenerator
+from phish_features import Whitelist
 
 _FIELDS = [
     "url", "label", "domain_age_days", "is_known_registrar",
@@ -67,7 +66,7 @@ def _fetch_feed_urls(max_urls: int) -> list[str]:
     try:
         resp = requests.get(OPENPHISH_URL, timeout=FEED_TIMEOUT, headers=headers)
         if resp.ok:
-            lines = [l.strip() for l in resp.text.splitlines() if l.strip()]
+            lines = [ln.strip() for ln in resp.text.splitlines() if ln.strip()]
             urls.extend(lines)
             print(f"[feeds] OpenPhish: +{len(lines)} urls")
     except Exception as exc:  # noqa: BLE001
@@ -135,8 +134,7 @@ _THAI_BRAND_SEED = {
     "rd", "set", "sec", "ktb", "scb", "bbl", "gsb", "ghb",
     "moe", "moi", "mof", "mot", "bot", "pea", "mwa", "dbd",
     "sso", "tat", "sat", "moc", "mod", "doh", "dlt", "dla",
-    "dms", "ddc", "dop", "dpr", "doe", "dft", "dft", "dft",
-    "ago", "dsi", "nhso", "nbtc",
+    "dms", "ddc", "dop", "dpr", "doe", "dft", "ago", "dsi", "nhso", "nbtc",
 }
 
 

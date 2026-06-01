@@ -1,0 +1,24 @@
+# Prometheus scrape config for the phishing-detector backend.
+# The backend exposes Prometheus metrics at GET /metrics (see app/metrics.py).
+#
+#   docker run -p 9090:9090 \
+#     -v $PWD/deploy/observability/prometheus.yml:/etc/prometheus/prometheus.yml \
+#     -v $PWD/deploy/observability/alert.rules.yml:/etc/prometheus/alert.rules.yml \
+#     prom/prometheus
+
+global:
+  scrape_interval: 15s
+  evaluation_interval: 15s
+
+rule_files:
+  - alert.rules.yml
+
+scrape_configs:
+  - job_name: phish-backend
+    metrics_path: /metrics
+    static_configs:
+      - targets:
+          # Point at your backend. For Render, use the service hostname.
+          - "phish-backend:8000"
+        labels:
+          service: phish-backend

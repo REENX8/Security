@@ -51,7 +51,7 @@ async function request(path, options = {}, { retries = 2 } = {}) {
     try {
       const body = await resp.json();
       message = body.error || body.detail || message;
-    } catch (_) { /* ignore */ }
+    } catch { /* ignore non-JSON error bodies */ }
     throw new Error(message);
   }
   return resp.json();

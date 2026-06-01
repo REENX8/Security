@@ -4,11 +4,20 @@ from __future__ import annotations
 
 from pathlib import Path
 
-from pydantic import Field, field_validator
+from pydantic import Field, field_validator, model_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 # Repo root = <root>/backend/app/config.py -> parents[2].
 ROOT = Path(__file__).resolve().parents[2]
+
+# Built-in placeholder secrets shipped for the zero-setup local demo. They MUST
+# never reach a public deployment, so the production guard below refuses to
+# start when any of them is still in place (see A1 in ROADMAP.md).
+_INSECURE_API_KEYS = frozenset({"", "dev-local-key-change-me", "change-this"})
+_INSECURE_JWT_SECRETS = frozenset(
+    {"", "change-this-secret-in-production-use-openssl-rand-hex-32"}
+)
+_PROD_ENV_NAMES = frozenset({"production", "prod", "live"})
 
 
 class Settings(BaseSettings):
@@ -63,6 +72,10 @@ class Settings(BaseSettings):
     # Rate-limited per IP to prevent abuse. Set higher than the global limit
     # because many real users will hit this endpoint simultaneously.
     public_check_rate_limit: str = Field(default="30/minute")
+    # Per-IP limit for the public report/feedback endpoint (no API key). Lower
+    # than /check because legitimate users report far less often than they
+    # browse, and it is a cheap abuse target.
+    report_rate_limit: str = Field(default="10/minute")
 
     # --- feature extraction (network lookups) ---
     enable_whois: bool = Field(default=True)
@@ -72,6 +85,14 @@ class Settings(BaseSettings):
     # --- scoring thresholds ---
     threshold_suspicious: float = Field(default=0.3)
     threshold_phishing: float = Field(default=0.7)
+    # --- threshold A/B (shadow) ---
+    # Candidate ("B") thresholds evaluated in shadow against live traffic. The
+    # served verdict always uses the A thresholds above; B only feeds telemetry
+    # (phish_threshold_ab_total) so a proposed threshold can be assessed on real
+    # score distributions before promotion. Defaults equal A = no-op.
+    enable_threshold_ab: bool = Field(default=False)
+    threshold_suspicious_candidate: float = Field(default=0.3)
+    threshold_phishing_candidate: float = Field(default=0.7)
 
     # --- caching / batch ---
     enable_cache: bool = Field(default=True)
@@ -87,6 +108,20 @@ class Settings(BaseSettings):
     # --- server ---
     app_name: str = Field(default="Thai Phishing URL Detector")
     log_format: str = Field(default="text")  # "text" or "json"
+    # Deployment environment. When set to "production" (APP_ENV=production) the
+    # startup guard below refuses to run with placeholder secrets or a wildcard
+    # CORS policy. Leave as "development" for the local demo / CI.
+    app_env: str = Field(default="development")
+    # Send HTTP Strict-Transport-Security. Only safe behind HTTPS (Render,
+    # a reverse proxy with TLS), so it is opt-in and forced on in production.
+    hsts_enabled: bool = Field(default=False)
+    hsts_max_age: int = Field(default=63072000)  # 2 years (seconds)
+
+    # --- data retention (A8) ---
+    # Days to keep observability rows (url_checks, webhook_delivery,
+    # feed_ingestion_records) before the retention job prunes them. 0 = keep
+    # forever (the default; opt in by setting RETENTION_DAYS).
+    retention_days: int = Field(default=0)
 
     # --- public threat feed ---
     enable_public_feed: bool = Field(default=True)
@@ -112,6 +147,16 @@ class Settings(BaseSettings):
     # --- LINE Messaging API bot ---
     line_channel_token: str = Field(default="")
     line_channel_secret: str = Field(default="")
+
+    # --- SMS report gateway (B2) ---
+    # Shared secret the SMS provider includes (X-SMS-Secret header or `secret`
+    # field) so only the provider can post inbound messages. Empty disables the
+    # /sms/inbound route entirely.
+    sms_inbound_secret: str = Field(default="")
+
+    # --- Government connectors (B3) ---
+    # Which GovernmentConnector to use ("stub" until a real one is provisioned).
+    gov_connector: str = Field(default="stub")
 
     # --- feedback-driven auto-retrain ---
     feedback_retrain_enabled: bool = Field(default=False)
@@ -139,6 +184,62 @@ class Settings(BaseSettings):
     @property
     def cors_origin_list(self) -> list[str]:
         return [o.strip() for o in self.cors_origins.split(",") if o.strip()]
+
+    @property
+    def is_production(self) -> bool:
+        return self.app_env.strip().lower() in _PROD_ENV_NAMES
+
+    def production_config_problems(self) -> list[str]:
+        """Return a list of insecure-config problems for a production run.
+
+        Empty list means the configuration is safe to expose publicly. This is
+        split out from the validator so it can be unit-tested directly and
+        reused by the readiness probe.
+        """
+        problems: list[str] = []
+        if self.api_key in _INSECURE_API_KEYS:
+            problems.append(
+                "API_KEY is unset or still the built-in demo value -- "
+                "set a strong random key."
+            )
+        if (
+            self.jwt_secret in _INSECURE_JWT_SECRETS
+            or "change-this" in self.jwt_secret.lower()
+            or len(self.jwt_secret) < 16
+        ):
+            problems.append(
+                "JWT_SECRET is unset/placeholder/too short -- "
+                "generate one with `openssl rand -hex 32`."
+            )
+        if not self.admin_password_hash.strip():
+            problems.append(
+                "ADMIN_PASSWORD_HASH is empty -- dashboard login would be "
+                "disabled or insecure."
+            )
+        # A wildcard CORS policy lets any site call the credential-bearing
+        # admin endpoints from a victim's browser. Forbid it in production.
+        for origin in self.cors_origin_list:
+            if "*" in origin:
+                problems.append(
+                    f"CORS_ORIGINS contains a wildcard ('{origin}') -- list "
+                    "explicit origins in production."
+                )
+        return problems
+
+    @model_validator(mode="after")
+    def _guard_production_secrets(self) -> Settings:
+        if not self.is_production:
+            return self
+        problems = self.production_config_problems()
+        if problems:
+            bullet = "\n  - ".join(problems)
+            raise ValueError(
+                "Refusing to start in production (APP_ENV=production) with an "
+                f"insecure configuration:\n  - {bullet}\n"
+                "Fix the variables above or set APP_ENV=development for local "
+                "use."
+            )
+        return self
 
 
 settings = Settings()

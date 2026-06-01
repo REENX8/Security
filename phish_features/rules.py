@@ -25,8 +25,7 @@ from __future__ import annotations
 
 import dataclasses
 import re
-from collections.abc import Callable
-from typing import Iterable
+from collections.abc import Callable, Iterable
 
 from .schema import LOGIN_KEYWORDS, SUSPICIOUS_TLDS
 
@@ -54,7 +53,7 @@ Rule = Callable[[str, dict], "RuleHit | None"]
 _IP_AT_RE = re.compile(r"://[^/]*@")
 
 
-def rule_at_trick(url: str, feat: dict) -> "RuleHit | None":
+def rule_at_trick(url: str, feat: dict) -> RuleHit | None:
     """``https://bank.com@evil.xyz/`` -- ``@`` hides the real host."""
     if _IP_AT_RE.search(url or ""):
         return RuleHit(
@@ -66,7 +65,7 @@ def rule_at_trick(url: str, feat: dict) -> "RuleHit | None":
     return None
 
 
-def rule_punycode_brand_match(url: str, feat: dict) -> "RuleHit | None":
+def rule_punycode_brand_match(url: str, feat: dict) -> RuleHit | None:
     """Punycode + close to a trusted brand: high-confidence IDN spoof."""
     if feat.get("has_punycode") and feat.get("homoglyph_distance", 999) <= 2:
         return RuleHit(
@@ -81,7 +80,7 @@ def rule_punycode_brand_match(url: str, feat: dict) -> "RuleHit | None":
     return None
 
 
-def rule_typosquat_with_login(url: str, feat: dict) -> "RuleHit | None":
+def rule_typosquat_with_login(url: str, feat: dict) -> RuleHit | None:
     """Typosquat + login keyword -- a credential phishing setup."""
     if feat.get("is_typosquat") and feat.get("has_login_keyword"):
         closest = feat.get("closest_domain") or "เว็บทางการ"
@@ -97,7 +96,7 @@ def rule_typosquat_with_login(url: str, feat: dict) -> "RuleHit | None":
     return None
 
 
-def rule_path_brand_impersonation(url: str, feat: dict) -> "RuleHit | None":
+def rule_path_brand_impersonation(url: str, feat: dict) -> RuleHit | None:
     """Trusted brand sits in URL path but not in host -- a brand-bait kit."""
     if feat.get("path_brand_hit") and feat.get("has_suspicious_tld"):
         closest = feat.get("closest_domain") or ""
@@ -114,7 +113,7 @@ def rule_path_brand_impersonation(url: str, feat: dict) -> "RuleHit | None":
     return None
 
 
-def rule_ip_with_login(url: str, feat: dict) -> "RuleHit | None":
+def rule_ip_with_login(url: str, feat: dict) -> RuleHit | None:
     """IP host + credential keyword -- almost always phishing."""
     if feat.get("has_ip") and feat.get("has_login_keyword"):
         return RuleHit(
@@ -126,7 +125,7 @@ def rule_ip_with_login(url: str, feat: dict) -> "RuleHit | None":
     return None
 
 
-def rule_whitelisted_exact(url: str, feat: dict) -> "RuleHit | None":
+def rule_whitelisted_exact(url: str, feat: dict) -> RuleHit | None:
     """Exact whitelist match should never be phishing.
 
     A safety net against false positives when other signals (eg. an
@@ -147,7 +146,7 @@ def rule_whitelisted_exact(url: str, feat: dict) -> "RuleHit | None":
     return None
 
 
-def rule_cheap_tld_no_https(url: str, feat: dict) -> "RuleHit | None":
+def rule_cheap_tld_no_https(url: str, feat: dict) -> RuleHit | None:
     """Cheap TLD without HTTPS -- low-effort phishing kit."""
     if (
         feat.get("has_suspicious_tld")

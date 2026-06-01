@@ -62,9 +62,9 @@ def required_files_present() -> list[str]:
     action = manifest.get("action", {})
     if action.get("default_popup"):
         referenced.add(action["default_popup"])
-    for size, p in (action.get("default_icon") or {}).items():
+    for p in (action.get("default_icon") or {}).values():
         referenced.add(p)
-    for size, p in (manifest.get("icons") or {}).items():
+    for p in (manifest.get("icons") or {}).values():
         referenced.add(p)
     if (manifest.get("options_ui") or {}).get("page"):
         referenced.add(manifest["options_ui"]["page"])

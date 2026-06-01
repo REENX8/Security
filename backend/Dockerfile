@@ -26,8 +26,12 @@ COPY models ./models
 WORKDIR /app/backend
 EXPOSE 8000
 
+# Container healthcheck uses the liveness probe: restart only when the process
+# itself is wedged, not when a downstream dependency (DB) is briefly down.
+# Traffic gating against the readiness probe (/health/ready) is the load
+# balancer's job (see render.yaml).
 HEALTHCHECK --interval=15s --timeout=5s --start-period=20s --retries=5 \
     CMD python -c "import urllib.request,sys; \
-sys.exit(0 if urllib.request.urlopen('http://localhost:8000/health').status==200 else 1)"
+sys.exit(0 if urllib.request.urlopen('http://localhost:8000/health/live').status==200 else 1)"
 
 CMD ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8000"]

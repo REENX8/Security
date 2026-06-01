@@ -7,9 +7,9 @@ from pathlib import Path
 import pytest
 
 from phish_features import (
-    FeatureExtractor,
     IMPUTED_DEFAULTS,
     ORDERED_FEATURES,
+    FeatureExtractor,
     Whitelist,
 )
 

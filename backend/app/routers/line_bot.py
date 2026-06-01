@@ -22,6 +22,7 @@ from fastapi import APIRouter, Header, HTTPException, Request
 from starlette.concurrency import run_in_threadpool
 
 from app.config import settings
+from app.unshorten import unshorten_url
 
 logger = logging.getLogger("phish-detector")
 router = APIRouter(prefix="/line", tags=["line"])
@@ -110,6 +111,10 @@ async def line_webhook(
             continue
 
         url = urls[0]
+        # Expand short links before scoring, same as the /check endpoint, so a
+        # bit.ly hiding a phishing destination is caught (SSRF-guarded).
+        if settings.enable_url_unshortening:
+            url = await unshorten_url(url, timeout=settings.unshorten_timeout)
         result = await run_in_threadpool(scorer.score, url)
         await _send_reply(reply_token, _build_reply(url, result))
 
