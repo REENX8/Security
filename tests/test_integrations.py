@@ -134,15 +134,15 @@ from app.integrations.government import (  # noqa: E402
 
 
 def _email_settings(**over):
-    base = dict(
-        gov_email_smtp_host="smtp.example.com",
-        gov_email_smtp_port=587,
-        gov_email_smtp_user="bot@example.com",
-        gov_email_smtp_password="pw",
-        gov_email_use_tls=True,
-        gov_email_from="bot@example.com",
-        gov_email_to="intake@etda.or.th, cyber@police.go.th",
-    )
+   base = {
+    "gov_email_smtp_host": "smtp.example.com",
+    "gov_email_smtp_port": 587,
+    "gov_email_smtp_user": "bot@example.com",
+    "gov_email_smtp_password": "pw",
+    "gov_email_use_tls": True,
+    "gov_email_from": "bot@example.com",
+    "gov_email_to": "intake@etda.or.th, cyber@police.go.th",
+}
     base.update(over)
     return SimpleNamespace(**base)
 
@@ -183,7 +183,7 @@ def test_email_connector_sends_csv_attachment(monkeypatch):
     msg = smtp.send_message.call_args.args[0]
     assert msg["To"] == "intake@etda.or.th, cyber@police.go.th"
     # The CSV is attached.
-    attachments = [p for p in msg.iter_attachments()]
+    attachments = list(msg.iter_attachments())
     assert len(attachments) == 1
     assert "phish.xyz" in attachments[0].get_content()
 
