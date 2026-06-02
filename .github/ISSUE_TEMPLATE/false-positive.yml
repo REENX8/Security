@@ -1,0 +1,41 @@
+name: False Positive — Safe URL Flagged as Phishing
+description: Report a legitimate URL that the system incorrectly flags as suspicious or phishing
+labels: ["false-positive", "ml-data"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        A false positive means a **legitimate URL was flagged as suspicious or phishing**.
+        Your report will be reviewed as a training-data candidate to improve the model.
+
+        ⚠️ Do not submit real credentials or personal data — URLs only.
+
+  - type: input
+    id: url
+    attributes:
+      label: URL
+      description: The legitimate URL that was incorrectly flagged.
+      placeholder: "https://www.example.go.th/page"
+    validations:
+      required: true
+
+  - type: input
+    id: score
+    attributes:
+      label: Score returned
+      description: The score and label from `/api/v1/check` (if available).
+      placeholder: "score: 0.85, label: phishing"
+
+  - type: textarea
+    id: why_safe
+    attributes:
+      label: Why this URL is safe
+      description: Provide evidence — official website link, news article, government registry, etc.
+    validations:
+      required: true
+
+  - type: input
+    id: version
+    attributes:
+      label: Version
+      placeholder: "e.g. 1.5.0"
