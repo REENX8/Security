@@ -24,7 +24,7 @@ body {
   border-bottom: 1px solid #334155;
 }
 .brand { display: flex; align-items: center; gap: 10px; }
-.shield { font-size: 26px; }
+.shield { width: 28px; height: 28px; border-radius: 7px; object-fit: cover; display: block; }
 .brand-title { font-size: 14px; font-weight: 700; }
 .brand-sub { font-size: 11px; color: var(--muted); }
 

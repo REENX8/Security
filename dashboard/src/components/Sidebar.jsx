@@ -32,12 +32,12 @@ export default function Sidebar({ open, onClose }) {
           ${open ? "translate-x-0" : "-translate-x-full"}`}
       >
         <div className="flex items-center gap-3 border-b border-slate-800 px-5 py-5">
-          <img src="/shield.svg" alt="" className="h-9 w-9" />
+          <img src="/logo.png" alt="รู้ทัน" className="h-9 w-9 rounded-lg object-cover" />
           <div>
             <div className="text-sm font-bold leading-tight">
-              Phishing Detector
+              รู้ทัน <span className="font-normal text-slate-400">RuThan</span>
             </div>
-            <div className="text-xs text-slate-400">ระบบตรวจจับเว็บฟิชชิง</div>
+            <div className="text-xs text-slate-400">ระบบตรวจจับเว็บปลอม</div>
           </div>
         </div>
 
