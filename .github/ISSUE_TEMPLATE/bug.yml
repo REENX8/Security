@@ -1,0 +1,55 @@
+name: Bug Report
+description: Something is broken or behaving unexpectedly
+labels: ["bug"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for taking the time to report a bug. Please fill in as much detail as possible.
+
+  - type: input
+    id: version
+    attributes:
+      label: Version
+      description: Which version are you using? (check `/version` endpoint or `cat VERSION`)
+      placeholder: "e.g. 1.5.0"
+    validations:
+      required: true
+
+  - type: textarea
+    id: description
+    attributes:
+      label: Bug description
+      description: A clear description of what is broken.
+    validations:
+      required: true
+
+  - type: textarea
+    id: reproduce
+    attributes:
+      label: Steps to reproduce
+      description: Minimal steps to reproduce the issue.
+      placeholder: |
+        1. Send POST /api/v1/check with ...
+        2. Observe response ...
+    validations:
+      required: true
+
+  - type: textarea
+    id: expected
+    attributes:
+      label: Expected behaviour
+      description: What should have happened instead?
+    validations:
+      required: true
+
+  - type: textarea
+    id: environment
+    attributes:
+      label: Environment
+      description: Deployment method, OS, Python version, database backend.
+      placeholder: |
+        - Deploy: Docker Compose / standalone / Render
+        - OS: Ubuntu 22.04
+        - Python: 3.11
+        - DB: PostgreSQL 16 / SQLite
