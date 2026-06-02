@@ -45,7 +45,7 @@ common commands:
 
 ```bash
 make install          # python deps + pre-commit hooks
-make test             # pytest (142 tests, ~4 s)
+make test             # pytest (331 tests, ~15 s)
 make lint             # ruff check + format check
 make format           # ruff format
 make run              # backend (sqlite mode), no docker required
@@ -157,9 +157,11 @@ split a large change into a series of smaller PRs.
   free.
 - **JavaScript** (extension + dashboard): plain ES modules, no
   build-time framework lint at the moment. Match the surrounding style.
-- **SQL / migrations**: there is no migration framework yet — schema
-  changes are handled by `Base.metadata.create_all` at startup. If you
-  introduce a destructive change, open an issue first.
+- **SQL / migrations**: schema is managed by **Alembic** (`backend/migrations/`).
+  Run `alembic upgrade head` after pulling. New columns need a migration file;
+  generate one with `alembic revision --autogenerate -m "describe change"` and
+  review it before committing. Destructive changes (drop column/table) need an
+  issue first.
 - **Comments**: prefer self-explanatory code; only add a comment when
   the **why** is non-obvious (a constraint, a workaround, a surprising
   invariant).

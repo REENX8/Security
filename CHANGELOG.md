@@ -12,8 +12,6 @@ or mirror it explicitly.
 
 ---
 
-## [Unreleased]
-
 ## [1.5.0] — schema + scale + continuous retraining + auth hardening (2026-05-30)
 
 ### Fixed
@@ -87,7 +85,7 @@ or mirror it explicitly.
 
 ---
 
-## [Unreleased] — NSC 2026 Presentation Round prep (2026-05-28)
+## [1.4.0] — NSC 2026 Presentation Round prep (2026-05-28)
 
 ### Added
 

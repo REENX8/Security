@@ -46,6 +46,44 @@ loop from "user spots a miss" → "model improves".
   thresholds are evaluated in shadow and counted in `phish_threshold_ab_total{variant,label}`,
   so a proposed threshold can be compared against real traffic before promotion.
 
+Example — testing a looser suspicious threshold:
+
+```env
+ENABLE_THRESHOLD_AB=true
+THRESHOLD_SUSPICIOUS=0.3          # current (live)
+THRESHOLD_PHISHING=0.7            # current (live)
+THRESHOLD_SUSPICIOUS_CANDIDATE=0.25   # shadow candidate
+THRESHOLD_PHISHING_CANDIDATE=0.65     # shadow candidate
+```
+
+Query Prometheus to compare false-positive rates before promoting:
+
+```promql
+rate(phish_threshold_ab_total{variant="candidate",label="suspicious"}[1h])
+/
+rate(phish_threshold_ab_total{variant="current",label="suspicious"}[1h])
+```
+
+### Retrain failure recovery
+
+If `feedback_promote_requires_gate=true` and the eval gate fails, the
+staging model at `models/staging/` is **not promoted** — `models/` keeps
+the previous model unchanged. To inspect or discard:
+
+```bash
+# see why the gate failed
+python -m ml_pipeline.evaluate --models-dir models/staging --enforce-threshold
+
+# discard staging and start fresh
+rm -rf models/staging/
+
+# promote manually (bypasses gate — use only if you have reviewed metrics)
+cp -r models/staging/* models/
+```
+
+The automatic retrain trigger backs up the previous model to `models/previous/`
+before any promotion, so a one-step rollback is always available.
+
 ## 4. Seed corpus refresh (C11)
 
 `data/thai_phishing_seed.csv` is refreshed on a fixed cadence by

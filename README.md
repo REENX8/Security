@@ -5,7 +5,7 @@
 [![Schema](https://img.shields.io/badge/feature%20schema-v1.5.0-informational)](phish_features/schema.py)
 [![Thai recall](https://img.shields.io/badge/Thai%20holdout%20recall-100%25%20(378%2F378)-success)](reports/evaluation_summary.json)
 [![Features](https://img.shields.io/badge/features-42-informational)](phish_features/schema.py)
-[![Tests](https://img.shields.io/badge/tests-265%20passing-success)](tests/)
+[![Tests](https://img.shields.io/badge/tests-<!--M:test_count-->331<!--/M-->%20passing-success)](tests/)
 
 **ผู้พัฒนา:** [REENX8](https://github.com/REENX8) (asdawesdzd22@gmail.com)
 
@@ -250,7 +250,7 @@ Security/
 ├── LICENSE NOTICE CHANGELOG.md
 ├── SECURITY.md CONTRIBUTING.md
 ├── VERSION                           #  single source of truth (1.5.0)
-└── tests/                            #  251 tests
+└── tests/                            #  331 tests
 ```
 
 ---
@@ -669,6 +669,8 @@ GitHub Actions รัน test suite + dashboard build + Docker build + extension
 [Apache 2.0](LICENSE) · เห็นรายการ third-party dependencies ที่ [`NOTICE`](NOTICE)
 
 ดู [`CHANGELOG.md`](CHANGELOG.md) สำหรับการเปลี่ยนแปลงทุกเวอร์ชัน, [`ROADMAP.md`](ROADMAP.md) สำหรับ todo list / แผนพัฒนา, [`SECURITY.md`](SECURITY.md) สำหรับ vulnerability disclosure, และ [`CONTRIBUTING.md`](CONTRIBUTING.md) สำหรับการมีส่วนร่วม
+
+เริ่มต้นอย่างเร็ว: [`QUICKSTART.md`](QUICKSTART.md) · แก้ปัญหา: [`docs/TROUBLESHOOTING.md`](docs/TROUBLESHOOTING.md)
 
 เอกสาร operations เพิ่มเติม: [`docs/DEPLOY.md`](docs/DEPLOY.md) (staging deploy + smoke test + backup/retention + load test), [`docs/ML_OPS.md`](docs/ML_OPS.md) (drift monitoring, retrain cadence, threshold A/B, seed refresh), [`docs/SECURITY_REVIEW.md`](docs/SECURITY_REVIEW.md) (SSRF/injection/authz review), และ [`deploy/observability/`](deploy/observability) (Prometheus + Grafana)
 
