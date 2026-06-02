@@ -9,11 +9,10 @@ publish fixes promptly.
 
 | Version | Status              | Security fixes |
 |---------|---------------------|----------------|
-| 1.0.x   | ✅ Actively supported | Yes            |
+| 1.5.x   | ✅ Actively supported | Yes            |
+| 1.1–1.4 | ⚠️ Security fixes only | Yes (6 months from 1.5 release) |
+| 1.0.x   | ⚠️ Security fixes only | Yes (until 2026-11-30)          |
 | < 1.0   | ❌ Pre-release        | No             |
-
-Once 1.1 ships, 1.0.x will receive **security-only** fixes for at least
-six months from the 1.1 release date.
 
 ## Reporting a vulnerability
 
@@ -31,7 +30,14 @@ Two private reporting channels are supported:
 
 You should receive an acknowledgement within **3 business days**. We aim
 to confirm or refute the report within **10 business days** and to ship a
-fix within **30 days** for high-severity issues.
+fix within:
+
+| Severity | Patch SLA |
+|----------|-----------|
+| Critical / P0 (RCE, auth bypass, data exfiltration) | **7 days** |
+| High / P1 | **14 days** |
+| Medium / P2 | **30 days** |
+| Low / P3 | Next scheduled release |
 
 ### What to include
 
