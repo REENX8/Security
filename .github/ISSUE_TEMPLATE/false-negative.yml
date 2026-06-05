@@ -1,0 +1,51 @@
+name: False Negative — Phishing URL Missed
+description: Report a phishing URL that the system failed to detect
+labels: ["false-negative", "ml-data"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        A false negative means a **phishing URL was not flagged** (returned safe or suspicious
+        when it should be phishing). Your report will be reviewed as a training-data candidate.
+
+        ⚠️ Submit the URL only — do not include any credentials or personal data you may have
+        entered on the phishing page. If you were a victim, contact ThaiCERT at 1212 or
+        Cyber Police at 1441 immediately.
+
+  - type: input
+    id: url
+    attributes:
+      label: Phishing URL
+      description: The URL that was missed by the system.
+      placeholder: "https://krungthai-secure.example.com/login"
+    validations:
+      required: true
+
+  - type: input
+    id: score
+    attributes:
+      label: Score returned
+      description: The score and label from `/api/v1/check` (if available).
+      placeholder: "score: 0.12, label: safe"
+
+  - type: textarea
+    id: evidence
+    attributes:
+      label: Evidence this is phishing
+      description: |
+        ThaiCERT advisory, news report, community warning, or your own analysis.
+        What brand does it impersonate? What did it ask you to do?
+    validations:
+      required: true
+
+  - type: input
+    id: brand
+    attributes:
+      label: Brand impersonated
+      placeholder: "e.g. กรุงไทย, สรรพากร, SCB"
+
+  - type: input
+    id: version
+    attributes:
+      label: Version
+      placeholder: "e.g. 1.5.0"

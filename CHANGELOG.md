@@ -12,8 +12,6 @@ or mirror it explicitly.
 
 ---
 
-## [Unreleased]
-
 ## [1.5.0] — schema + scale + continuous retraining + auth hardening (2026-05-30)
 
 ### Fixed
@@ -87,7 +85,7 @@ or mirror it explicitly.
 
 ---
 
-## [Unreleased] — NSC 2026 Presentation Round prep (2026-05-28)
+## [1.4.0] — NSC 2026 Presentation Round prep (2026-05-28)
 
 ### Added
 
@@ -270,4 +268,9 @@ The pre-1.0 commit history captures the path to this release:
 - Chrome Web Store submission pack (zip builder, privacy policy,
   permission justification).
 
+[1.5.0]: https://github.com/reenx8/security/releases/tag/v1.5.0
+[1.4.0]: https://github.com/reenx8/security/releases/tag/v1.4.0
+[1.3.0]: https://github.com/reenx8/security/releases/tag/v1.3.0
+[1.2.0]: https://github.com/reenx8/security/releases/tag/v1.2.0
+[1.1.0]: https://github.com/reenx8/security/releases/tag/v1.1.0
 [1.0.0]: https://github.com/reenx8/security/releases/tag/v1.0.0
