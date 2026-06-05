@@ -27,6 +27,16 @@ ml = [
     "joblib>=1.3",
     "requests>=2.31",
 ]
+# Visual fingerprinting (B6) — only needed for the opt-in Playwright renderer.
+# The default null renderer and the perceptual-hash core need none of these.
+visual = [
+    "playwright>=1.40",
+    "Pillow>=10.0",
+]
+# ASN reputation (B8) — only needed for the opt-in Team Cymru DNS provider.
+asn = [
+    "dnspython>=2.4",
+]
 
 [tool.setuptools]
 packages = ["phish_features"]

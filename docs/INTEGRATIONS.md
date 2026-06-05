@@ -58,17 +58,29 @@ Goal: combine phishing signal across agencies **without sharing raw URLs**.
   secure-aggregation transport. Implement behind `FEDERATED_ENABLED` once those
   exist. No raw-URL egress is the hard invariant.
 
-## 🔜 B6 — Visual fingerprinting (design)
+## ✅ B6 — Visual fingerprinting (implemented; renderer + library opt-in)
 
 Goal: catch pixel-clones of real agency login pages.
 
-- A headless-browser worker screenshots a gray-zone URL and compares a perceptual
-  hash (pHash/SSIM) against a library of genuine agency-page templates; a close
-  match on a non-official host raises the score.
-- Cost: high latency + a browser in the path, so it must be an **opt-in feature
-  flag** (`VISUAL_FINGERPRINT_ENABLED`) running asynchronously off the hot path,
-  similar to the existing content-check gray-zone fallback.
-- Prerequisites: a maintained template library and a sandboxed render worker.
+- A renderer screenshots a **gray-zone** URL; its perceptual hash (dHash,
+  `app/visual/phash.py` — pure Python, no image deps) is compared against a
+  library of genuine agency-page templates (`app/visual/fingerprint.py`). A close
+  match (Hamming ≤ `VISUAL_PHASH_MAX_DISTANCE`, default 10) on a **non-official**
+  host raises the score by a bounded `[+0.15, +0.35]`. Fail-open + SSRF-guarded,
+  exactly like the content-check fallback; gray-zone only so the browser stays
+  off the hot path.
+- **Off by default** behind `VISUAL_FINGERPRINT_ENABLED`. The renderer is a
+  pluggable provider (`app/visual/renderer.py`): `VISUAL_RENDERER=null` (default,
+  no browser, no Pillow — the hash core needs neither) or
+  `VISUAL_RENDERER=playwright` (opt-in headless Chromium; Playwright + Pillow are
+  imported lazily and only required when selected — install `pip install .[visual]`
+  then `python -m playwright install chromium`).
+- **Template library** (`data/visual_templates/templates.json`) ships EMPTY: real
+  hashes must be generated from real screenshots, which the repo cannot do. Build
+  it with `python scripts/build_visual_templates.py --url https://www.<agency>.go.th
+  --agency "<name>"`. Until populated, the check is a safe no-op even when enabled.
+- Tests: `tests/test_visual_fingerprint.py` (pure-Python hash + stub renderer —
+  no browser, no Pillow, no network).
 
 ## ✅ B8 — IP/ASN-level reputation (Stage 1 implemented; Stage 2 deferred)
 

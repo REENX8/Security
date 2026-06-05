@@ -133,6 +133,14 @@ async def lifespan(app: FastAPI):
     from app.integrations.asn import get_asn_provider
     app.state.asn_provider = get_asn_provider(settings.asn_provider, settings)
 
+    # Build the visual-fingerprint renderer once (default NullRenderer = no
+    # browser) and load the template library. Used only when
+    # VISUAL_FINGERPRINT_ENABLED is set (B6).
+    from app.visual.fingerprint import load_templates
+    from app.visual.renderer import get_renderer
+    app.state.visual_renderer = get_renderer(settings.visual_renderer, settings)
+    app.state.visual_templates = load_templates(settings.visual_templates_path)
+
     app.state.db_ready = False
     try:
         await init_db()

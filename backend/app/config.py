@@ -154,6 +154,20 @@ class Settings(BaseSettings):
     asn_provider: str = Field(default="null")
     ip_reputation_timeout: float = Field(default=2.0)
 
+    # --- visual fingerprinting (B6) ---
+    # Off by default. When enabled, gray-zone URLs are screenshotted (via
+    # VISUAL_RENDERER) and their perceptual hash compared against the template
+    # library; a close match to a genuine agency page on a non-official host
+    # raises the score. Heavy (a browser in the path) so it runs gray-zone only.
+    visual_fingerprint_enabled: bool = Field(default=False)
+    # "null" (default, no browser) or "playwright" (opt-in headless Chromium).
+    visual_renderer: str = Field(default="null")
+    visual_fingerprint_timeout: float = Field(default=8.0)
+    visual_phash_max_distance: int = Field(default=10)
+    visual_templates_path: str = Field(
+        default=str(ROOT / "data" / "visual_templates" / "templates.json")
+    )
+
     # --- LINE Messaging API bot ---
     line_channel_token: str = Field(default="")
     line_channel_secret: str = Field(default="")
