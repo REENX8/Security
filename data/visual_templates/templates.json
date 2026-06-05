@@ -1,0 +1,10 @@
+{
+  "_comment": "Visual fingerprint template library (B6). Each entry is the perceptual (dHash) fingerprint of a GENUINE agency login/landing page. A gray-zone URL whose screenshot dHash is within VISUAL_PHASH_MAX_DISTANCE bits of an entry, on a host other than that entry's official_host, is flagged as a likely pixel-clone. dhash is a 64-bit integer produced by app.visual.phash.dhash. This file ships EMPTY: real hashes must be generated from real screenshots with the opt-in renderer (the repo cannot render pages). Populate it with: python scripts/build_visual_templates.py --url https://www.<agency>.go.th --agency <name>",
+  "schema": {
+    "agency": "human-readable agency name",
+    "official_host": "the legitimate host this page lives on (matches are ignored on this host)",
+    "dhash": "64-bit integer perceptual hash (app.visual.phash.dhash)",
+    "label": "optional note, e.g. 'login page'"
+  },
+  "templates": []
+}

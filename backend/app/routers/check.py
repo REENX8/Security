@@ -107,6 +107,30 @@ async def _score_url(request: Request, url: str) -> dict:
                     "rep": rep,
                 }
 
+    # Visual fingerprint fallback for gray-zone URLs (B6, opt-in). Heavy (a
+    # headless browser), so gray-zone only and after the cheap content check.
+    # Screenshots the page and flags a perceptual-hash match to a genuine agency
+    # template on a non-official host. Bounded and fail-open.
+    if (
+        settings.visual_fingerprint_enabled
+        and settings.threshold_suspicious < result["score"] < settings.threshold_phishing
+    ):
+        from app.visual.fingerprint import visual_fingerprint_adjustment
+        renderer = getattr(request.app.state, "visual_renderer", None)
+        templates = getattr(request.app.state, "visual_templates", []) or []
+        if renderer is not None and templates:
+            adj = await visual_fingerprint_adjustment(
+                url,
+                renderer=renderer,
+                templates=templates,
+                timeout=settings.visual_fingerprint_timeout,
+                max_distance=settings.visual_phash_max_distance,
+            )
+            if adj != 0.0:
+                from app.ml.scorer import label_from_score
+                new_score = max(0.0, min(1.0, result["score"] + adj))
+                result = {**result, "score": new_score, "label": label_from_score(new_score)}
+
     if cache is not None:
         cache.set(url, result)
         CACHE_SIZE.set(len(cache))
