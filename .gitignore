@@ -20,9 +20,10 @@ env/
 data/dataset.csv
 data/features_cache.csv
 data/test_split.csv
-data/real_phish_holdout.csv
 data/raw/
 data/feedback_labels.csv
+# NOTE: data/real_phish_holdout.csv IS committed — it is a curated, independent
+# real-world holdout (zero training host overlap), not a regenerable artifact.
 
 # --- Feedback-retrain working dirs (staged model + backup + staging reports) ---
 models/staging/
