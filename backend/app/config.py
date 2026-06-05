@@ -144,6 +144,16 @@ class Settings(BaseSettings):
     gray_zone_content_check: bool = Field(default=False)
     content_check_timeout: float = Field(default=5.0)
 
+    # --- IP / ASN reputation (B8, Stage 1) ---
+    # Off by default. When enabled, each check resolves the host to a public IP
+    # (SSRF-safe), looks up the ASN via ASN_PROVIDER, reads accumulated verdict
+    # history from the reputation store, and applies a bounded score adjustment.
+    # The store is fed best-effort from the verdict stream.
+    ip_reputation_enabled: bool = Field(default=False)
+    # "null" (default, no network) or "cymru" (Team Cymru IP-to-ASN DNS).
+    asn_provider: str = Field(default="null")
+    ip_reputation_timeout: float = Field(default=2.0)
+
     # --- LINE Messaging API bot ---
     line_channel_token: str = Field(default="")
     line_channel_secret: str = Field(default="")

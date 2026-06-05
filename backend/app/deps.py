@@ -56,3 +56,8 @@ def get_scorer(request: Request):
     if scorer is None:
         raise ModelNotLoadedError()
     return scorer
+
+
+def get_asn_provider(request: Request):
+    """Return the ASN provider built at startup (None if not configured)."""
+    return getattr(request.app.state, "asn_provider", None)

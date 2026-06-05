@@ -70,15 +70,35 @@ Goal: catch pixel-clones of real agency login pages.
   similar to the existing content-check gray-zone fallback.
 - Prerequisites: a maintained template library and a sandboxed render worker.
 
-## 🔜 B8 — IP/ASN-level reputation (design)
+## ✅ B8 — IP/ASN-level reputation (Stage 1 implemented; Stage 2 deferred)
 
-Goal: reputation beyond the URL/host level.
+Goal: reputation beyond the URL/host level — a known-bad hosting range raises a
+brand-new URL's score even on first sighting.
 
-- Add a `DomainReputation`-style store keyed by **IP and ASN** (resolve host →
-  IP → ASN), accumulating verdict history per IP/ASN so a known-bad hosting
-  range raises new URLs' scores even on first sighting.
-- Feed it from the existing verdict stream and external blocklists; expose as new
-  features in a future schema version (retrain + ML gate required).
-- Prerequisites: an ASN lookup source (e.g. Team Cymru / MaxMind) and a schema
-  bump — sequenced after the current 42-feature schema, behind the normal
-  retrain/eval gate so Thai recall cannot regress.
+**Stage 1 — serve-time reputation (implemented, no schema change).**
+
+- Tables `ip_reputation` / `asn_reputation` (`app/models.py`, migration
+  `0002_ip_asn_reputation`) accumulate verdict counts per IP and per ASN.
+- Fed best-effort from the verdict stream: each non-cached check resolves the
+  host to a public IP (SSRF-safe via `app/net_guard.py`), looks up the ASN, and
+  upserts counters (`app/ip_reputation_store.py`).
+- Read at serve time: `app/ip_reputation.py` returns a **bounded** adjustment
+  (`[-0.10, +0.30]`) — a dirty range nudges the score up, a clean well-observed
+  range slightly down — applied like the content-check fallback. Fail-open: any
+  resolution/DB error returns 0.0 and never blocks a verdict. A range is ignored
+  until it has ≥ 5 observations.
+- **Off by default** behind `IP_REPUTATION_ENABLED`. ASN lookup is a pluggable
+  provider (`app/integrations/asn.py`): `ASN_PROVIDER=null` (default, no
+  network — IP-level reputation still works) or `ASN_PROVIDER=cymru` (Team Cymru
+  IP-to-ASN DNS, no API key, needs `dnspython`).
+- Tests: `tests/test_ip_reputation.py` (all offline, null provider + IP
+  literals — no DNS).
+
+**Stage 2 — promote reputation to ML features (deferred).**
+
+- Expose IP/ASN reputation as new features in a future schema version
+  (`FEATURE_SCHEMA_VERSION` bump + `IMPUTED_DEFAULTS` + retrain). This MUST clear
+  the Thai-recall ≥ 0.85 ML gate before merge.
+- Deferred deliberately: fold reputation into training only once the Stage 1
+  store has accumulated enough real verdict history to be predictive — training
+  on a cold/empty reputation feature adds noise without signal.
