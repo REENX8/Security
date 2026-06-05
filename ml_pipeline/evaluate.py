@@ -34,6 +34,7 @@ from sklearn.preprocessing import StandardScaler as _CVScaler
 from ml_pipeline.config import (
     EVALUATION_SUMMARY_JSON,
     GENERIC_HOLDOUT_CSV,
+    INDEPENDENT_HOLDOUT_METRICS_JSON,
     METRICS_JSON,
     MODEL_PATH,
     RANDOM_SEED,
@@ -206,11 +207,22 @@ def main() -> None:
     # the model has never seen during training.
     # ------------------------------------------------------------------
     real_holdout_metrics: dict | None = None
-    if os.path.exists(GENERIC_HOLDOUT_CSV) or os.path.exists(REAL_HOLDOUT_CSV):
+    if os.path.exists(GENERIC_HOLDOUT_CSV):
         real_holdout_metrics = evaluate_real_holdout(model, scaler)
     else:
-        print("[eval] no generic/real-phishing holdout found "
-              "(skipping generalisation check)")
+        print("[eval] no generic-phishing holdout found "
+              "(skipping generic cross-check)")
+
+    # INDEPENDENT real-world holdout: a fresh sample with ZERO host overlap
+    # against training (unlike the generic snapshot, which shares ~24% of hosts
+    # with training). Reported as a distinct third holdout; never aliased onto
+    # the generic one.
+    independent_holdout_metrics: dict | None = None
+    if os.path.exists(REAL_HOLDOUT_CSV):
+        independent_holdout_metrics = evaluate_independent_real_holdout(model, scaler)
+    else:
+        print(f"[eval] no independent real-world holdout at {REAL_HOLDOUT_CSV} "
+              "(run scripts/collect_real_phish_holdout.py to curate one)")
 
     thai_holdout_metrics: dict | None = None
     if os.path.exists(THAI_HOLDOUT_CSV):
@@ -219,7 +231,13 @@ def main() -> None:
         print(f"[eval] no Thai-specific holdout found at {THAI_HOLDOUT_CSV} "
               "(expected — Thai-targeting phishing is rare in public feeds)")
 
-    write_evaluation_summary(metrics, real_holdout_metrics, thai_holdout_metrics, cv_metrics)
+    write_evaluation_summary(
+        metrics,
+        real_holdout_metrics,
+        thai_holdout_metrics,
+        cv_metrics,
+        independent_holdout_metrics,
+    )
 
 
 def _eval_holdout_csv(
@@ -316,19 +334,36 @@ def _eval_holdout_csv(
 
 
 def evaluate_real_holdout(model, scaler) -> dict:
-    # Prefer the committed generic snapshot holdout (reproducible offline);
-    # fall back to the live-feed holdout when only that is present.
-    holdout_csv = (
-        GENERIC_HOLDOUT_CSV if os.path.exists(GENERIC_HOLDOUT_CSV)
-        else REAL_HOLDOUT_CSV
-    )
+    """Generic-phishing cross-check on the committed snapshot holdout.
+
+    Reproducible offline. Note this snapshot shares ~24% of its hosts with
+    training; the truly independent number is the real-world holdout (see
+    evaluate_independent_real_holdout).
+    """
     return _eval_holdout_csv(
-        holdout_csv,
+        GENERIC_HOLDOUT_CSV,
         REAL_HOLDOUT_METRICS_JSON,
-        "HOLDOUT EVAL ON UNSEEN REAL PHISHING URLS (committed snapshot / feeds)",
+        "HOLDOUT EVAL ON GENERIC PHISHING URLS (committed snapshot)",
         model,
         scaler,
         missed_csv_path=os.path.join(REPORTS_DIR, "missed_generic_urls.csv"),
+    )
+
+
+def evaluate_independent_real_holdout(model, scaler) -> dict:
+    """Recall on a fresh real-world sample with ZERO training host overlap.
+
+    This is the honest generalisation number: every host is novel to the model,
+    so it cannot be inflated by train/eval host bleed the way the generic
+    snapshot holdout can. Reported, not gated (see write_evaluation_summary).
+    """
+    return _eval_holdout_csv(
+        REAL_HOLDOUT_CSV,
+        INDEPENDENT_HOLDOUT_METRICS_JSON,
+        "INDEPENDENT REAL-WORLD HOLDOUT (zero train host overlap)",
+        model,
+        scaler,
+        missed_csv_path=os.path.join(REPORTS_DIR, "missed_real_urls.csv"),
     )
 
 
@@ -381,6 +416,7 @@ def write_evaluation_summary(
     real_holdout_metrics: dict | None,
     thai_holdout_metrics: dict | None,
     cv_metrics: dict | None = None,
+    independent_holdout_metrics: dict | None = None,
 ) -> None:
     """Write a consolidated evaluation_summary.json that makes grader intent clear.
 
@@ -396,6 +432,10 @@ def write_evaluation_summary(
     thai_recall = (thai_holdout_metrics or {}).get("recall_phishing_threshold")
     thai_ci = (thai_holdout_metrics or {}).get("recall_phishing_ci_95")
     thai_n = (thai_holdout_metrics or {}).get("sample_size", 0)
+
+    indep_recall = (independent_holdout_metrics or {}).get("recall_phishing_threshold")
+    indep_ci = (independent_holdout_metrics or {}).get("recall_phishing_ci_95")
+    indep_n = (independent_holdout_metrics or {}).get("sample_size", 0)
 
     alignment_score: float | None = None
     if thai_recall is not None and real_recall is not None:
@@ -417,6 +457,9 @@ def write_evaluation_summary(
             "generic_real_holdout_recall": real_recall,
             "generic_real_holdout_ci_95": real_ci,
             "generic_real_holdout_n": real_n,
+            "independent_real_holdout_recall": indep_recall,
+            "independent_real_holdout_ci_95": indep_ci,
+            "independent_real_holdout_n": indep_n,
             "synthetic_f1": synthetic_metrics["f1_score"],
         },
         "notes": {
@@ -429,11 +472,19 @@ def write_evaluation_summary(
                 else "No Thai-targeting holdout available (seed corpus empty)."
             ),
             "generic_holdout": (
-                f"{round((real_recall or 0) * 100, 1)}% recall on {real_n} unseen real "
-                "phishing URLs (OpenPhish / PhishTank / URLhaus). Cross-check that "
-                "Thai-tuning has not regressed generic detection."
+                f"{round((real_recall or 0) * 100, 1)}% recall on {real_n} generic "
+                "phishing URLs (committed snapshot, ~24% host overlap with training). "
+                "Cross-check that Thai-tuning has not regressed generic detection."
                 if real_recall is not None
                 else "No generic real holdout available (feeds unreachable)."
+            ),
+            "independent_real_holdout": (
+                f"{round((indep_recall or 0) * 100, 1)}% recall on {indep_n} real "
+                "phishing URLs with ZERO host overlap against training. This is the "
+                "honest generalisation number — it cannot be inflated by train/eval "
+                "host bleed. Reported, not gated."
+                if indep_recall is not None
+                else "No independent real-world holdout available."
             ),
             "synthetic_f1": (
                 f"F1={synthetic_metrics['f1_score']} is on a same-distribution synthetic "
@@ -452,6 +503,7 @@ def write_evaluation_summary(
         },
         "thai_targeting_holdout": thai_holdout_metrics,
         "generic_real_holdout": real_holdout_metrics,
+        "independent_real_holdout": independent_holdout_metrics,
         "cross_validation": cv_metrics,
     }
     with open(EVALUATION_SUMMARY_JSON, "w", encoding="utf-8") as fh:

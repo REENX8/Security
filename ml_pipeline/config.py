@@ -21,6 +21,10 @@ WHITELIST_JSON = os.path.join(MODELS_DIR, "whitelist.json")
 DATASET_CSV = os.path.join(DATA_DIR, "dataset.csv")
 RAW_DIR = os.path.join(DATA_DIR, "raw")
 
+# Independent real-world holdout: a fresh sample of real phishing URLs with
+# ZERO host overlap against any training corpus (built by
+# scripts/collect_real_phish_holdout.py). This is the honest generalisation
+# check — unlike GENERIC_HOLDOUT_CSV, none of its hosts are seen in training.
 REAL_HOLDOUT_CSV = os.path.join(DATA_DIR, "real_phish_holdout.csv")
 
 MODEL_PATH = os.path.join(MODELS_DIR, "ensemble.pkl")
@@ -28,6 +32,9 @@ SCALER_PATH = os.path.join(MODELS_DIR, "scaler.pkl")
 FEATURES_JSON = os.path.join(MODELS_DIR, "features.json")
 METRICS_JSON = os.path.join(REPORTS_DIR, "metrics.json")
 REAL_HOLDOUT_METRICS_JSON = os.path.join(REPORTS_DIR, "real_holdout_metrics.json")
+INDEPENDENT_HOLDOUT_METRICS_JSON = os.path.join(
+    REPORTS_DIR, "independent_real_holdout_metrics.json"
+)
 
 # Fraction of fetched real phishing URLs reserved as a held-out test set
 # that the model never sees during training.

@@ -56,13 +56,44 @@ THRESHOLD_SUSPICIOUS_CANDIDATE=0.25   # shadow candidate
 THRESHOLD_PHISHING_CANDIDATE=0.65     # shadow candidate
 ```
 
-Query Prometheus to compare false-positive rates before promoting:
+Query Prometheus to compare false-positive rates before promoting. The metric
+labels are `variant="a"` (the live thresholds) and `variant="b"` (the shadow
+candidate) — see `app/threshold_ab.py`:
 
 ```promql
-rate(phish_threshold_ab_total{variant="candidate",label="suspicious"}[1h])
+rate(phish_threshold_ab_total{variant="b",label="suspicious"}[1h])
 /
-rate(phish_threshold_ab_total{variant="current",label="suspicious"}[1h])
+rate(phish_threshold_ab_total{variant="a",label="suspicious"}[1h])
 ```
+
+### Promoting a candidate threshold
+
+The serve-time cutoffs (`THRESHOLD_PHISHING=0.7` / `THRESHOLD_SUSPICIOUS=0.3`)
+are theoretical defaults. Promote a new value only with evidence, in this order:
+
+1. **Offline evidence.** Every CI `ml-gate` run executes `tune_threshold` on the
+   freshly-retrained model and uploads `reports/threshold_analysis.json` (+ PNG)
+   as a build artifact. Read `f1_optimal` and `high_precision_recommended` — the
+   latter is the highest-recall threshold that still keeps precision ≥ 0.99 on
+   the trusted-domain negatives (operator objective: do not cry wolf on real gov
+   sites). This is in-distribution guidance, not proof.
+2. **Shadow it.** Set `ENABLE_THRESHOLD_AB=true` with `THRESHOLD_*_CANDIDATE` to
+   the value from step 1 and deploy. The served verdict is unchanged; the
+   candidate is only counted in shadow.
+3. **Collect real traffic.** Observe `phish_threshold_ab_total{variant,label}`
+   over a representative window (≥ a few days, ideally spanning weekday/weekend
+   traffic) so the comparison is not dominated by a single campaign.
+4. **Decision rule.** Promote the candidate (`b`) only if, over the window, it
+   reduces the suspicious/phishing false-positive rate on legitimate traffic
+   *without* lowering the phishing catch rate below the live (`a`) level. If it
+   trades catch rate for fewer false positives, that is a product decision —
+   document it.
+5. **Promote.** Edit `THRESHOLD_SUSPICIOUS` / `THRESHOLD_PHISHING` in the
+   deployment env to the promoted value, then reset `THRESHOLD_*_CANDIDATE` to
+   equal the new live values (a no-op shadow) until the next experiment.
+
+Never promote from `threshold_analysis.json` alone — it is computed on committed
+holdouts and trusted-domain negatives, which is an in-distribution estimate.
 
 ### Retrain failure recovery
 
@@ -91,3 +122,21 @@ before any promotion, so a one-step rollback is always available.
 `scripts/collect_thai_phishing_seed.py`, audits coverage, and opens a PR for
 human review. New rows feed both training and the Thai holdout; the ML gate runs
 on the PR.
+
+### Holdouts: what each one measures
+
+| Holdout | File | Built by | Host overlap with training | Role |
+| --- | --- | --- | --- | --- |
+| **Thai-targeting** | `data/thai_phish_holdout.csv` | 30% split of the Thai seed | shares hosts (split of same corpus) | **primary, gated** (recall ≥ 0.85) |
+| **Generic snapshot** | `data/generic_phish_holdout.csv` | 30% split of the generic seed | ~24% (split of same corpus) | secondary cross-check |
+| **Independent real-world** | `data/real_phish_holdout.csv` | `scripts/collect_real_phish_holdout.py` | **zero (enforced)** | honest generalisation, reported |
+
+The independent real-world holdout is the only one whose hosts are guaranteed
+**never seen during training** — the collector drops any URL whose host appears
+in any seed/holdout/`dataset.csv`, and `tests/test_real_holdout.py` asserts the
+disjoint-host invariant in CI. It is therefore the trustworthy generalisation
+number, but it is **reported, not gated**: a tight recall floor on ~100 decaying
+public URLs would flake the build on routine retrains. The zero-overlap test is
+the real protection; recall is surfaced in `evaluation_summary.json` under
+`secondary_metrics.independent_real_holdout_recall`. Re-curate periodically
+(re-run the collector, review, commit) so the sample stays fresh.

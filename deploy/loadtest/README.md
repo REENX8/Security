@@ -4,6 +4,13 @@ Two equivalent load tests that assert the documented **p95 < 250 ms** SLO for
 `POST /api/v1/check`. Run them against a **staging** deployment — never
 production data.
 
+> **CI profile vs staging SLO.** `k6_check.js` is the authoritative staging SLO
+> (ramps to 200 VUs, asserts p95 < 250 ms). `k6_check_ci.js` is a separate,
+> looser profile (10 VUs / 30s, p95 < 1500 ms by default) that runs on every
+> push in the `loadtest-e2e` CI job against a freshly-booted sqlite backend. The
+> CI gate exists to catch gross latency regressions on a cold shared runner, not
+> to enforce the production SLO — tune `LOADTEST_P95_MS` once it proves stable.
+
 ## k6 (recommended for CI/scripted runs)
 
 ```bash
