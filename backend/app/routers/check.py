@@ -84,6 +84,29 @@ async def _score_url(request: Request, url: str) -> dict:
             new_score = max(0.0, min(1.0, result["score"] + adj))
             result = {**result, "score": new_score, "label": label_from_score(new_score)}
 
+    # IP/ASN reputation adjustment (B8, opt-in). Resolve the host to a public
+    # IP + ASN, read accumulated verdict history, and nudge the score. Bounded
+    # and fail-open like the content check. The resolved rep is stashed on the
+    # result so the persist path can feed the store without re-resolving.
+    if settings.ip_reputation_enabled:
+        from app.ip_reputation import reputation_adjustment, resolve_ip_asn_async
+        asn_provider = getattr(request.app.state, "asn_provider", None)
+        rep = await resolve_ip_asn_async(
+            url, asn_provider, timeout=settings.ip_reputation_timeout
+        )
+        if rep:
+            result["rep"] = rep
+            adj = await reputation_adjustment(rep)
+            if adj != 0.0:
+                from app.ml.scorer import label_from_score
+                new_score = max(0.0, min(1.0, result["score"] + adj))
+                result = {
+                    **result,
+                    "score": new_score,
+                    "label": label_from_score(new_score),
+                    "rep": rep,
+                }
+
     if cache is not None:
         cache.set(url, result)
         CACHE_SIZE.set(len(cache))
@@ -128,6 +151,23 @@ async def _persist_observability(session: AsyncSession, result: dict) -> None:
         )
     except Exception as exc:  # noqa: BLE001
         _log.warning("watchlist alert skipped: %s", exc)
+
+    # Feed the IP/ASN reputation store from the verdict stream (best-effort).
+    # ``rep`` was resolved during scoring (see _score_url) so no extra DNS here.
+    if settings.ip_reputation_enabled and result.get("rep"):
+        try:
+            from app.ip_reputation_store import record_ip_verdict
+            rep = result["rep"]
+            await record_ip_verdict(
+                session,
+                ip=rep["ip"],
+                asn=rep.get("asn"),
+                as_name=rep.get("as_name", ""),
+                label=result["label"],
+                score=result["score"],
+            )
+        except Exception as exc:  # noqa: BLE001
+            _log.warning("ip reputation record skipped: %s", exc)
 
 
 async def _score_and_persist(

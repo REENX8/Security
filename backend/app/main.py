@@ -128,6 +128,11 @@ async def lifespan(app: FastAPI):
     # at request time with a clear error. This makes the service resilient
     # to managed-DB DNS hiccups (e.g. cross-region Render Postgres) and
     # lets users run the detector even before provisioning a DB.
+    # Build the ASN provider once (default NullAsnProvider = no network). Used by
+    # the IP/ASN reputation layer when IP_REPUTATION_ENABLED is set.
+    from app.integrations.asn import get_asn_provider
+    app.state.asn_provider = get_asn_provider(settings.asn_provider, settings)
+
     app.state.db_ready = False
     try:
         await init_db()

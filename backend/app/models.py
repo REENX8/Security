@@ -240,6 +240,64 @@ class ExternalFeedSource(Base):
     )
 
 
+# ---------------------------------------------------------------------------
+# IP / ASN reputation (B8)
+#
+# Reputation beyond the URL/host level. As verdicts stream in, we resolve the
+# host to an IP and (optionally) an ASN and accumulate verdict counts per IP and
+# per ASN. A new URL hosted on a range with a bad track record can then be
+# nudged upward at serve time even on first sighting. Fed from the verdict
+# stream (see app/ip_reputation_store.py); read at serve time behind the
+# IP_REPUTATION_ENABLED flag (see app/ip_reputation.py).
+# ---------------------------------------------------------------------------
+
+
+class IpReputation(Base):
+    __tablename__ = "ip_reputation"
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
+    ip: Mapped[str] = mapped_column(
+        String(45), nullable=False, unique=True, index=True  # 45 = max IPv6 len
+    )
+    asn: Mapped[int | None] = mapped_column(Integer, nullable=True, index=True)
+    phishing_count: Mapped[int] = mapped_column(Integer, default=0)
+    suspicious_count: Mapped[int] = mapped_column(Integer, default=0)
+    total_count: Mapped[int] = mapped_column(Integer, default=0)
+    last_score: Mapped[float] = mapped_column(Float, default=0.0)
+    first_seen: Mapped[dt.datetime] = mapped_column(
+        DateTime(timezone=True),
+        default=lambda: dt.datetime.now(dt.timezone.utc),
+    )
+    last_seen: Mapped[dt.datetime] = mapped_column(
+        DateTime(timezone=True),
+        default=lambda: dt.datetime.now(dt.timezone.utc),
+        index=True,
+    )
+
+
+class AsnReputation(Base):
+    __tablename__ = "asn_reputation"
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
+    asn: Mapped[int] = mapped_column(
+        Integer, nullable=False, unique=True, index=True
+    )
+    as_name: Mapped[str] = mapped_column(String(255), default="")
+    phishing_count: Mapped[int] = mapped_column(Integer, default=0)
+    suspicious_count: Mapped[int] = mapped_column(Integer, default=0)
+    total_count: Mapped[int] = mapped_column(Integer, default=0)
+    last_score: Mapped[float] = mapped_column(Float, default=0.0)
+    first_seen: Mapped[dt.datetime] = mapped_column(
+        DateTime(timezone=True),
+        default=lambda: dt.datetime.now(dt.timezone.utc),
+    )
+    last_seen: Mapped[dt.datetime] = mapped_column(
+        DateTime(timezone=True),
+        default=lambda: dt.datetime.now(dt.timezone.utc),
+        index=True,
+    )
+
+
 class FeedIngestionRecord(Base):
     """Deduplication log — one row per (url, source) that has been processed."""
 
