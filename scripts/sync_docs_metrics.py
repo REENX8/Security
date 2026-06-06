@@ -29,6 +29,7 @@ ROOT = Path(__file__).resolve().parents[1]
 EVAL_JSON = ROOT / "reports" / "evaluation_summary.json"
 FEATURES_JSON = ROOT / "models" / "features.json"
 SEED_CSV = ROOT / "data" / "thai_phishing_seed.csv"
+TESTS_DIR = ROOT / "tests"
 
 # Files scanned for <!--M:KEY-->...<!--/M--> sentinels.
 DOC_FILES = [ROOT / "README.md"]
@@ -41,6 +42,22 @@ def _csv_rows(path: Path) -> int:
         return 0
     with path.open(encoding="utf-8") as fh:
         return max(sum(1 for _ in fh) - 1, 0)  # minus header
+
+
+def _test_count() -> int:
+    """Count test functions across ``tests/`` (pure file scan, no pytest).
+
+    The README badge is informational, so a deterministic source-derived count
+    (``def test_`` / ``async def test_``) is authoritative enough and keeps this
+    script dependency-free.
+    """
+    count = 0
+    for path in sorted(TESTS_DIR.glob("test_*.py")):
+        for line in path.read_text(encoding="utf-8").splitlines():
+            stripped = line.lstrip()
+            if stripped.startswith(("def test_", "async def test_")):
+                count += 1
+    return count
 
 
 def compute_metrics() -> dict[str, str]:
@@ -68,6 +85,7 @@ def compute_metrics() -> dict[str, str]:
         "schema_version": str(feats.get("schema_version", "")),
         "n_features": str(feats.get("n_features", len(feats.get("ordered_features", [])))),
         "seed_count": f"{_csv_rows(SEED_CSV):,}",
+        "test_count": str(_test_count()),
         "thai_holdout_n": str(n),
         "thai_recall": f"{recall_pct:.4g}% ({caught}/{n})",
         "thai_recall_pct": f"{recall_pct:.4g}%",

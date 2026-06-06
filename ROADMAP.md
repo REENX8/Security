@@ -60,12 +60,14 @@
   objects (envelope) / manifest, STIX indicators ผ่าน `app/stix.py` (deterministic id) (`tests/test_taxii.py`)
 - [x] **B5. Federated Learning** — design (aggregate-counts protocol, secure aggregation/DP, PDPA review, ห้าม raw-URL egress)
   พร้อม feature flag plan ใน `docs/INTEGRATIONS.md` (implement หลัง MOU/privacy review)
-- [x] **B6. Visual Fingerprinting** — design (headless screenshot + perceptual hash vs template library,
-  off-hot-path, opt-in `VISUAL_FINGERPRINT_ENABLED`) ใน `docs/INTEGRATIONS.md`
+- [x] **B6. Visual Fingerprinting** — **implemented** (`app/visual/`: pure-Python dHash +
+  pluggable renderer, `NullRenderer` default / opt-in Playwright, gray-zone only, off by default
+  `VISUAL_FINGERPRINT_ENABLED`) (`tests/test_visual_fingerprint.py`)
 - [x] **B7. SIEM/SOAR export ของ campaigns** — `GET /campaigns/export.json` (flat SIEM schema) + `/campaigns/export.stix`
   (STIX grouping SDOs, deterministic id) (`tests/test_campaign_export.py`)
-- [x] **B8. IP/ASN-level reputation** — design (IP/ASN-keyed reputation store + features ใน schema ถัดไป,
-  หลัง retrain/eval gate) ใน `docs/INTEGRATIONS.md`
+- [x] **B8. IP/ASN-level reputation** — **Stage 1 implemented** (serve-time IP/ASN reputation store
+  + bounded adjustment, pluggable ASN provider, off by default `IP_REPUTATION_ENABLED`, no schema bump;
+  Stage 2 ML-feature integration deferred) (`tests/test_ip_reputation.py`)
 
 ---
 
