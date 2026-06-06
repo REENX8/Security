@@ -227,6 +227,21 @@ class FeatureExtractor:
             feat["cert_validity_days"] = IMPUTED_DEFAULTS["cert_validity_days"]
             feat["cert_san_count"] = IMPUTED_DEFAULTS["cert_san_count"]
 
+        # --- IP/ASN reputation (v1.6) ---
+        # This package never touches the DB: the backend resolves the host ->
+        # IP -> ASN and supplies the accumulated bad-verdict share via
+        # ``network_overrides`` (the ML pipeline supplies a simulated value).
+        # Absent an override the feature is "unknown" (-1), which is the
+        # dominant serve-time state and is class-neutral by construction.
+        if network_overrides and "ip_reputation_score" in network_overrides:
+            feat["ip_reputation_score"] = network_overrides["ip_reputation_score"]
+            feat["asn_reputation_score"] = network_overrides.get(
+                "asn_reputation_score", IMPUTED_DEFAULTS["asn_reputation_score"]
+            )
+        else:
+            feat["ip_reputation_score"] = IMPUTED_DEFAULTS["ip_reputation_score"]
+            feat["asn_reputation_score"] = IMPUTED_DEFAULTS["asn_reputation_score"]
+
         return feat
 
     def extract_vector(

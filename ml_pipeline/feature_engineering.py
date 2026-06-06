@@ -19,6 +19,8 @@ _NETWORK_COLS = [
     "cert_age_days", "is_self_signed", "whois_ok", "tls_ok",
     # v1.5 simulated TLS-derived columns
     "cert_is_lets_encrypt", "cert_validity_days", "cert_san_count",
+    # v1.6 simulated IP/ASN reputation columns
+    "ip_reputation_score", "asn_reputation_score",
 ]
 
 

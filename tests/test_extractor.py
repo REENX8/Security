@@ -75,11 +75,11 @@ def test_extract_dict_has_idn_features(extractor):
 
 
 def test_schema_contract_v15(extractor):
-    """v1.5 schema invariants: 42 features, no dups, defaults are a subset."""
+    """v1.6 schema invariants: 44 features, no dups, defaults are a subset."""
     from phish_features.schema import FEATURE_SCHEMA_VERSION, N_FEATURES
 
-    assert FEATURE_SCHEMA_VERSION == "1.5.0"
-    assert N_FEATURES == 42
+    assert FEATURE_SCHEMA_VERSION == "1.6.0"
+    assert N_FEATURES == 44
     assert len(set(ORDERED_FEATURES)) == N_FEATURES
     assert set(IMPUTED_DEFAULTS).issubset(set(ORDERED_FEATURES))
 

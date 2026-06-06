@@ -1,15 +1,16 @@
-"""Serve-time IP / ASN reputation adjustment (B8, Stage 1).
+"""Serve-time IP / ASN reputation (B8, Stage 2).
 
-Mirrors :mod:`app.content_check`: a bounded, fail-open score adjustment applied
-on the check hot path only when ``IP_REPUTATION_ENABLED`` is set. It resolves
-the URL's host to a public IP (SSRF-safe, via :mod:`app.net_guard`), looks up
-the ASN through the configured pluggable provider, and reads the accumulated
-verdict history from the reputation store. A range with a bad track record nudges
-the score up; a well-observed clean range nudges it slightly down.
+When ``IP_REPUTATION_ENABLED`` is set, the check pipeline resolves the URL's host
+to a public IP (SSRF-safe, via :mod:`app.net_guard`), looks up the ASN through
+the configured pluggable provider, and reads the accumulated bad-verdict share of
+that IP / ASN from the reputation store. Those shares are fed to the model as the
+``ip_reputation_score`` / ``asn_reputation_score`` features (schema v1.6) — so a
+hosting range with a bad track record raises a brand-new URL even on first
+sighting. The store itself is fed best-effort from the verdict stream
+(:mod:`app.ip_reputation_store`).
 
-No model/schema change: this is a runtime layer on top of the existing model
-(Stage 1). Promoting reputation to an ML feature is a deferred Stage 2 that would
-require a schema bump + retrain behind the Thai-recall gate.
+Fail-open throughout: any resolution / DB error yields "unknown" (-1) reputation
+so a verdict is never blocked.
 """
 
 from __future__ import annotations
@@ -24,12 +25,8 @@ from app.net_guard import _addr_is_blocked, host_is_safe
 
 logger = logging.getLogger("phish-detector")
 
-# Reputation bump bounds. Bad ranges add up to +0.30; a clean, well-observed
-# range subtracts at most 0.10. Identical envelope philosophy to content_check.
-_MIN_BUMP = -0.10
-_MAX_BUMP = 0.30
-# Don't act on a range until we've seen enough verdicts on it — a single bad
-# sighting is not yet reputation.
+# Don't report a reputation until we've seen enough verdicts on a range — a
+# single bad sighting is not yet reputation (below this it stays "unknown").
 _MIN_OBSERVATIONS = 5
 
 
@@ -85,46 +82,43 @@ async def resolve_ip_asn_async(url: str, asn_provider, timeout: float = 2.0) -> 
     return await run_in_threadpool(resolve_ip_asn, url, asn_provider, timeout)
 
 
-def _rep_bump(row) -> float:
-    """Map one reputation row to a bounded score bump.
+def _bad_share(row) -> float:
+    """Accumulated bad-verdict share of a reputation row, or -1.0 if unknown.
 
-    ``bad`` in [0, 1] is the share of (weighted) bad verdicts on the range;
-    it linearly maps bad=0 -> _MIN_BUMP (clean range, small discount) and
-    bad=1 -> _MAX_BUMP (consistently malicious range).
+    This is the value fed to the model as the ``*_reputation_score`` feature
+    (B8 Stage 2); -1.0 mirrors the training/imputed "unknown" convention and is
+    used until a range has at least ``_MIN_OBSERVATIONS`` verdicts.
     """
-    total = row.total_count or 0 if row is not None else 0
+    total = (row.total_count or 0) if row is not None else 0
     if row is None or total < _MIN_OBSERVATIONS:
-        return 0.0
-    phishing = row.phishing_count or 0
-    suspicious = row.suspicious_count or 0
-    bad = (phishing + 0.5 * suspicious) / total
-    bad = max(0.0, min(1.0, bad))
-    return round(_MIN_BUMP + (_MAX_BUMP - _MIN_BUMP) * bad, 4)
+        return -1.0
+    bad = ((row.phishing_count or 0) + 0.5 * (row.suspicious_count or 0)) / total
+    return round(max(0.0, min(1.0, bad)), 4)
 
 
-async def reputation_adjustment(rep: dict | None, *, session=None) -> float:
-    """Return a bounded score adjustment from stored IP/ASN reputation.
+async def reputation_feature_scores(rep: dict | None, *, session=None) -> dict:
+    """Return ``{ip_reputation_score, asn_reputation_score}`` for the model.
 
-    Reads the strongest available signal (largest-magnitude bump of the IP and
-    ASN rows). Fail-open: any error returns 0.0. When ``session`` is None a
-    short-lived session is opened (so batch concurrency is safe — each call gets
-    its own session, never sharing the request session across gather tasks).
+    Values are accumulated bad-verdict shares in [0, 1], or -1.0 ("unknown").
+    Fail-open: any error yields both unknown so scoring is never blocked. Opens
+    a short-lived session when none is supplied (safe under batch concurrency).
     """
+    unknown = {"ip_reputation_score": -1.0, "asn_reputation_score": -1.0}
     if not rep or not rep.get("ip"):
-        return 0.0
+        return unknown
     try:
         if session is not None:
-            return await _compute(session, rep)
+            return await _compute_scores(session, rep)
         from app.database import SessionLocal
 
         async with SessionLocal() as own:
-            return await _compute(own, rep)
+            return await _compute_scores(own, rep)
     except Exception as exc:  # noqa: BLE001 - never block a verdict
-        logger.debug("ip reputation adjustment skipped: %s", exc)
-        return 0.0
+        logger.debug("ip reputation feature lookup skipped: %s", exc)
+        return unknown
 
 
-async def _compute(session, rep: dict) -> float:
+async def _compute_scores(session, rep: dict) -> dict:
     from sqlalchemy import select
 
     from app.models import AsnReputation, IpReputation
@@ -134,18 +128,15 @@ async def _compute(session, rep: dict) -> float:
             select(IpReputation).where(IpReputation.ip == rep["ip"])
         )
     ).scalar_one_or_none()
-    bumps = [_rep_bump(ip_row)]
+    asn_score = -1.0
     if rep.get("asn") is not None:
         asn_row = (
             await session.execute(
                 select(AsnReputation).where(AsnReputation.asn == rep["asn"])
             )
         ).scalar_one_or_none()
-        bumps.append(_rep_bump(asn_row))
-
-    nonzero = [b for b in bumps if b != 0.0]
-    if not nonzero:
-        return 0.0
-    # Strongest signal wins; clamp to the envelope as a belt-and-braces guard.
-    bump = max(nonzero, key=abs)
-    return max(_MIN_BUMP, min(_MAX_BUMP, bump))
+        asn_score = _bad_share(asn_row)
+    return {
+        "ip_reputation_score": _bad_share(ip_row),
+        "asn_reputation_score": asn_score,
+    }

@@ -58,8 +58,29 @@ async def _score_url(request: Request, url: str) -> dict:
             CHECKS_TOTAL.labels(label=cached["label"], cached="true").inc()
             return {**cached, "cached": True}
 
+    # IP/ASN reputation (B8): resolve the host -> IP -> ASN and read the
+    # accumulated bad-verdict share from the store, then feed it to the model as
+    # the *_reputation_score features (overrides). A hosting range with a bad
+    # track record raises a brand-new URL even on first sighting. Resolved
+    # before scoring; rep is stashed so the persist path feeds the store without
+    # re-resolving. Fail-open: unknown reputation (-1) when disabled or on error.
+    rep: dict | None = None
+    overrides: dict | None = None
+    if settings.ip_reputation_enabled:
+        from app.ip_reputation import (
+            reputation_feature_scores,
+            resolve_ip_asn_async,
+        )
+        asn_provider = getattr(request.app.state, "asn_provider", None)
+        rep = await resolve_ip_asn_async(
+            url, asn_provider, timeout=settings.ip_reputation_timeout
+        )
+        overrides = await reputation_feature_scores(rep)
+
     with CHECK_LATENCY.time():
-        result = await run_in_threadpool(scorer.score, url)
+        result = await run_in_threadpool(scorer.score, url, overrides)
+    if rep:
+        result["rep"] = rep
 
     # Observe silent feature degradation: a lookup that was ENABLED but came
     # back not-ok timed out or failed and fell back to imputed defaults.
@@ -83,29 +104,6 @@ async def _score_url(request: Request, url: str) -> dict:
             from app.ml.scorer import label_from_score
             new_score = max(0.0, min(1.0, result["score"] + adj))
             result = {**result, "score": new_score, "label": label_from_score(new_score)}
-
-    # IP/ASN reputation adjustment (B8, opt-in). Resolve the host to a public
-    # IP + ASN, read accumulated verdict history, and nudge the score. Bounded
-    # and fail-open like the content check. The resolved rep is stashed on the
-    # result so the persist path can feed the store without re-resolving.
-    if settings.ip_reputation_enabled:
-        from app.ip_reputation import reputation_adjustment, resolve_ip_asn_async
-        asn_provider = getattr(request.app.state, "asn_provider", None)
-        rep = await resolve_ip_asn_async(
-            url, asn_provider, timeout=settings.ip_reputation_timeout
-        )
-        if rep:
-            result["rep"] = rep
-            adj = await reputation_adjustment(rep)
-            if adj != 0.0:
-                from app.ml.scorer import label_from_score
-                new_score = max(0.0, min(1.0, result["score"] + adj))
-                result = {
-                    **result,
-                    "score": new_score,
-                    "label": label_from_score(new_score),
-                    "rep": rep,
-                }
 
     # Visual fingerprint fallback for gray-zone URLs (B6, opt-in). Heavy (a
     # headless browser), so gray-zone only and after the cheap content check.

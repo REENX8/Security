@@ -48,6 +48,9 @@ _FIELDS = [
     "has_valid_cert", "cert_age_days", "is_self_signed", "whois_ok", "tls_ok",
     # v1.5 simulated TLS-derived columns
     "cert_is_lets_encrypt", "cert_validity_days", "cert_san_count",
+    # v1.6 simulated IP/ASN reputation columns (blank for real seed rows ->
+    # imputed to -1 / "unknown" by the extractor)
+    "ip_reputation_score", "asn_reputation_score",
 ]
 
 
