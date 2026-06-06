@@ -12,6 +12,34 @@ or mirror it explicitly.
 
 ---
 
+## [Unreleased]
+
+### Added
+
+- **B6 — Visual fingerprinting** (`app/visual/`): gray-zone URLs can be
+  screenshotted and perceptually hashed (pure-Python dHash) against a library of
+  genuine agency-page templates; a close match on a non-official host raises the
+  score by a bounded `[+0.15, +0.35]`. SSRF-guarded, fail-open, gray-zone only.
+  Off by default (`VISUAL_FINGERPRINT_ENABLED`); pluggable renderer with a no-op
+  `NullRenderer` default and an opt-in `PlaywrightRenderer` (`pip install .[visual]`).
+- **B8 — IP/ASN reputation, Stage 1** (`app/ip_reputation*.py`,
+  `app/integrations/asn.py`): per-IP and per-ASN verdict history accumulates from
+  the verdict stream and nudges new URLs' scores (bounded `[-0.10, +0.30]`) even
+  on first sighting. No schema change. Off by default
+  (`IP_REPUTATION_ENABLED`); pluggable ASN provider (`NullAsnProvider` default,
+  opt-in Team Cymru DNS). Migration `0002_ip_asn_reputation`.
+- **Independent real-world holdout** (`data/real_phish_holdout.csv`,
+  `scripts/collect_real_phish_holdout.py`): a curated phishing sample with
+  zero training-host overlap — the honest generalisation metric (reported, not
+  gated), surfaced in `evaluation_summary.json`. Guarded by
+  `tests/test_real_holdout.py`.
+- **Load-test CI gate**: `loadtest-e2e` job boots the backend and runs
+  `deploy/loadtest/k6_check_ci.js` with a CI-appropriate p95 threshold.
+- **Threshold-tuning evidence in CI**: `ml-gate` runs `tune_threshold` and
+  uploads `threshold_analysis.json`; `docs/ML_OPS.md` documents the
+  shadow-A/B → promote process (and fixes the `phish_threshold_ab_total`
+  variant label in the PromQL example).
+
 ## [1.5.0] — schema + scale + continuous retraining + auth hardening (2026-05-30)
 
 ### Fixed
