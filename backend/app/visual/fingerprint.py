@@ -16,7 +16,7 @@ import os
 from urllib.parse import urlparse
 
 from app.net_guard import url_is_safe_async
-from app.visual.phash import dhash, hamming
+from app.visual.phash import dhash, hamming, is_degenerate
 
 logger = logging.getLogger("phish-detector")
 
@@ -36,7 +36,12 @@ def load_templates(path: str) -> list[dict]:
         with open(path, encoding="utf-8") as fh:
             payload = json.load(fh)
         templates = payload.get("templates", [])
-        return [t for t in templates if isinstance(t.get("dhash"), int)]
+        # Drop malformed and degenerate (near-blank) template hashes — the
+        # latter would match any blank render and cause false positives.
+        return [
+            t for t in templates
+            if isinstance(t.get("dhash"), int) and not is_degenerate(t["dhash"])
+        ]
     except Exception as exc:  # noqa: BLE001
         logger.warning("visual: failed to load templates from %s: %s", path, exc)
         return []
@@ -77,6 +82,10 @@ async def visual_fingerprint_adjustment(
         page_hash = dhash(grid)
     except Exception as exc:  # noqa: BLE001
         logger.debug("visual: hash failed for %s: %s", url, exc)
+        return 0.0
+    # A blank / unpainted render carries no structural signal; matching it would
+    # produce false positives against any low-bit template.
+    if is_degenerate(page_hash):
         return 0.0
 
     host = (urlparse(url).hostname or "").lower().removeprefix("www.")

@@ -5,7 +5,7 @@
 [![Schema](https://img.shields.io/badge/feature%20schema-v1.5.0-informational)](phish_features/schema.py)
 [![Thai recall](https://img.shields.io/badge/Thai%20holdout%20recall-100%25%20(378%2F378)-success)](reports/evaluation_summary.json)
 [![Features](https://img.shields.io/badge/features-42-informational)](phish_features/schema.py)
-[![Tests](https://img.shields.io/badge/tests-<!--M:test_count-->334<!--/M-->%20passing-success)](tests/)
+[![Tests](https://img.shields.io/badge/tests-<!--M:test_count-->337<!--/M-->%20passing-success)](tests/)
 
 **ผู้พัฒนา:** [REENX8](https://github.com/REENX8) (asdawesdzd22@gmail.com)
 

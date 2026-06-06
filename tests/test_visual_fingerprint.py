@@ -15,7 +15,7 @@ from app.visual.fingerprint import (
     load_templates,
     visual_fingerprint_adjustment,
 )
-from app.visual.phash import dhash, hamming
+from app.visual.phash import dhash, hamming, is_degenerate
 from app.visual.renderer import NullRenderer, get_renderer
 
 TEMPLATES_JSON = Path(__file__).resolve().parents[1] / "data" / "visual_templates" / "templates.json"
@@ -35,6 +35,12 @@ def _allow_ssrf(monkeypatch):
 
 def _grid(rows, cols, fn):
     return [[fn(r, c) for c in range(cols)] for r in range(rows)]
+
+
+def _bal(r, c):
+    """Spatially-hashed value with good bit spread, so dhash is non-degenerate
+    (a smooth gradient hashes to a near-uniform, degenerate value)."""
+    return ((r * 73856093) ^ (c * 19349663)) % 256
 
 
 def test_dhash_identical_grids_zero_distance():
@@ -77,6 +83,37 @@ def test_committed_templates_json_well_formed():
     for t in payload["templates"]:
         assert isinstance(t["dhash"], int)
         assert t["official_host"]
+
+
+def test_committed_templates_are_non_degenerate_and_load():
+    # The committed library must not carry blank/near-uniform hashes (they would
+    # match any blank render). load_templates filters them, so the loaded count
+    # must equal the raw count — i.e. nothing committed is degenerate.
+    payload = json.loads(TEMPLATES_JSON.read_text(encoding="utf-8"))
+    raw = payload["templates"]
+    loaded = load_templates(str(TEMPLATES_JSON))
+    assert len(loaded) == len(raw), "a committed template hash is degenerate"
+    for t in raw:
+        assert not is_degenerate(t["dhash"])
+
+
+def test_is_degenerate():
+    assert is_degenerate(0)  # blank page
+    assert is_degenerate((1 << 64) - 1)  # all bits set
+    # A balanced hash is not degenerate.
+    assert not is_degenerate(dhash(_grid(32, 32, _bal)))
+
+
+def test_load_templates_filters_degenerate(tmp_path):
+    p = tmp_path / "t.json"
+    p.write_text(json.dumps({"templates": [
+        {"agency": "blank", "official_host": "x.go.th", "dhash": 0},
+        {"agency": "good", "official_host": "y.go.th",
+         "dhash": dhash(_grid(32, 32, _bal))},
+    ]}), encoding="utf-8")
+    loaded = load_templates(str(p))
+    assert len(loaded) == 1
+    assert loaded[0]["agency"] == "good"
 
 
 def test_load_templates_missing_file_returns_empty():
@@ -125,7 +162,7 @@ async def test_null_renderer_no_match_returns_zero():
 
 
 async def test_close_match_on_foreign_host_raises_score():
-    grid = _grid(32, 32, lambda r, c: (r * 5 + c * 2) % 256)
+    grid = _grid(32, 32, _bal)
     tmpl = _template_for(grid, "obec.go.th")
     # Same pixels, clone host -> strong match -> positive bump.
     adj = await visual_fingerprint_adjustment(
@@ -137,7 +174,7 @@ async def test_close_match_on_foreign_host_raises_score():
 
 
 async def test_match_on_official_host_not_flagged():
-    grid = _grid(32, 32, lambda r, c: (r * 5 + c * 2) % 256)
+    grid = _grid(32, 32, _bal)
     tmpl = _template_for(grid, "obec.go.th")
     adj = await visual_fingerprint_adjustment(
         "https://www.obec.go.th/login",
@@ -157,8 +194,8 @@ async def test_render_error_fails_open():
 
 
 async def test_distant_image_no_match():
-    grid_a = _grid(32, 32, lambda r, c: (r * 5 + c * 2) % 256)
-    grid_b = _grid(32, 32, lambda r, c: (c * 13 + r * 7) % 256)
+    grid_a = _grid(32, 32, _bal)
+    grid_b = _grid(32, 32, lambda r, c: ((r * 12582917) ^ (c * 6291469)) % 256)
     tmpl = _template_for(grid_a, "obec.go.th")
     adj = await visual_fingerprint_adjustment(
         "https://clone.cc/login",
