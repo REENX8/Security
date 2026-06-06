@@ -47,3 +47,18 @@ def dhash(pixels: list[list[int]], size: int = 8) -> int:
 def hamming(a: int, b: int) -> int:
     """Number of differing bits between two hashes."""
     return (a ^ b).bit_count()
+
+
+# A near-uniform image (blank/white page, or a render that never painted)
+# produces a hash with very few or very many set bits. Such hashes carry no
+# structural signal: a near-zero template would match any blank render and a
+# blank page hash would match any low-bit template — both are false positives.
+# Treat a hash as meaningful only when its set-bit count sits in this band.
+_MIN_SET_BITS = 8
+_MAX_SET_BITS = 56
+
+
+def is_degenerate(h: int) -> bool:
+    """True if a hash is too uniform to be a reliable fingerprint."""
+    bits = h.bit_count()
+    return bits < _MIN_SET_BITS or bits > _MAX_SET_BITS

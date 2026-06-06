@@ -58,6 +58,12 @@ class PlaywrightRenderer:
     name: str = "playwright"
     width: int = 1280
     height: int = 800
+    # Suspicious / phishing pages routinely carry self-signed or otherwise
+    # invalid certificates. We only extract pixels (no trust decision is made on
+    # the page's cert), so ignoring HTTPS errors is what lets the renderer
+    # actually fingerprint the malicious pages we care about. SSRF is already
+    # enforced upstream by url_is_safe_async before the renderer is invoked.
+    ignore_https_errors: bool = True
 
     async def render_gray(self, url: str, timeout: float) -> list[list[int]] | None:
         try:
@@ -70,12 +76,23 @@ class PlaywrightRenderer:
             async with async_playwright() as pw:
                 browser = await pw.chromium.launch(headless=True)
                 try:
-                    page = await browser.new_page(
-                        viewport={"width": self.width, "height": self.height}
+                    context = await browser.new_context(
+                        viewport={"width": self.width, "height": self.height},
+                        ignore_https_errors=self.ignore_https_errors,
                     )
+                    page = await context.new_page()
                     await page.goto(
-                        url, timeout=int(timeout * 1000), wait_until="domcontentloaded"
+                        url, timeout=int(timeout * 1000), wait_until="load"
                     )
+                    # JS-heavy / SPA pages keep painting after `load`. Give the
+                    # network a chance to settle, then a fixed delay, so the
+                    # screenshot captures the real page and not a blank frame
+                    # (a blank frame hashes to a near-zero, useless fingerprint).
+                    try:
+                        await page.wait_for_load_state("networkidle", timeout=5000)
+                    except Exception:  # noqa: BLE001 - networkidle may never fire
+                        pass
+                    await page.wait_for_timeout(1500)
                     png_bytes = await page.screenshot(type="png")
                 finally:
                     await browser.close()

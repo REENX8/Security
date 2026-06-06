@@ -6,5 +6,60 @@
     "dhash": "64-bit integer perceptual hash (app.visual.phash.dhash)",
     "label": "optional note, e.g. 'login page'"
   },
-  "templates": []
+  "templates": [
+    {
+      "agency": "สพฐ. (OBEC)",
+      "official_host": "obec.go.th",
+      "dhash": 7671825113922802324,
+      "label": "landing page"
+    },
+    {
+      "agency": "กระทรวงศึกษาธิการ",
+      "official_host": "moe.go.th",
+      "dhash": 9331882296111890832,
+      "label": "landing page"
+    },
+    {
+      "agency": "กรมสรรพากร",
+      "official_host": "rd.go.th",
+      "dhash": 82035422362172,
+      "label": "landing page"
+    },
+    {
+      "agency": "กรมพัฒนาธุรกิจการค้า",
+      "official_host": "dbd.go.th",
+      "dhash": 4548449906022367003,
+      "label": "landing page"
+    },
+    {
+      "agency": "ธนาคารแห่งประเทศไทย",
+      "official_host": "bot.or.th",
+      "dhash": 17628479690340618722,
+      "label": "landing page"
+    },
+    {
+      "agency": "ตลาดหลักทรัพย์",
+      "official_host": "set.or.th",
+      "dhash": 10728458636770091811,
+      "label": "landing page"
+    },
+    {
+      "agency": "จุฬาลงกรณ์มหาวิทยาลัย",
+      "official_host": "chula.ac.th",
+      "dhash": 16169858803199174886,
+      "label": "landing page"
+    },
+    {
+      "agency": "มหาวิทยาลัยมหิดล",
+      "official_host": "mahidol.ac.th",
+      "dhash": 8509465584946118800,
+      "label": "landing page"
+    },
+    {
+      "agency": "มหาวิทยาลัยเกษตรศาสตร์",
+      "official_host": "ku.ac.th",
+      "dhash": 4263138566432149616,
+      "label": "landing page"
+    }
+  ]
 }

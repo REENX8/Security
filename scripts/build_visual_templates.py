@@ -56,6 +56,17 @@ def main() -> int:
         print("[visual] render failed (need .[visual] + chromium?)", file=sys.stderr)
         return 1
 
+    from app.visual.phash import is_degenerate
+
+    if is_degenerate(h):
+        print(
+            f"[visual] refusing to add degenerate (near-blank) hash {h} for "
+            f"{args.url} — the page likely did not finish painting. Retry with a "
+            "longer --timeout or check the URL.",
+            file=sys.stderr,
+        )
+        return 2
+
     official_host = (urlparse(args.url).hostname or "").lower().removeprefix("www.")
     with open(args.out, encoding="utf-8") as fh:
         payload = json.load(fh)
