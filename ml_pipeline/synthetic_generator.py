@@ -149,6 +149,32 @@ class SyntheticGenerator:
         return mutated if mutated != label else mutated + self.rng.choice("xz")
 
     # ----- network feature simulation ----------------------------------
+    def _sim_reputation(self, label: int) -> dict:
+        """Simulated IP/ASN reputation (B8 Stage 2), matching serve-time semantics.
+
+        At serve time the value is the accumulated bad-verdict share of the
+        host's IP / ASN, or -1 when there is no history. Most hosts have NO
+        history, so -1 dominates and must be class-neutral; only a minority of
+        rows carry a real reputation, and there it correlates with the label
+        (with deliberate overlap: clean sites on noisy shared ASNs, fresh
+        phishing on not-yet-flagged ranges).
+        """
+        r = self.rng
+        if r.random() < 0.70:  # no accumulated history -> unknown, class-neutral
+            return {"ip_reputation_score": -1, "asn_reputation_score": -1}
+        if label == 0:  # legitimate: low bad share
+            ip = round(r.uniform(0.0, 0.20), 3)
+            asn = round(r.uniform(0.0, 0.15), 3)
+            if r.random() < 0.10:  # clean site on a so-so shared range
+                asn = round(r.uniform(0.20, 0.50), 3)
+            return {"ip_reputation_score": ip, "asn_reputation_score": asn}
+        # phishing: high bad share
+        ip = round(r.uniform(0.40, 1.00), 3)
+        asn = round(r.uniform(0.30, 0.90), 3)
+        if r.random() < 0.15:  # fresh host on a not-yet-flagged range
+            ip = round(r.uniform(0.10, 0.40), 3)
+        return {"ip_reputation_score": ip, "asn_reputation_score": asn}
+
     def sim_network(self, label: int, has_https: bool) -> dict:
         """Simulated WHOIS/TLS values with realistic class overlap.
 
@@ -158,6 +184,7 @@ class SyntheticGenerator:
         lookup ("domain_age_days = -1") as evidence of phishing.
         """
         r = self.rng
+        rep = self._sim_reputation(label)
         # ~22% of the time BOTH lookups fail completely (short serve-time
         # timeouts). This state is class-neutral on purpose -- it must carry
         # no signal, so the model falls back on lexical + whitelist features.
@@ -174,6 +201,7 @@ class SyntheticGenerator:
                 "cert_is_lets_encrypt": 0,
                 "cert_validity_days": -1,
                 "cert_san_count": -1,
+                **rep,
             }
         if label == 0:  # legitimate
             whois_ok = 1 if r.random() < 0.80 else 0
@@ -201,6 +229,7 @@ class SyntheticGenerator:
                     (90 if le_legit else r.randint(180, 397)) if tls_ok else -1
                 ),
                 "cert_san_count": (r.randint(1, 4) if tls_ok else -1),
+                **rep,
             }
 
         # phishing — distributions updated to match 2024 reality:
@@ -239,6 +268,7 @@ class SyntheticGenerator:
                 (r.randint(1, 2) if r.random() < 0.85 else r.randint(3, 30))
                 if valid_cert else -1
             ),
+            **rep,
         }
 
     # ----- legitimate ---------------------------------------------------

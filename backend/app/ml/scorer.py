@@ -103,8 +103,8 @@ class Scorer:
         self.features_meta = features_meta
         self.rules_engine = rules_engine or RulesEngine()
 
-    def score(self, url: str) -> dict:
-        feat = self.extractor.extract_dict(url)
+    def score(self, url: str, network_overrides: dict | None = None) -> dict:
+        feat = self.extractor.extract_dict(url, network_overrides=network_overrides)
         vector = [float(feat[name]) for name in ORDERED_FEATURES]
         proba = self.model.predict_proba(self.scaler.transform([vector]))[0][1]
         base_score = float(proba)

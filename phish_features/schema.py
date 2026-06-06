@@ -34,7 +34,14 @@ from __future__ import annotations
 #             over-index heavily on phishing; two are deterministic
 #             (digit_to_letter_ratio, host_has_brand_and_suspicious_tld --
 #             a brand impersonated on a cheap/abused TLD).
-FEATURE_SCHEMA_VERSION = "1.5.0"
+#   v1.6.0 -- 2 IP/ASN reputation features (B8 Stage 2). The backend resolves
+#             the host -> IP -> ASN and supplies the accumulated bad-verdict
+#             share of that IP / ASN as a feature (0..1; -1 = no history /
+#             unknown, the dominant state). Supplied as network_overrides at
+#             serve time (from the reputation store) and simulated in training,
+#             exactly like the WHOIS/TLS features -- so a hosting range with a
+#             bad track record raises a brand-new URL even on first sighting.
+FEATURE_SCHEMA_VERSION = "1.6.0"
 
 # The exact, ordered list of numeric features fed to the model.
 # Index position IS the contract -- never reorder, only append + bump version.
@@ -95,6 +102,9 @@ ORDERED_FEATURES: list[str] = [
     "cert_validity_days",             # notAfter - notBefore in days (90 = LE; legit DV/OV longer)
     "cert_san_count",                 # number of subjectAltName entries on the leaf cert
     "host_has_brand_and_suspicious_tld",  # trusted brand impersonated on a cheap/abused TLD
+    # --- v1.6 IP/ASN reputation (supplied as overrides; -1 = unknown) ---
+    "ip_reputation_score",            # bad-verdict share on the host's IP (0..1; -1 unknown)
+    "asn_reputation_score",           # bad-verdict share on the host's ASN (0..1; -1 unknown)
 ]
 
 N_FEATURES = len(ORDERED_FEATURES)
@@ -125,6 +135,10 @@ IMPUTED_DEFAULTS: dict[str, float] = {
     "cert_is_lets_encrypt": 0,
     "cert_validity_days": -1,
     "cert_san_count": -1,
+    # v1.6 reputation: -1 = "unknown / no history", the dominant serve-time
+    # state, so the model must learn it as neutral (it appears in both classes).
+    "ip_reputation_score": -1,
+    "asn_reputation_score": -1,
 }
 
 # Known Thai domain registrars (lower-cased substrings matched against the

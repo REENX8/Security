@@ -22,12 +22,21 @@ or mirror it explicitly.
   score by a bounded `[+0.15, +0.35]`. SSRF-guarded, fail-open, gray-zone only.
   Off by default (`VISUAL_FINGERPRINT_ENABLED`); pluggable renderer with a no-op
   `NullRenderer` default and an opt-in `PlaywrightRenderer` (`pip install .[visual]`).
-- **B8 — IP/ASN reputation, Stage 1** (`app/ip_reputation*.py`,
-  `app/integrations/asn.py`): per-IP and per-ASN verdict history accumulates from
-  the verdict stream and nudges new URLs' scores (bounded `[-0.10, +0.30]`) even
-  on first sighting. No schema change. Off by default
-  (`IP_REPUTATION_ENABLED`); pluggable ASN provider (`NullAsnProvider` default,
-  opt-in Team Cymru DNS). Migration `0002_ip_asn_reputation`.
+- **B8 — IP/ASN reputation** (`app/ip_reputation*.py`, `app/integrations/asn.py`):
+  per-IP and per-ASN verdict history accumulates from the verdict stream
+  (migration `0002_ip_asn_reputation`) and is fed to the model as the
+  `ip_reputation_score` / `asn_reputation_score` features (**schema v1.6**), so a
+  hosting range with a bad track record raises a brand-new URL even on first
+  sighting. Off by default (`IP_REPUTATION_ENABLED`); pluggable ASN provider
+  (`NullAsnProvider` default, opt-in Team Cymru DNS). Retrain passes the
+  Thai-recall ≥ 0.85 gate (unknown reputation is class-neutral).
+
+### Changed
+
+- **Feature schema bumped to v1.6.0** (42 → 44 features): adds
+  `ip_reputation_score` and `asn_reputation_score`. The committed model is
+  retrained; behaviour is unchanged when `IP_REPUTATION_ENABLED` is off (the new
+  features impute to -1 / "unknown" everywhere).
 - **Independent real-world holdout** (`data/real_phish_holdout.csv`,
   `scripts/collect_real_phish_holdout.py`): a curated phishing sample with
   zero training-host overlap — the honest generalisation metric (reported, not

@@ -16,9 +16,9 @@ from app.integrations.asn import (
     get_asn_provider,
 )
 from app.ip_reputation import (
-    _rep_bump,
+    _bad_share,
     _resolve_public_ip,
-    reputation_adjustment,
+    reputation_feature_scores,
     resolve_ip_asn,
 )
 from app.ip_reputation_store import record_ip_verdict
@@ -92,23 +92,34 @@ def test_resolve_ip_asn_uses_provider_asn():
     assert rep == {"ip": "8.8.8.8", "asn": 64500, "as_name": "EVIL-AS"}
 
 
-# --- bump math --------------------------------------------------------------
+# --- bad-share feature value ------------------------------------------------
 
-def test_rep_bump_below_min_observations_is_zero():
+def test_bad_share_below_min_observations_is_unknown():
     row = IpReputation(ip="1.2.3.4", total_count=3, phishing_count=3)
-    assert _rep_bump(row) == 0.0
+    assert _bad_share(row) == -1.0
 
 
-def test_rep_bump_dirty_range_is_positive_and_bounded():
-    row = IpReputation(ip="1.2.3.4", total_count=10, phishing_count=10)
-    bump = _rep_bump(row)
-    assert 0.0 < bump <= 0.30
+def test_bad_share_none_is_unknown():
+    assert _bad_share(None) == -1.0
 
 
-def test_rep_bump_clean_range_is_small_negative():
+def test_bad_share_dirty_range_is_high():
+    row = IpReputation(ip="1.2.3.4", total_count=10, phishing_count=10,
+                       suspicious_count=0)
+    assert _bad_share(row) == pytest.approx(1.0)
+
+
+def test_bad_share_clean_range_is_zero():
     row = IpReputation(ip="1.2.3.4", total_count=10, phishing_count=0,
                        suspicious_count=0)
-    assert _rep_bump(row) == pytest.approx(-0.10)
+    assert _bad_share(row) == 0.0
+
+
+def test_bad_share_weights_suspicious_half():
+    row = IpReputation(ip="1.2.3.4", total_count=10, phishing_count=2,
+                       suspicious_count=4)
+    # (2 + 0.5*4) / 10 = 0.4
+    assert _bad_share(row) == pytest.approx(0.4)
 
 
 # --- store upsert -----------------------------------------------------------
@@ -152,22 +163,28 @@ async def test_record_ip_verdict_without_asn(session):
     assert (await session.execute(select(AsnReputation))).first() is None
 
 
-# --- adjustment end-to-end --------------------------------------------------
+# --- feature scores end-to-end ----------------------------------------------
 
-async def test_adjustment_zero_for_unknown_ip(session):
+async def test_feature_scores_unknown_for_new_ip(session):
     rep = {"ip": "198.51.100.1", "asn": None, "as_name": ""}
-    assert await reputation_adjustment(rep, session=session) == 0.0
+    scores = await reputation_feature_scores(rep, session=session)
+    assert scores == {"ip_reputation_score": -1.0, "asn_reputation_score": -1.0}
 
 
-async def test_adjustment_zero_for_empty_rep(session):
-    assert await reputation_adjustment(None, session=session) == 0.0
-    assert await reputation_adjustment({}, session=session) == 0.0
+async def test_feature_scores_unknown_for_empty_rep(session):
+    assert await reputation_feature_scores(None, session=session) == {
+        "ip_reputation_score": -1.0, "asn_reputation_score": -1.0
+    }
+    assert await reputation_feature_scores({}, session=session) == {
+        "ip_reputation_score": -1.0, "asn_reputation_score": -1.0
+    }
 
 
-async def test_adjustment_positive_for_dirty_ip(session):
+async def test_feature_scores_high_for_dirty_ip(session):
     for _ in range(8):
-        await record_ip_verdict(session, ip="198.51.100.9", asn=None,
+        await record_ip_verdict(session, ip="198.51.100.9", asn=64500,
                                 label="phishing", score=0.95)
-    rep = {"ip": "198.51.100.9", "asn": None, "as_name": ""}
-    adj = await reputation_adjustment(rep, session=session)
-    assert 0.0 < adj <= 0.30
+    rep = {"ip": "198.51.100.9", "asn": 64500, "as_name": ""}
+    scores = await reputation_feature_scores(rep, session=session)
+    assert scores["ip_reputation_score"] == pytest.approx(1.0)
+    assert scores["asn_reputation_score"] == pytest.approx(1.0)

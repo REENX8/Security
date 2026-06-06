@@ -82,35 +82,38 @@ Goal: catch pixel-clones of real agency login pages.
 - Tests: `tests/test_visual_fingerprint.py` (pure-Python hash + stub renderer —
   no browser, no Pillow, no network).
 
-## ✅ B8 — IP/ASN-level reputation (Stage 1 implemented; Stage 2 deferred)
+## ✅ B8 — IP/ASN-level reputation (implemented: store + ML feature)
 
 Goal: reputation beyond the URL/host level — a known-bad hosting range raises a
 brand-new URL's score even on first sighting.
 
-**Stage 1 — serve-time reputation (implemented, no schema change).**
+**Reputation store (verdict stream).**
 
 - Tables `ip_reputation` / `asn_reputation` (`app/models.py`, migration
   `0002_ip_asn_reputation`) accumulate verdict counts per IP and per ASN.
 - Fed best-effort from the verdict stream: each non-cached check resolves the
   host to a public IP (SSRF-safe via `app/net_guard.py`), looks up the ASN, and
   upserts counters (`app/ip_reputation_store.py`).
-- Read at serve time: `app/ip_reputation.py` returns a **bounded** adjustment
-  (`[-0.10, +0.30]`) — a dirty range nudges the score up, a clean well-observed
-  range slightly down — applied like the content-check fallback. Fail-open: any
-  resolution/DB error returns 0.0 and never blocks a verdict. A range is ignored
-  until it has ≥ 5 observations.
-- **Off by default** behind `IP_REPUTATION_ENABLED`. ASN lookup is a pluggable
-  provider (`app/integrations/asn.py`): `ASN_PROVIDER=null` (default, no
-  network — IP-level reputation still works) or `ASN_PROVIDER=cymru` (Team Cymru
-  IP-to-ASN DNS, no API key, needs `dnspython`).
-- Tests: `tests/test_ip_reputation.py` (all offline, null provider + IP
-  literals — no DNS).
 
-**Stage 2 — promote reputation to ML features (deferred).**
+**ML feature (schema v1.6, Stage 2).**
 
-- Expose IP/ASN reputation as new features in a future schema version
-  (`FEATURE_SCHEMA_VERSION` bump + `IMPUTED_DEFAULTS` + retrain). This MUST clear
-  the Thai-recall ≥ 0.85 ML gate before merge.
-- Deferred deliberately: fold reputation into training only once the Stage 1
-  store has accumulated enough real verdict history to be predictive — training
-  on a cold/empty reputation feature adds noise without signal.
+- At serve time `app/ip_reputation.py` reads the accumulated **bad-verdict
+  share** of the host's IP / ASN (in `[0, 1]`, or `-1` = unknown / fewer than 5
+  observations) and feeds it to the model as the `ip_reputation_score` /
+  `asn_reputation_score` features (`reputation_feature_scores` → scorer
+  `network_overrides`). The model — not a hand-tuned bump — decides the weight,
+  in interaction with every other feature.
+- Training simulates reputation correlated with the label
+  (`SyntheticGenerator._sim_reputation`), with `-1` dominant and class-neutral so
+  the common "unknown" serve-time state carries no signal. The committed model
+  retrains at schema v1.6; the Thai-recall ≥ 0.85 gate still passes (the
+  Thai/holdout rows are all `-1`, so reputation neither helps nor hurts there),
+  while on real traffic a dirty range demonstrably raises borderline scores
+  (e.g. a benign-looking URL: `P(phish)` 0.00 → 0.56 as the IP reputation goes
+  from unknown/clean to 0.95).
+- **Off by default** behind `IP_REPUTATION_ENABLED` (when off, the feature is
+  imputed `-1` everywhere — identical to v1.5 behaviour). ASN lookup is a
+  pluggable provider (`app/integrations/asn.py`): `ASN_PROVIDER=null` (default,
+  no network — IP-level reputation still works) or `ASN_PROVIDER=cymru` (Team
+  Cymru IP-to-ASN DNS, no API key, needs `dnspython`).
+- Tests: `tests/test_ip_reputation.py` (offline, null provider + IP literals).

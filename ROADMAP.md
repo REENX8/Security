@@ -65,9 +65,9 @@
   `VISUAL_FINGERPRINT_ENABLED`) (`tests/test_visual_fingerprint.py`)
 - [x] **B7. SIEM/SOAR export ของ campaigns** — `GET /campaigns/export.json` (flat SIEM schema) + `/campaigns/export.stix`
   (STIX grouping SDOs, deterministic id) (`tests/test_campaign_export.py`)
-- [x] **B8. IP/ASN-level reputation** — **Stage 1 implemented** (serve-time IP/ASN reputation store
-  + bounded adjustment, pluggable ASN provider, off by default `IP_REPUTATION_ENABLED`, no schema bump;
-  Stage 2 ML-feature integration deferred) (`tests/test_ip_reputation.py`)
+- [x] **B8. IP/ASN-level reputation** — **implemented** (IP/ASN reputation store fed from the verdict
+  stream + `ip_reputation_score`/`asn_reputation_score` ML features in schema **v1.6** (retrain passes the
+  Thai-recall gate), pluggable ASN provider, off by default `IP_REPUTATION_ENABLED`) (`tests/test_ip_reputation.py`)
 
 ---
 

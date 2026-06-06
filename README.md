@@ -5,7 +5,7 @@
 [![Schema](https://img.shields.io/badge/feature%20schema-v1.5.0-informational)](phish_features/schema.py)
 [![Thai recall](https://img.shields.io/badge/Thai%20holdout%20recall-100%25%20(378%2F378)-success)](reports/evaluation_summary.json)
 [![Features](https://img.shields.io/badge/features-42-informational)](phish_features/schema.py)
-[![Tests](https://img.shields.io/badge/tests-<!--M:test_count-->337<!--/M-->%20passing-success)](tests/)
+[![Tests](https://img.shields.io/badge/tests-<!--M:test_count-->339<!--/M-->%20passing-success)](tests/)
 
 **ผู้พัฒนา:** [REENX8](https://github.com/REENX8) (asdawesdzd22@gmail.com)
 
@@ -74,7 +74,7 @@
 > ตัวเลขความแม่นยำในเอกสารนี้ถูกฉีดอัตโนมัติจาก `reports/evaluation_summary.json`
 > ด้วย `make sync-docs` (ดู [ความแม่นยำของโมเดล](#ความแม่นยำของโมเดล)) จึงไม่มีวันค้างอีก
 
-**Feature Schema v<!--M:schema_version-->1.5.0<!--/M--> — <!--M:n_features-->42<!--/M--> features (ใหม่ใน v1.5.0)** — เพิ่ม 5 features ที่ไม่ต้องเรียก network เพิ่ม:
+**Feature Schema v<!--M:schema_version-->1.6.0<!--/M--> — <!--M:n_features-->44<!--/M--> features (ใหม่ใน v1.5.0)** — เพิ่ม 5 features ที่ไม่ต้องเรียก network เพิ่ม:
 - `cert_is_lets_encrypt`, `cert_validity_days`, `cert_san_count` — อ่านจาก TLS handshake เดิม (cert ฟรี DV อายุ 90 วันพบมากใน phishing)
 - `digit_to_letter_ratio` — โฮสต์ที่สร้างด้วยอัลกอริทึมมักมีตัวเลขปนตัวอักษรเยอะ
 - `host_has_brand_and_suspicious_tld` — แบรนด์ที่เชื่อถือถูกปลอมบน TLD ราคาถูก/น่าสงสัย
@@ -125,7 +125,7 @@
 > ตัวเลขด้านล่างฉีดจาก `reports/evaluation_summary.json` ด้วย `make sync-docs`
 > (CI รัน `--check` กันค้าง) — รันใหม่ได้ด้วย `make evaluate`
 
-### 🎯 Primary — Thai-targeting phishing holdout (schema v<!--M:schema_version-->1.5.0<!--/M-->)
+### 🎯 Primary — Thai-targeting phishing holdout (schema v<!--M:schema_version-->1.6.0<!--/M-->)
 | เกณฑ์                              | repo v1.2.0 | **repo ปัจจุบัน** |
 |------------------------------------|-------------|-----------------|
 | Holdout size                       | 66 URLs     | **<!--M:thai_holdout_n-->378<!--/M--> URLs** |
@@ -139,7 +139,7 @@
 เดิมโมเดลฝึกแบบ `--no-feeds` จึง**ตาบอดต่อ generic phishing** (จับได้แค่ ~4% บน holdout นี้)
 v1.5 เพิ่ม **committed snapshot ของ generic phishing จริง** (`data/generic_phishing_seed.csv`
 จาก OpenPhish) fold เข้า training (cap 90 rows) แล้วแยก 30% เป็น holdout — generic recall ขึ้นเป็น
-**<!--M:generic_recall-->91.11% (82/90)<!--/M-->** โดย **Thai recall ยังคง 100% (378/378)**
+**<!--M:generic_recall-->98.89% (89/90)<!--/M-->** โดย **Thai recall ยังคง 100% (378/378)**
 
 > ⚠️ **เป็น in-distribution cross-check**: holdout มาจาก feed snapshot เดียวกับ training (คนละ URL,
 > ไม่มี host ซ้ำกับ training set เลย แต่เป็น scrape วันเดียวกัน) ตัวเลขนี้จึง**มองโลกในแง่ดี** — phishing

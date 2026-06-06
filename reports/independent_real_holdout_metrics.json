@@ -1,24 +1,24 @@
 {
   "sample_size": 100,
-  "recall_phishing_threshold": 0.91,
+  "recall_phishing_threshold": 0.9,
   "recall_phishing_ci_95": [
+    0.8256,
+    0.9448
+  ],
+  "recall_suspicious_threshold": 0.91,
+  "recall_suspicious_ci_95": [
     0.8377,
     0.9519
   ],
-  "recall_suspicious_threshold": 0.92,
-  "recall_suspicious_ci_95": [
-    0.85,
-    0.9589
-  ],
-  "mean_score": 0.9008,
+  "mean_score": 0.9001,
   "median_score": 1.0,
-  "missed_count": 8,
+  "missed_count": 9,
   "missed_urls": [
     {
-      "url": "http://dpd.hvtmxqr.xin/com",
+      "url": "http://veaxz.fwh.is/",
       "score": 0.0,
-      "closest_domain": "dmcr.go.th",
-      "min_edit_distance": 5,
+      "closest_domain": "dmh.go.th",
+      "min_edit_distance": 2,
       "is_typosquat": 0,
       "has_punycode": 0,
       "has_mixed_script": 0,
@@ -35,8 +35,28 @@
       "tld_type": "other"
     },
     {
+      "url": "http://dpd.hvtmxqr.xin/com",
+      "score": 0.025,
+      "closest_domain": "dmcr.go.th",
+      "min_edit_distance": 5,
+      "is_typosquat": 0,
+      "has_punycode": 0,
+      "has_mixed_script": 0,
+      "tld_type": "other"
+    },
+    {
+      "url": "http://gweissrs.github.io/Netflix_telalogin",
+      "score": 0.0375,
+      "closest_domain": "ait.ac.th",
+      "min_edit_distance": 4,
+      "is_typosquat": 0,
+      "has_punycode": 0,
+      "has_mixed_script": 0,
+      "tld_type": "other"
+    },
+    {
       "url": "https://q.funyfpt.org/flampifypdf/flhanper/",
-      "score": 0.0,
+      "score": 0.0375,
       "closest_domain": "ant.ac.th",
       "min_edit_distance": 5,
       "is_typosquat": 0,
@@ -45,29 +65,9 @@
       "tld_type": "other"
     },
     {
-      "url": "http://veaxz.fwh.is/",
-      "score": 0.0605,
-      "closest_domain": "dmh.go.th",
-      "min_edit_distance": 2,
-      "is_typosquat": 0,
-      "has_punycode": 0,
-      "has_mixed_script": 0,
-      "tld_type": "other"
-    },
-    {
-      "url": "http://zulpiyev.github.io/js29",
-      "score": 0.1156,
-      "closest_domain": "ait.ac.th",
-      "min_edit_distance": 4,
-      "is_typosquat": 0,
-      "has_punycode": 0,
-      "has_mixed_script": 0,
-      "tld_type": "other"
-    },
-    {
-      "url": "http://gweissrs.github.io/Netflix_telalogin",
-      "score": 0.1333,
-      "closest_domain": "ait.ac.th",
+      "url": "https://yahwebonlinetime.weebly.com/",
+      "score": 0.0443,
+      "closest_domain": "bbl.co.th",
       "min_edit_distance": 4,
       "is_typosquat": 0,
       "has_punycode": 0,
@@ -76,7 +76,7 @@
     },
     {
       "url": "https://bet98d.com/",
-      "score": 0.1333,
+      "score": 0.0604,
       "closest_domain": "bot.or.th",
       "min_edit_distance": 4,
       "is_typosquat": 0,
@@ -85,8 +85,18 @@
       "tld_type": "other"
     },
     {
+      "url": "http://alwajalwa.github.io/video-player",
+      "score": 0.0988,
+      "closest_domain": "ait.ac.th",
+      "min_edit_distance": 4,
+      "is_typosquat": 0,
+      "has_punycode": 0,
+      "has_mixed_script": 0,
+      "tld_type": "other"
+    },
+    {
       "url": "https://gnlgroup.net/santander/index.html",
-      "score": 0.1796,
+      "score": 0.2282,
       "closest_domain": "uobgroup.com",
       "min_edit_distance": 3,
       "is_typosquat": 1,
