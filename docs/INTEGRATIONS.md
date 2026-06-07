@@ -48,7 +48,7 @@ mailed to the agency's intake mailbox.
 
 Goal: combine phishing signal across agencies **without sharing raw URLs**.
 
-- Each participant computes **aggregate counts** over the shared 42-feature
+- Each participant computes **aggregate counts** over the shared 44-feature
   schema (e.g. histogram of `min_edit_distance`, rule-hit rates, label mix) on
   its local traffic and submits only those aggregates.
 - A coordinator averages aggregates (optionally with secure aggregation / DP

@@ -15,7 +15,7 @@
 | 3. โซลูชัน (overview) | 1:00 – 1:45 (45s) | สไลด์ architecture + 5 ส่วนหลัก |
 | 4. Demo: ส่วนขยายเบราว์เซอร์ | 1:45 – 2:30 (45s) | เปิด URL ปลอม → หน้าแดงเตือนเต็มจอ |
 | 5. Demo: Citizen Report Portal | 2:30 – 3:00 (30s) | ผู้สูงอายุพิมพ์ URL → เห็นผล → แจ้ง |
-| 6. เทคนิค: ML + Rules Engine | 3:00 – 4:00 (60s) | 42 features + IDN defense + transparent rules |
+| 6. เทคนิค: ML + Rules Engine | 3:00 – 4:00 (60s) | 44 features + IDN defense + transparent rules |
 | 7. Demo: Brand Watchlist + LINE | 4:00 – 4:45 (45s) | ลงทะเบียน → ทำให้เกิด phishing → LINE แจ้ง |
 | 8. ความแม่นยำ + ทดสอบ | 4:45 – 5:15 (30s) | 100% recall (378/378), 265 tests, CI gate |
 | 9. Sustainable Innovation | 5:15 – 6:15 (60s) | 4 pillars + impact metrics |
@@ -54,7 +54,7 @@
 > *[ภาพ: architecture diagram ที่เคลื่อนไหวทีละชิ้น]*
 >
 > "เราออกแบบระบบนี้เป็นแพลตฟอร์มที่ทำงานร่วมกัน 5 ส่วน หนึ่ง ML pipeline
-> ที่ฝึกโมเดล RandomForest + XGBoost บน 42 features สอง backend ภาษา
+> ที่ฝึกโมเดล RandomForest + XGBoost บน 44 features สอง backend ภาษา
 > Python ที่มี API สำหรับตรวจ URL และส่งข้อมูลให้แอป สาม ส่วนขยายเบราว์เซอร์
 > Manifest V3 ที่ใช้ได้ในทุกเบราว์เซอร์หลัก สี่ dashboard React 11 หน้า
 > สำหรับ operator และห้าที่สำคัญที่สุด — citizen report portal ที่ใช้ได้
@@ -88,11 +88,13 @@
 > *[ภาพ: code snippet + feature list + rules engine output]*
 >
 > "เทคนิคที่ใช้มีสองชั้นทำงานร่วมกัน ชั้นแรกคือ ML — เราออกแบบ feature
-> เอง 42 ตัว ที่สำคัญที่สุดคือกลุ่ม IDN/Homoglyph ที่ decode Punycode
+> เอง 44 ตัว ที่สำคัญที่สุดคือกลุ่ม IDN/Homoglyph ที่ decode Punycode
 > และ fold Unicode confusables จับการปลอมตัวอักษรซีริลลิกได้ และ
-> feature ใหม่ใน v1.5.0 ล่าสุด — อ่านจาก TLS handshake เดิม (cert ฟรี Let's
+> feature กลุ่ม TLS ที่เพิ่มใน v1.5.0 — อ่านจาก TLS handshake เดิม (cert ฟรี Let's
 > Encrypt อายุ 90 วันที่พบมากใน phishing) บวก host_has_brand_and_suspicious_tld
 > — จับ phishing kit แบบ 'แบรนด์ปลอมบน TLD ราคาถูก' ที่เป็น pattern หลักปี 2024-2025
+> และล่าสุดใน v1.6.0 เพิ่ม 2 features กลุ่ม IP/ASN reputation — สะสมสัดส่วน
+> verdict ที่เคยเป็นฟิชชิงต่อ IP และต่อ ASN ทำให้จับ hosting ที่เคยถูกใช้ก่อภัยซ้ำ
 >
 > ชั้นที่สองคือ Rules Engine — กฎที่เขียนเป็น Python ฟังก์ชัน แต่ละกฎมี
 > rule_id, score delta และ pin label ทุก verdict ที่ออกจากระบบจะมี

@@ -12,8 +12,8 @@
 หน่วยงานราชการไทย (`.go.th`) สถาบันการศึกษา (`.ac.th`) และธนาคาร/รัฐวิสาหกิจ
 แบบ realtime ประกอบด้วย 5 ส่วนที่ทำงานร่วมกัน:
 
-1. **ML pipeline** ที่ฝึก ensemble RandomForest + XGBoost บนชุด feature 42 ตัว
-   (lexical, IDN/homoglyph, path-impersonation, WHOIS, TLS, whitelist, lexical patterns ใหม่)
+1. **ML pipeline** ที่ฝึก ensemble RandomForest + XGBoost บนชุด feature 44 ตัว
+   (lexical, IDN/homoglyph, path-impersonation, WHOIS, TLS, whitelist, lexical patterns ใหม่, IP/ASN reputation)
    ได้ recall **100% (378/378)** บน Thai-targeting holdout
 2. **FastAPI backend** ให้บริการ `/check`, public threat feed (JSON/CSV/STIX),
    brand watchlist + webhook (รองรับ LINE Notify), campaign clustering,
@@ -30,6 +30,10 @@
 - **LINE Messaging API Bot** — webhook `/api/v1/line/webhook` รับ URL จากแชท LINE ตอบกลับภาษาไทยพร้อม verdict
 - **Content-based Fallback** — ดึง HTML ตรวจสัญญาณฟิชชิงเพิ่มเติมสำหรับ URL ที่อยู่ในโซนเทา (score 0.3–0.7)
 - **Feedback-driven Auto-retrain** — export confirmed feedback จาก DB แล้ว trigger retrain อัตโนมัติ
+
+ความสามารถใหม่ที่ implement แล้ว (off by default):
+- **B6 Visual Fingerprinting** — URL โซนเทา (score 0.3–0.7) สามารถถ่าย screenshot แล้วทำ perceptual hash (dHash pure-Python) เทียบกับคลังหน้าเว็บราชการไทยของจริง; ถ้า host ไม่เป็นทางการแต่หน้าตาเหมือน → เพิ่ม score แบบมีขอบเขต [+0.15, +0.35] (มี SSRF guard, fail-open, renderer แบบ pluggable)
+- **B8 IP/ASN Reputation** — 2 ML features ใหม่ (`ip_reputation_score`, `asn_reputation_score`) สัดส่วน verdict ที่ไม่ดีสะสมต่อ IP/ASN (0..1; -1 = ไม่ทราบประวัติ) ป้อนตอน serve จาก reputation store
 
 **คำสำคัญ (Keywords):** ฟิชชิง · machine learning · ความปลอดภัยไซเบอร์ ·
 หน่วยงานราชการไทย · IDN homograph · STIX · sustainable innovation ·
@@ -147,8 +151,8 @@ LINE Messaging API · Phishing Detection · Cybersecurity · Thai Government
                               ┌────────▼─────────┐
                               │ ML Ensemble      │
                               │ RF + XGB         │
-                              │ schema v1.5.0    │
-                              │ 42 features      │
+                              │ schema v1.6.0    │
+                              │ 44 features      │
                               └──────────────────┘
 ```
 
@@ -157,7 +161,7 @@ LINE Messaging API · Phishing Detection · Cybersecurity · Thai Government
 | ส่วน | เทคนิค / Algorithm |
 |------|--------------------|
 | ML model | RandomForest + XGBoost soft-voting ensemble + isotonic calibration |
-| Feature extraction | Lexical 15 ตัว + IDN/Homoglyph 3 ตัว + Path-impersonation 4 ตัว + WHOIS 4 ตัว + TLS 3 ตัว + Whitelist 2 ตัว + Meta 2 ตัว + Lexical v1.4 4 ตัว + TLS/interaction v1.5 5 ตัว = **42 features** |
+| Feature extraction | Lexical 15 ตัว + IDN/Homoglyph 3 ตัว + Path-impersonation 4 ตัว + WHOIS 4 ตัว + TLS 3 ตัว + Whitelist 2 ตัว + Meta 2 ตัว + Lexical v1.4 4 ตัว + TLS/interaction v1.5 5 ตัว + IP/ASN reputation v1.6 2 ตัว = **44 features** |
 | IDN Defense | Punycode decode + Unicode confusable fold (TR36) + Levenshtein distance |
 | Typosquat | Brand-label edit distance ≤ 3 + TLD-swap detection |
 | Campaign clustering | Fingerprint = `brand|tld|path-shape` (digit → `#`, hex → `$hex`) |
@@ -187,7 +191,7 @@ LINE Messaging API · Phishing Detection · Cybersecurity · Thai Government
 #### Input / Output
 * **Input:** URL string (HTTP/HTTPS, ≤ 2048 chars) — ส่งเข้า `/api/v1/check`
 * **Output:** JSON ที่มี `score` (0–1), `label` (safe/suspicious/phishing),
-  `reason` (อธิบายภาษาไทย), `features` (42 ตัว), `rules.hits[]` (กฎที่ทำงาน),
+  `reason` (อธิบายภาษาไทย), `features` (44 ตัว), `rules.hits[]` (กฎที่ทำงาน),
   `closest_domain`, `edit_distance`, `checked_at`
 
 #### Functional Specification (เลือกที่สำคัญ)
@@ -205,7 +209,7 @@ LINE Messaging API · Phishing Detection · Cybersecurity · Thai Government
 #### โครงสร้างซอฟต์แวร์ (Design)
 ```
 phish_features/   ← shared package, ML pipeline และ backend ใช้ร่วมกัน
-├── schema.py     ← single source of truth ของ 42 features + LOGIN_KEYWORDS + SUSPICIOUS_TLDS
+├── schema.py     ← single source of truth ของ 44 features + LOGIN_KEYWORDS + SUSPICIOUS_TLDS
 ├── lexical.py    ← computed-from-string features (เร็ว, deterministic)
 ├── whitelist.py  ← typosquat + brand-label edit distance
 ├── homoglyph.py  ← IDN decode + confusable fold
@@ -217,8 +221,11 @@ backend/app/
 ├── ml/scorer.py                ← model + rules → final verdict
 ├── unshorten.py                ← async URL unshortener (18 providers, HEAD-only)
 ├── content_check.py            ← HTML content fallback for gray-zone URLs + SSRF protection
-├── routers/                    ← 11 routers (check, stats, history, admin, feedback,
-│                                  watchlist, campaigns, domain, feed, impact, learn, line_bot)
+├── visual/                     ← B6 visual fingerprinting (dHash + pluggable renderer)
+├── ip_reputation.py            ← B8 per-IP/ASN verdict-history reputation feature
+├── routers/                    ← 15 routers (check, stats, history, admin, feedback,
+│                                  watchlist, campaigns, domain, feed, impact, learn,
+│                                  line_bot, auth, integrations, taxii)
 ├── campaigns.py + notifier.py  ← clustering + webhook (LINE-compatible)
 └── models.py                   ← 7 ORM tables (UrlCheck, Whitelist, Feedback,
                                    BrandWatch, WebhookDelivery, Campaign,

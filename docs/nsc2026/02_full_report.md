@@ -54,8 +54,8 @@
 
 โครงการนี้นำเสนอ **แพลตฟอร์มตรวจจับ URL ฟิชชิงเฉพาะทาง** สำหรับเป้าหมาย
 ที่เป็นแบรนด์ไทย ประกอบด้วย (1) ML ensemble RandomForest + XGBoost บน
-42 features รวมถึง IDN/Homoglyph, Path-impersonation features และ
-lexical patterns ใหม่ใน schema v1.5.0 (2) Heuristic Rules Engine เพื่อความ
+44 features รวมถึง IDN/Homoglyph, Path-impersonation features และ
+lexical patterns ใหม่ใน schema v1.6.0 (2) Heuristic Rules Engine เพื่อความ
 โปร่งใสและตรวจสอบได้ (3) Brand Watchlist + Webhook (รองรับ LINE Notify)
 สำหรับแจ้งเตือนหน่วยงาน (4) Campaign Clustering เพื่อจัดกลุ่มฟิชชิงจาก kit
 เดียวกัน (5) Public Threat Feed (JSON/CSV/STIX 2.1) แชร์เป็นสาธารณะ
@@ -81,8 +81,8 @@ training data.
 
 This project presents a **specialised phishing-URL detection platform**
 targeting Thai brands, consisting of (1) a RandomForest + XGBoost
-ensemble on 42 features including IDN/Homoglyph, Path-impersonation
-and new lexical pattern features at schema v1.5.0, (2) a Heuristic Rules
+ensemble on 44 features including IDN/Homoglyph, Path-impersonation
+and new lexical pattern features at schema v1.6.0, (2) a Heuristic Rules
 Engine for transparency and auditability, (3) Brand Watchlist + Webhook
 (LINE Notify compatible) for agency alerting, (4) Campaign Clustering
 to group phishing URLs from the same kit, (5) Public Threat Feed
@@ -113,7 +113,7 @@ brand ราชการที่ประชาชนไว้ใจ — สร
 ระบบที่ออกแบบโดยตรงสำหรับเป้าหมายนี้ต้องการ:
 
 1. **Whitelist ของ Thai brand** ที่ครอบคลุม → ใช้ 500+ โดเมน
-2. **Feature ที่จับการปลอมในระดับ URL string ได้** → 42 features ที่ออกแบบเอง (schema v1.5.0)
+2. **Feature ที่จับการปลอมในระดับ URL string ได้** → 44 features ที่ออกแบบเอง (schema v1.6.0)
 3. **โมเดลที่ฝึกบน Thai-specific data** → curated seed corpus 215 URL
 4. **ระบบที่โปร่งใส** → Rules Engine แสดง rule_id ที่ทำงาน
 5. **ช่องทางใช้งานที่ accessible** → extension + portal ฟรี ไม่ต้อง login
@@ -206,8 +206,8 @@ verdict กลับ:
                               ┌────────▼─────────┐
                               │ ML Ensemble      │
                               │ RF + XGB         │
-                              │ schema v1.5.0    │
-                              │ 42 features      │
+                              │ schema v1.6.0    │
+                              │ 44 features      │
                               └──────────────────┘
 ```
 
@@ -215,7 +215,7 @@ verdict กลับ:
 
 1. Browser extension หรือ portal ส่ง URL ไป `POST /api/v1/check`
 2. Backend เรียก `URLUnshortener` (ถ้าเปิด) แกะ short-link → URL ปลายทาง
-3. `FeatureExtractor` คำนวณ 42 features (lexical, IDN, whitelist, WHOIS, TLS)
+3. `FeatureExtractor` คำนวณ 44 features (lexical, IDN, whitelist, WHOIS, TLS, IP/ASN reputation)
 4. ML ensemble (RF + XGB voting + isotonic calibration) ให้ probability score
 5. `RulesEngine` ตรวจ rule hits → ปรับ score / pin label หากตรง pattern ที่
    มั่นใจ
@@ -226,7 +226,7 @@ verdict กลับ:
 
 ### 4.2 ทฤษฎี / Algorithm / เทคโนโลยี
 
-#### 4.2.1 Feature Schema v1.5.0 (รวม 42 features)
+#### 4.2.1 Feature Schema v1.6.0 (รวม 44 features)
 
 | กลุ่ม | จำนวน | ตัวอย่าง |
 |------|------|----------|
@@ -240,6 +240,7 @@ verdict กลับ:
 | **Path v1.3** | 4 | has_login_keyword, has_suspicious_tld, path_brand_hit, path_length |
 | **Lexical v1.4** | 4 | num_login_keywords, query_param_count, path_entropy, host_token_count |
 | **TLS + interaction v1.5** | 5 | **cert_is_lets_encrypt, cert_validity_days, cert_san_count, digit_to_letter_ratio, host_has_brand_and_suspicious_tld** |
+| **IP/ASN reputation v1.6** | 2 | **ip_reputation_score, asn_reputation_score** (สัดส่วน verdict ไม่ดีสะสมต่อ IP/ASN 0..1; -1 = ไม่ทราบประวัติ) |
 
 #### 4.2.2 ML Ensemble + Calibration
 
@@ -283,6 +284,21 @@ secure-update.online/obec/verify-account
 * `path_brand_hit = 1` ถ้ามี brand label ของ whitelist อยู่ใน path
 * `has_login_keyword = 1` ถ้าใน path มีคำอย่าง login, signin, verify, ...
 * `has_suspicious_tld = 1` ถ้า eTLD อยู่ใน list `.cc, .xyz, .icu, .cfd, ...`
+
+#### 4.2.4b ความสามารถใหม่ใน v1.6.0 (off by default)
+
+**B6 — Visual Fingerprinting (`app/visual/`):** URL ที่อยู่โซนเทา (score 0.3–0.7)
+สามารถถูกถ่าย screenshot แล้วทำ perceptual hash (dHash แบบ pure-Python) เทียบกับ
+คลัง template ของหน้าเว็บหน่วยงานราชการไทยของจริง ถ้าหน้าตาใกล้เคียงแต่อยู่บน host
+ที่ไม่เป็นทางการ จะเพิ่ม score แบบมีขอบเขต [+0.15, +0.35] — มี SSRF guard, fail-open,
+ทำเฉพาะโซนเทา, renderer แบบ pluggable (NullRenderer ค่าเริ่มต้น / opt-in Playwright),
+ปิดเป็นค่าเริ่มต้นผ่าน `VISUAL_FINGERPRINT_ENABLED`
+
+**B8 — IP/ASN Reputation:** เพิ่ม 2 ML features (`ip_reputation_score`,
+`asn_reputation_score`) เป็นสัดส่วน verdict ที่ไม่ดีสะสมต่อ IP/ASN (0..1; -1 =
+ไม่ทราบประวัติ ซึ่งเป็นสถานะส่วนใหญ่) ป้อนตอน serve จาก reputation store ที่
+ฟีดจาก verdict stream — เป็นกลางต่อ class เมื่อไม่ทราบ จึงไม่กระทบ Thai-recall ≥ 0.85
+ปิดเป็นค่าเริ่มต้นผ่าน `IP_REPUTATION_ENABLED`
 
 #### 4.2.5 Heuristic Rules Engine
 
@@ -360,7 +376,7 @@ URL ที่ fingerprint ตรงกันถือเป็น campaign เ�
   * `score` — float 0–1 (probability ของ phishing)
   * `label` — `safe` | `suspicious` | `phishing`
   * `reason` — ข้อความภาษาไทยอธิบายว่าทำไม
-  * `features` — dict 42 ฟีเจอร์ที่คำนวณได้
+  * `features` — dict 44 ฟีเจอร์ที่คำนวณได้
   * `rules.hits[]` — array ของ rule_id ที่ทำงาน + delta + pinned
   * `closest_domain`, `edit_distance` — แบรนด์ใน whitelist ที่ใกล้ที่สุด
   * `checked_at` — ISO timestamp
@@ -385,7 +401,7 @@ URL ที่ fingerprint ตรงกันถือเป็น campaign เ�
 
 ```
 phish_features/   ← shared package, ML pipeline และ backend ใช้ร่วมกัน
-├── schema.py     ← single source of truth 42 features + LOGIN_KEYWORDS + SUSPICIOUS_TLDS
+├── schema.py     ← single source of truth 44 features + LOGIN_KEYWORDS + SUSPICIOUS_TLDS
 ├── lexical.py    ← computed-from-string features (deterministic)
 ├── whitelist.py  ← typosquat + brand-label edit distance
 ├── homoglyph.py  ← IDN decode + confusable fold (Unicode TR36)
@@ -397,8 +413,11 @@ backend/app/
 ├── ml/scorer.py                ← model + rules → final verdict
 ├── unshorten.py                ← async URL unshortener (18 providers, HEAD-only)
 ├── content_check.py            ← HTML content fallback for gray-zone URLs + SSRF protection
-├── routers/                    ← 11 routers (check, stats, history, admin, feedback,
-│                                  watchlist, campaigns, domain, feed, impact, learn, line_bot)
+├── visual/                     ← B6 visual fingerprinting (dHash + pluggable renderer)
+├── ip_reputation.py            ← B8 per-IP/ASN verdict-history reputation feature
+├── routers/                    ← 15 routers (check, stats, history, admin, feedback,
+│                                  watchlist, campaigns, domain, feed, impact, learn,
+│                                  line_bot, auth, integrations, taxii)
 ├── campaigns.py + notifier.py  ← clustering + webhook (LINE/Slack-compatible)
 └── models.py                   ← ORM tables (UrlCheck, Whitelist, Feedback,
                                    BrandWatch, WebhookDelivery, Campaign,
@@ -473,7 +492,7 @@ FastAPI, React, TailwindCSS, pandas — ใช้ตาม API public ไม่�
 
 ### Thai-targeting Holdout (Primary Metric)
 
-| Metric | v1.2.0 baseline | v1.3.0 | **v1.5.0 (ปัจจุบัน)** |
+| Metric | v1.2.0 baseline | v1.3.0 | **v1.6.0 (ปัจจุบัน)** |
 |--------|------|------|------|
 | Holdout size | 53 URLs | 378 URLs | **378 URLs** |
 | Recall ที่ threshold ≥ 0.7 | 98.11% (52/53) | 99.7% (377/378) | **100% (378/378)** |
@@ -494,7 +513,7 @@ cross-check ไม่ใช่การทดสอบ phishing แปลกใ�
 
 ### Cross-validation (5-fold synthetic, 12000 samples)
 
-| Metric | v1.2.0 | v1.3.0 | **v1.5.0** |
+| Metric | v1.2.0 | v1.3.0 | **v1.6.0** |
 |--------|--------|--------|-----------|
 | F1 mean | 0.992 ± 0.002 | 0.999 ± 0.000 | **0.999 ± 0.000** |
 
@@ -572,12 +591,23 @@ Economic, Environmental — บวกแนวคิด Open / Circular ระ�
 
 ## แนวทางการพัฒนาและประยุกต์ใช้ร่วมกับงานอื่น ๆ ในขั้นต่อไป
 
-1. **LINE Official Account bot** — ให้ผู้ใช้พิมพ์ URL ส่งใน chat เพื่อตรวจ (Thai elderly ใช้ LINE มาก)
-2. **SMS report gateway** — รับแจ้งฟิชชิงผ่าน SMS จากผู้สูงอายุที่ไม่ใช้ smartphone
-3. **เชื่อม ETDA 1212 / ตำรวจไซเบอร์ 1441** — ส่ง finding ผ่าน API
-4. **เปิด TAXII 2.1 server** เต็มรูปแบบ ไม่ใช่แค่ STIX bundle export
-5. **Federated learning** — หน่วยงานหลายแห่ง deploy แล้ว aggregate signal โดยไม่ต้องแชร์ raw URL
-6. **Visual fingerprint** — ใช้ headless browser ดูหน้าเว็บแล้วเปรียบเทียบกับ template ของหน่วยงานจริง
+**พัฒนาเสร็จแล้วในเวอร์ชันปัจจุบัน (v1.6.0):** LINE Official Account bot (B1),
+SMS report gateway (B2), government connector ETDA 1212 / ตำรวจไซเบอร์ 1441 ผ่าน
+email/CSV intake (B3), TAXII 2.1 server (B4), visual fingerprinting โซนเทา (B6)
+และ IP/ASN reputation (B8) — ทั้งหมดมีเทสต์ครอบและปิดเป็นค่าเริ่มต้นจนกว่าจะตั้งค่า
+provider/feature flag
+
+**ขั้นต่อไปจริง ๆ:**
+
+1. **เติม template library ของ visual fingerprint (B6)** — generate perceptual
+   hash จาก screenshot หน้าเว็บหน่วยงานจริง เพื่อให้ B6 ทำงานได้เต็มประสิทธิภาพ
+   (คลังเริ่มต้นว่างเปล่าโดยตั้งใจ เพราะ repo สร้าง screenshot จริงไม่ได้)
+2. **เปิดใช้ IP/ASN reputation (B8) บน production** — ต่อ ASN provider จริง
+   (เช่น Team Cymru) และสะสมประวัติ verdict จาก traffic จริง
+3. **Federated learning (B5)** — หน่วยงานหลายแห่ง deploy แล้ว aggregate signal
+   โดยไม่ต้องแชร์ raw URL (ยังเป็น design — implement หลัง MOU + PDPA review)
+4. **ต่อ provider จริงให้ช่องทางที่วางไว้** — SMS aggregator (B2), HTTP API ฝั่ง
+   รัฐเมื่อมี (B3), และ push provider สำหรับ LINE bot
 
 ---
 
