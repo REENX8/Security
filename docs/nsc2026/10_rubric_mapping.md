@@ -20,11 +20,11 @@ Story Board · เทคนิค · เครื่องมือ · Spec · �
 
 | ชั้น | สิ่งที่ทำ | หลักฐาน |
 |------|-----------|----------|
-| Feature Engineering | 42 features หลายกลุ่ม + ออกแบบใหม่ schema v1.5.0 | `phish_features/schema.py`, `extractor.py` |
+| Feature Engineering | 44 features หลายกลุ่ม + ออกแบบใหม่ schema v1.6.0 | `phish_features/schema.py`, `extractor.py` |
 | IDN Defense | Punycode decode + Unicode confusable fold + Levenshtein | `phish_features/homoglyph.py` |
 | ML Ensemble | RF + XGB voting + Isotonic Calibration + 5-fold CV | `ml_pipeline/train.py` |
 | Rules Engine | declarative rule system + pin priority + clamping | `phish_features/rules.py` |
-| Backend | async FastAPI + 11 routers + middleware stack + 5 ORM tables | `backend/app/` |
+| Backend | async FastAPI + 15 routers + middleware stack + 5 ORM tables | `backend/app/` |
 | Frontend | React 18 + 11 pages + TanStack Query + Tailwind | `dashboard/src/` |
 | Extension | Manifest V3 + service worker + warning interstitial + bypass | `extension/` |
 | DevOps | Docker, Compose, Render Blueprint, GitHub Actions CI gate | `Dockerfile`, `render.yaml`, `.github/workflows/ci.yml` |
@@ -52,6 +52,12 @@ Story Board · เทคนิค · เครื่องมือ · Spec · �
   + password field; SSRF protection ด้วย private IP reject
 * **Feedback Auto-retrain** (v1.2.0) — confirmed feedback → trigger retrain อัตโนมัติ
   ตาม schedule หรือรันด้วยมือผ่าน `ml_pipeline.feedback_retrain`
+* **Visual Fingerprinting (B6)** (v1.6.0) — โซนเทา (0.3–0.7) ถ่าย screenshot + perceptual
+  dHash เทียบ template หน้าเว็บหน่วยงานราชการจริง; ตรงหน้าตาบน host ไม่เป็นทางการ →
+  +score [+0.15, +0.35]; SSRF-guarded, fail-open, renderer แบบ pluggable, off by default
+* **IP/ASN Reputation (B8)** (v1.6.0) — 2 ML features ใหม่ (`ip_reputation_score`,
+  `asn_reputation_score`) สัดส่วน verdict ไม่ดีสะสมต่อ IP/ASN ป้อนจาก reputation store,
+  class-neutral เมื่อไม่ทราบประวัติ, off by default
 
 ### 4. ประโยชน์ใช้งาน (25) ← **highest weight**
 
@@ -134,10 +140,12 @@ Extension, Train, Deploy, ตรวจสอบ, Troubleshooting
 
 ### Technique (20)
 
-✅ 42-feature schema + IDN defense + Rules Engine + Campaign clustering + External Feed Ingestion
+✅ 44-feature schema (v1.6.0) + IDN defense + Rules Engine + Campaign clustering + External Feed Ingestion
 ✅ URL Unshortener (async HEAD, 18 providers, fail-open)
 ✅ Content-based Fallback (HTML fetch + SSRF protection + gray-zone score adjustment)
 ✅ Feedback Auto-retrain pipeline (min-rows gate, dry-run mode, background loop)
+✅ Visual Fingerprinting B6 (perceptual dHash โซนเทาเทียบ template หน่วยงานจริง, off by default)
+✅ IP/ASN Reputation B8 (2 ML features ใหม่ใน v1.6.0, off by default)
 
 ### Creativity (25) ← **highest weight**
 

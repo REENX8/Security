@@ -22,7 +22,7 @@ docker compose up -d --build
 
 ```bash
 curl http://localhost:8000/version
-# {"backend":"1.5.0","phish_features":"1.1.0","schema":"1.5.0"}
+# {"backend":"1.6.0","phish_features":"1.1.0","schema":"1.6.0"}
 
 curl -X POST http://localhost:8000/api/v1/check \
      -H "Content-Type: application/json" \

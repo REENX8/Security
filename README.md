@@ -2,9 +2,9 @@
 
 [![CI](https://github.com/reenx8/security/actions/workflows/ci.yml/badge.svg)](https://github.com/reenx8/security/actions/workflows/ci.yml)
 [![License: Apache 2.0](https://img.shields.io/badge/License-Apache_2.0-blue.svg)](LICENSE)
-[![Schema](https://img.shields.io/badge/feature%20schema-v1.5.0-informational)](phish_features/schema.py)
+[![Schema](https://img.shields.io/badge/feature%20schema-v1.6.0-informational)](phish_features/schema.py)
 [![Thai recall](https://img.shields.io/badge/Thai%20holdout%20recall-100%25%20(378%2F378)-success)](reports/evaluation_summary.json)
-[![Features](https://img.shields.io/badge/features-42-informational)](phish_features/schema.py)
+[![Features](https://img.shields.io/badge/features-44-informational)](phish_features/schema.py)
 [![Tests](https://img.shields.io/badge/tests-<!--M:test_count-->339<!--/M-->%20passing-success)](tests/)
 
 **ผู้พัฒนา:** [REENX8](https://github.com/REENX8) (asdawesdzd22@gmail.com)
@@ -39,7 +39,7 @@
                                     │
                           ┌─────────▼──────────┐
                           │ scikit-learn + XGB │
-                          │ ensemble (.pkl)    │  schema v1.5.0 · 42 features
+                          │ ensemble (.pkl)    │  schema v1.6.0 · 44 features
                           └────────────────────┘
 ```
 
@@ -74,11 +74,12 @@
 > ตัวเลขความแม่นยำในเอกสารนี้ถูกฉีดอัตโนมัติจาก `reports/evaluation_summary.json`
 > ด้วย `make sync-docs` (ดู [ความแม่นยำของโมเดล](#ความแม่นยำของโมเดล)) จึงไม่มีวันค้างอีก
 
-**Feature Schema v<!--M:schema_version-->1.6.0<!--/M--> — <!--M:n_features-->44<!--/M--> features (ใหม่ใน v1.5.0)** — เพิ่ม 5 features ที่ไม่ต้องเรียก network เพิ่ม:
-- `cert_is_lets_encrypt`, `cert_validity_days`, `cert_san_count` — อ่านจาก TLS handshake เดิม (cert ฟรี DV อายุ 90 วันพบมากใน phishing)
-- `digit_to_letter_ratio` — โฮสต์ที่สร้างด้วยอัลกอริทึมมักมีตัวเลขปนตัวอักษรเยอะ
-- `host_has_brand_and_suspicious_tld` — แบรนด์ที่เชื่อถือถูกปลอมบน TLD ราคาถูก/น่าสงสัย
-- ฟีเจอร์ใหม่ทำให้ URL ที่เคยหลุด (`thaid-app.net/auth/login`) ถูกจับได้ → Thai recall ขึ้นจาก 99.7% เป็น <!--M:thai_recall_pct-->100%<!--/M-->
+**Feature Schema v<!--M:schema_version-->1.6.0<!--/M--> — <!--M:n_features-->44<!--/M--> features** — สัญญา feature-matrix ล่าสุด:
+- **ใหม่ใน v1.6.0 — IP/ASN reputation (B8):** `ip_reputation_score`, `asn_reputation_score` — สัดส่วน verdict ที่เป็นอันตรายสะสมต่อ IP/ASN (0..1; -1 = ไม่มีประวัติ) ป้อนจาก reputation store ตอน serve ทำให้ช่วง hosting ที่มีประวัติเสียดัน URL ใหม่ขึ้นได้ตั้งแต่ครั้งแรก (เป็น class-neutral เมื่อไม่รู้ → Thai-recall gate ยังผ่าน; ปิดเป็นค่าเริ่มต้นด้วย `IP_REPUTATION_ENABLED`)
+- **v1.5.0 — 5 features ที่ไม่ต้องเรียก network เพิ่ม:** `cert_is_lets_encrypt`, `cert_validity_days`, `cert_san_count` (อ่านจาก TLS handshake เดิม — cert ฟรี DV อายุ 90 วันพบมากใน phishing), `digit_to_letter_ratio` (โฮสต์ที่สร้างด้วยอัลกอริทึมมักมีตัวเลขปนตัวอักษรเยอะ), `host_has_brand_and_suspicious_tld` (แบรนด์ที่เชื่อถือถูกปลอมบน TLD ราคาถูก/น่าสงสัย)
+- ฟีเจอร์ v1.5 ทำให้ URL ที่เคยหลุด (`thaid-app.net/auth/login`) ถูกจับได้ → Thai recall ขึ้นจาก 99.7% เป็น <!--M:thai_recall_pct-->100%<!--/M-->
+
+**Visual fingerprinting สำหรับโซนเทา (ใหม่ใน v1.6.0 — B6)** — URL ที่ได้คะแนนก้ำกึ่ง (0.3–0.7) ถูก screenshot แล้วทำ perceptual hash (dHash แบบ pure-Python) เทียบกับคลังหน้าเว็บหน่วยงานจริง; ถ้าหน้าตาเหมือนแต่อยู่บนโฮสต์ที่ไม่ใช่ทางการจะดันคะแนนขึ้นแบบมีขอบเขต `[+0.15, +0.35]` — มี SSRF guard, fail-open, ทำเฉพาะโซนเทา, ปิดเป็นค่าเริ่มต้น (`VISUAL_FINGERPRINT_ENABLED`), renderer แบบ pluggable (NullRenderer เริ่มต้น / Playwright แบบ opt-in)
 
 **Thai-targeting seed corpus ขยายใหญ่ (215 → <!--M:seed_count-->1,261<!--/M--> URLs, holdout 66 → <!--M:thai_holdout_n-->378<!--/M-->)** — v1.3.0 เพิ่ม programmatic brand-expander ที่ผลิต 8 รูปแบบ phishing ต่อแบรนด์อย่าง deterministic ครอบคลุม **160+ แบรนด์ไทย** (banks, ministries, มหาวิทยาลัย, รัฐวิสาหกิจ, e-commerce, logistics, telecom) — holdout ที่ใหญ่ขึ้นเกือบ 6 เท่าทำให้ 95% CI ของ Thai recall แคบลงเหลือ <!--M:thai_recall_ci-->[0.990, 1.000]<!--/M--> และเลิกพึ่ง sample เล็กไปได้
 
@@ -114,7 +115,7 @@
 
 **Production-grade observability** — `/health`, `/version`, `/metrics` (Prometheus), structured JSON logs (`LOG_FORMAT=json`), `X-Request-ID` propagation, security response headers ทุก response
 
-**331 automated tests** — feature extraction, rules engine, campaign clustering + SIEM export, scorer, middleware + security headers, liveness/readiness probes, ทุก API endpoint, JWT login + auth, golden URLs, Thai seed corpus + holdout split (รวม guard ใหม่ใน v1.3.0 ที่ฟ้องถ้า holdout < 300 rows), feed ingestion, TAXII 2.1 server, SSRF net guard, config production guard, Alembic migrations, URL unshortener, content check, LINE bot webhook, feedback retrain + auto-trigger, threshold A/B telemetry, data retention, generic seed corpus, doc-metric sync, extension store-readiness + manifest hardening, TLS helpers
+**339 automated tests** — feature extraction, rules engine, campaign clustering + SIEM export, scorer, middleware + security headers, liveness/readiness probes, ทุก API endpoint, JWT login + auth, golden URLs, Thai seed corpus + holdout split (รวม guard ใหม่ใน v1.3.0 ที่ฟ้องถ้า holdout < 300 rows), feed ingestion, TAXII 2.1 server, SSRF net guard, config production guard, Alembic migrations, URL unshortener, content check, LINE bot webhook, feedback retrain + auto-trigger, threshold A/B telemetry, data retention, generic seed corpus, doc-metric sync, extension store-readiness + manifest hardening, TLS helpers
 
 ---
 
@@ -183,7 +184,7 @@ v1.5 เพิ่ม **committed snapshot ของ generic phishing จริ�
 ```
 Security/
 ├── phish_features/           # ⭐ shared package (ทั้ง train และ serve ใช้ร่วมกัน)
-│   ├── schema.py             #    42 features + LOGIN_KEYWORDS + SUSPICIOUS_TLDS (v1.5.0)
+│   ├── schema.py             #    44 features + LOGIN_KEYWORDS + SUSPICIOUS_TLDS (v1.6.0)
 │   ├── lexical.py            #    feature จาก URL string
 │   ├── whitelist.py          #    typosquat + edit distance
 │   ├── homoglyph.py          #    IDN decode + confusable fold
@@ -204,6 +205,8 @@ Security/
 │   │   ├── middleware.py     #    🆕 X-Request-ID + security headers + JSON log
 │   │   ├── campaigns.py      #    🆕 fingerprint clustering
 │   │   ├── notifier.py       #    🆕 webhook delivery
+│   │   ├── visual/           #    🆕 B6 perceptual-hash (dHash) visual fingerprinting
+│   │   ├── ip_reputation.py  #    🆕 B8 per-IP/ASN verdict-history reputation store
 │   │   ├── routers/
 │   │   │   ├── check.py
 │   │   │   ├── stats.py history.py admin.py feedback.py
@@ -249,8 +252,8 @@ Security/
 ├── render.yaml                       #  Render Blueprint (one-click deploy)
 ├── LICENSE NOTICE CHANGELOG.md
 ├── SECURITY.md CONTRIBUTING.md
-├── VERSION                           #  single source of truth (1.5.0)
-└── tests/                            #  331 tests
+├── VERSION                           #  single source of truth (1.6.0)
+└── tests/                            #  339 tests
 ```
 
 ---
@@ -264,7 +267,7 @@ cp .env.example .env          # แก้ API_KEY (สำคัญ)
 docker compose up -d --build  # PostgreSQL + API
 
 curl http://localhost:8000/version
-# {"backend":"1.5.0","phish_features":"1.1.0","schema":"1.5.0"}
+# {"backend":"1.6.0","phish_features":"1.1.0","schema":"1.6.0"}
 
 # /check เป็น public ตั้งแต่ v1.5 (extension จาก store ใช้ได้เลย ไม่ต้องใช้ key)
 curl -X POST http://localhost:8000/api/v1/check \
@@ -297,7 +300,7 @@ make evaluate            # → reports/*.png, metrics.json, evaluation_summary.j
 make evaluate-gate       # ⚠️  ออกด้วย exit-code != 0 ถ้า Thai recall < 0.85
 ```
 
-### Feature ทั้ง 42 ตัว (schema v1.5.0)
+### Feature ทั้ง 44 ตัว (schema v1.6.0)
 
 | กลุ่ม     | Feature |
 |-----------|---------|
@@ -310,7 +313,8 @@ make evaluate-gate       # ⚠️  ออกด้วย exit-code != 0 ถ้�
 | IDN/Homoglyph (v1.2) | has_punycode, has_mixed_script, homoglyph_distance |
 | Path-impersonation (v1.3) | has_login_keyword, has_suspicious_tld, path_brand_hit, path_length |
 | Lexical rich (v1.4) | num_login_keywords, query_param_count, path_entropy, host_token_count |
-| **🆕 TLS + interaction (v1.5)** | **cert_is_lets_encrypt, cert_validity_days, cert_san_count, digit_to_letter_ratio, host_has_brand_and_suspicious_tld** |
+| TLS + interaction (v1.5) | cert_is_lets_encrypt, cert_validity_days, cert_san_count, digit_to_letter_ratio, host_has_brand_and_suspicious_tld |
+| **🆕 IP/ASN reputation (v1.6)** | **ip_reputation_score, asn_reputation_score** |
 
 Retrain ด้วย `python -m ml_pipeline.train` (default) หรือ `python -m ml_pipeline.train --tune` เพื่อ Optuna HP search (50 trials)
 
@@ -605,7 +609,7 @@ Dashboard: `VITE_API_URL`, `VITE_API_KEY`
 ## Tests
 
 ```bash
-make test                     # 331 tests, ~15 วินาที
+make test                     # 339 tests, ~15 วินาที
 ```
 
 | Suite                  | ครอบคลุม |

@@ -1,7 +1,9 @@
 # Security Review — ROADMAP C6
 
 Scope: SSRF in outbound fetches, injection in WHOIS/TLS feature extraction,
-and authorization of admin routes. Reviewed against the v1.5.0 codebase.
+and authorization of admin routes. Reviewed against the v1.6.0 codebase
+(re-checked for the v1.6.0 additions — B6 visual fingerprinting and B8 IP/ASN
+reputation, both of which add outbound network paths; see finding 6).
 
 ## Findings & resolutions
 
@@ -43,6 +45,19 @@ production config guard (C-A1) now refuses to boot with a placeholder
 (no SQL injection). A `host` containing `%`/`_` would broaden the match, but
 the route is authenticated and bounded to 90 days / 20 rows, and results are
 re-filtered by exact parsed hostname. Accepted as low risk.
+
+### 6. SSRF in v1.6.0 outbound paths (B6 renderer / B8 IP resolution) — OK (reviewed)
+The v1.6.0 features each add an outbound path and both reuse the shared guard:
+- **B6 visual fingerprinting** screenshots a gray-zone URL. The renderer is
+  off by default (`VISUAL_FINGERPRINT_ENABLED`), runs only on the gray-zone
+  fallback, fails open, and the target host is vetted by `app.net_guard` before
+  rendering — same control as `content_check.py`.
+- **B8 IP/ASN reputation** resolves the host to a public IP before recording /
+  reading reputation; resolution is SSRF-safe via `app.net_guard`, and the
+  optional Team Cymru ASN lookup is a fixed DNS query (no attacker-controlled
+  URL). Off by default (`IP_REPUTATION_ENABLED`).
+No new injection or authz surface: both consume the existing `urlparse`
+hostname and write only aggregate counters.
 
 ## Shared control
 `app.net_guard` centralizes the SSRF allow/deny decision (literal-IP and
