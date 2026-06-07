@@ -232,17 +232,33 @@ class Whitelist:
         An exact whitelist domain is never a typosquat. A non-whitelisted host
         whose brand label is within ``TYPOSQUAT_MAX_DISTANCE`` edits of a
         trusted brand (including distance 0, i.e. a TLD swap) is flagged.
+
+        False-positive guard: with 500+ whitelist entries many common
+        international brand names (amazon, twitter, line …) accidentally fall
+        within 3 edits of some short Thai-gov label. We filter these out with a
+        proportional-distance gate: ``distance / min(target_len, closest_len)``
+        must be ≤ 0.50. This keeps genuine near-miss detection (same label
+        length, small relative error) while rejecting accidental short-label
+        collisions (e.g. "amazon" vs "amlo" = 3/4 = 0.75, rejected).
         """
         distance, closest = self.closest(host)
         is_exact = self.is_whitelisted(host)
         if is_exact:
             distance = 0
-        # A non-trusted host is a typosquat when its brand label either
-        # exactly matches a trusted brand on the wrong TLD (distance 0), or
-        # is a near-miss of one. Distance-based matches require a label of
-        # >= 4 characters -- short labels (e.g. "scb") collide by chance.
         label_len = len(brand_label(host))
-        is_typo = (not is_exact) and (
+        closest_label_len = len(brand_label(closest)) if closest else 0
+
+        # Proportional similarity gate: skip when the absolute edit distance
+        # is large relative to the shorter of the two compared labels.
+        proportional_ok = (
+            distance == 0  # TLD swap: always a genuine typosquat signal
+            or (
+                closest_label_len > 0
+                and distance / min(label_len, closest_label_len) <= 0.50
+            )
+        )
+
+        is_typo = (not is_exact) and proportional_ok and (
             distance == 0
             or (1 <= distance <= TYPOSQUAT_MAX_DISTANCE and label_len >= 4)
         )
