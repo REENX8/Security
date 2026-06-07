@@ -14,6 +14,8 @@ or mirror it explicitly.
 
 ## [Unreleased]
 
+## [1.6.0] — visual fingerprinting + IP/ASN reputation + ML-ops gates (2026-06-07)
+
 ### Added
 
 - **B6 — Visual fingerprinting** (`app/visual/`): gray-zone URLs can be
@@ -305,6 +307,7 @@ The pre-1.0 commit history captures the path to this release:
 - Chrome Web Store submission pack (zip builder, privacy policy,
   permission justification).
 
+[1.6.0]: https://github.com/reenx8/security/releases/tag/v1.6.0
 [1.5.0]: https://github.com/reenx8/security/releases/tag/v1.5.0
 [1.4.0]: https://github.com/reenx8/security/releases/tag/v1.4.0
 [1.3.0]: https://github.com/reenx8/security/releases/tag/v1.3.0

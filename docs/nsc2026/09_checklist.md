@@ -36,8 +36,8 @@
 | เกณฑ์ | น้ำหนัก | กลยุทธ์ที่ใช้ |
 |------|---------|----------------|
 | ความสมบูรณ์ | 20 | ใช้ template `01_proposal.md` ครบทุกหัวข้อ + ใส่ภาพประกอบ + ตาราง |
-| ความยากง่าย | 20 | เน้น ML ensemble + IDN/Homoglyph + Schema v1.5 + Rules Engine |
-| ความคิดสร้างสรรค์ | 20 | Citizen Portal + Public Feed + Brand Watchlist (LINE) + Campaign clustering + External Feed + LINE Bot + URL Unshortening + Content Fallback + Feedback Retrain |
+| ความยากง่าย | 20 | เน้น ML ensemble + IDN/Homoglyph + Schema v1.6 + Rules Engine |
+| ความคิดสร้างสรรค์ | 20 | Citizen Portal + Public Feed + Brand Watchlist (LINE) + Campaign clustering + External Feed + LINE Bot + URL Unshortening + Content Fallback + Feedback Retrain + Visual Fingerprinting (B6) + IP/ASN Reputation (B8) |
 | ประโยชน์ใช้งาน | 25 | กลุ่มเป้าหมายชัด, /impact ที่ quantify ผล, ใช้กับผู้สูงอายุได้ |
 | ความน่าจะเสร็จ | 15 | ของจริง deploy ได้แล้ว (Docker, Render), 265 tests ผ่าน |
 

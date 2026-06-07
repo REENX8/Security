@@ -49,7 +49,7 @@ URL ปลอม         ความเสียหาย
                               │
                 ┌─────────────▼────────────────────────┐
                 │   ML Ensemble + Rules Engine         │
-                │   schema v1.5.0 · 42 features        │
+                │   schema v1.6.0 · 44 features        │
                 │   RF + XGB + Isotonic Calibration    │
                 └──────────────────────────────────────┘
 ```
@@ -78,15 +78,17 @@ URL ปลอม         ความเสียหาย
 
 ```
 ✦ ML Ensemble:    RandomForest + XGBoost + Isotonic Calibration
-                  on 42 deterministic features
+                  on 44 deterministic features
 
 ✦ IDN Defense:    decode Punycode → fold Unicode confusables
                   จับ chulа.com (Cyrillic) ได้เป็น distance 0
 
-✦ Schema v1.5.0:  เพิ่ม 5 features ล่าสุด (ไม่ต้องเรียก network เพิ่ม)
-                  cert_is_lets_encrypt · cert_validity_days
-                  cert_san_count · digit_to_letter_ratio
-                  host_has_brand_and_suspicious_tld
+✦ Schema v1.6.0:  44 features — v1.5 เพิ่ม 5 TLS features
+                  (cert_is_lets_encrypt · cert_validity_days ฯลฯ),
+                  v1.6 เพิ่ม 2 IP/ASN reputation features (B8)
+
+✦ Visual FP (B6): dHash หน้าโซนเทาเทียบ template หน่วยงานจริง
+                  ตรงหน้าตาบน host ปลอม → +score (off by default)
 
 ✦ Rules Engine:   declarative rules โปร่งใส
                   ทุก verdict แสดง rule_id ที่ทำงาน

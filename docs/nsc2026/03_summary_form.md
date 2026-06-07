@@ -25,8 +25,8 @@ training เฉพาะของไทย
 ### สิ่งที่ทำ
 
 แพลตฟอร์ม **end-to-end** ที่จับ URL ฟิชชิงเลียนแบบแบรนด์ไทย ประกอบด้วย
-**5 ส่วนหลัก:** (1) ML ensemble RF+XGB บน **42 features** v1.5.0
-รวม IDN/Homoglyph + Path-impersonation + Lexical patterns ใหม่ (2) FastAPI backend พร้อม
+**5 ส่วนหลัก:** (1) ML ensemble RF+XGB บน **44 features** v1.6.0
+รวม IDN/Homoglyph + Path-impersonation + Lexical patterns ใหม่ + IP/ASN reputation (2) FastAPI backend พร้อม
 **Rules Engine โปร่งใส** (3) **Brand Watchlist + Webhook** (LINE/Slack)
 (4) **Campaign Clustering** จับ kit เดียวกัน (5) **Public Threat Feed**
 STIX 2.1 (no auth) + **Citizen Report Portal** ไม่ต้อง login
@@ -39,10 +39,14 @@ STIX 2.1 (no auth) + **Citizen Report Portal** ไม่ต้อง login
 
 ### จุดเด่น (Creativity + Technique)
 
-* **Schema v1.5.0**: เพิ่ม 5 features ใหม่ล่าสุดที่ไม่ต้องเรียก network เพิ่ม —
+* **Schema v1.6.0 (44 features)**: v1.5 เพิ่ม 5 features ที่ไม่ต้องเรียก network เพิ่ม —
   `cert_is_lets_encrypt`, `cert_validity_days`, `cert_san_count` (อ่านจาก TLS
   handshake เดิม), `digit_to_letter_ratio`, `host_has_brand_and_suspicious_tld`
-  — ทำให้ URL ที่เคยหลุดถูกจับได้ Thai recall ขึ้นเป็น **100% (378/378)** บน holdout
+  — ทำให้ Thai recall ขึ้นเป็น **100% (378/378)** บน holdout; v1.6 เพิ่ม 2 features
+  กลุ่ม **IP/ASN reputation** (B8: `ip_reputation_score`, `asn_reputation_score`)
+* **Visual Fingerprinting (B6)**: URL โซนเทา (0.3–0.7) ถ่าย screenshot + perceptual dHash
+  เทียบ template หน้าเว็บราชการจริง ตรงหน้าตาบน host ปลอม → เพิ่ม score [+0.15, +0.35]
+  (SSRF-guarded, fail-open, off by default)
 * **IDN/Homoglyph defense**: decode Punycode + fold Unicode confusables
   จับ `chulа.com` (Cyrillic) และ `xn--rd-yia.com` ได้
 * **Rules Engine**: ทุก verdict แสดง `rule_id` ที่ทำงาน — โปร่งใส, ตรวจสอบได้,
