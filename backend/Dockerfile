@@ -31,7 +31,7 @@ EXPOSE 8000
 # Traffic gating against the readiness probe (/health/ready) is the load
 # balancer's job (see render.yaml).
 HEALTHCHECK --interval=15s --timeout=5s --start-period=20s --retries=5 \
-    CMD python -c "import urllib.request,sys; \
-sys.exit(0 if urllib.request.urlopen('http://localhost:8000/health/live').status==200 else 1)"
+    CMD python -c "import urllib.request,sys,os; \
+sys.exit(0 if urllib.request.urlopen('http://localhost:' + os.environ.get('PORT','8000') + '/health/live').status==200 else 1)"
 
-CMD ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8000"]
+CMD uvicorn app.main:app --host 0.0.0.0 --port ${PORT:-8000}
