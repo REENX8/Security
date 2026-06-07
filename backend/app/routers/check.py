@@ -38,13 +38,17 @@ router = APIRouter()
 _log = logging.getLogger("phish-detector")
 
 
-def _check_rate_limit(request: Request) -> str:
-    # Authenticated callers (API key present) get the higher global rate limit.
-    # Unauthenticated callers (browser extension, public) get the lower public
-    # limit to throttle abuse without penalising API consumers.
-    if request.headers.get("x-api-key"):
-        return settings.rate_limit
-    return settings.public_check_rate_limit
+def _check_rate_limit(key: str) -> str:
+    # slowapi calls this with key_func(request) as the argument, which is
+    # either the raw API key string or the client IP (see rate_limit._key).
+    # Authenticated callers (API key present) get the higher global rate limit;
+    # unauthenticated callers get the lower public limit to throttle abuse.
+    import ipaddress
+    try:
+        ipaddress.ip_address(key)
+        return settings.public_check_rate_limit  # key is an IP → public caller
+    except ValueError:
+        return settings.rate_limit  # key is an API key string → authenticated caller
 
 # Bound the number of URLs scored concurrently in a batch. Scoring runs in a
 # threadpool (sklearn inference + optional network), so a small ceiling keeps
