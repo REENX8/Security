@@ -8,7 +8,7 @@
 ## เรื่องการพัฒนา
 
 **Q: ทำเองทั้งหมดเลยไหม หรือใช้ AI ช่วย?**
-→ ผมออกแบบ architecture เอง: feature schema v1.5.0, rules engine, IDN
+→ ผมออกแบบ architecture เอง: feature schema v1.6.0, rules engine, IDN
 defense, campaign clustering, evaluation framework AI เป็นเครื่องมือช่วย
 type code บางส่วน แต่ทุก design decision (เลือก ensemble vs single,
 schema fields, rule thresholds, fingerprint formula) ตัดสินใจเอง

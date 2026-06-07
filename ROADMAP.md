@@ -1,17 +1,17 @@
 # 📋 ROADMAP / TODO List — Thai Anti-Phishing System
 
-> เอกสารนี้คือ todo list การพัฒนาแบบครบถ้วนของโปรเจกต์ (อ้างอิงสถานะ **v1.5.0**)
+> เอกสารนี้คือ todo list การพัฒนาแบบครบถ้วนของโปรเจกต์ (อ้างอิงสถานะ **v1.6.0**)
 > แบ่งเป็น 3 หมวดหลัก: **A. Production/Deployment**, **B. Roadmap ฟีเจอร์ใหม่**, **C. คุณภาพโค้ด/ระบบ/ML**
 > สัญลักษณ์ลำดับความสำคัญ: 🔴 สูง · 🟡 กลาง · 🟢 ต่อเนื่อง/ระยะยาว
 
 ## สถานะปัจจุบัน (สรุป)
 
-- Backend FastAPI (Python 3.11) — 13 routers, ML ensemble (RF + XGBoost, 42 features, schema v1.5.0)
-- `phish_features` package (shared train/serve) + Rules Engine 7 กฎ
+- Backend FastAPI (Python 3.11) — 15 routers, ML ensemble (RF + XGBoost, 44 features, schema v1.6.0)
+- `phish_features` package (shared train/serve) + Rules Engine 7 กฎ + visual fingerprinting (B6, gray-zone) + IP/ASN reputation (B8)
 - Browser extension (Manifest V3) + Dashboard React 18 (15 หน้า) + public threat feed (JSON/CSV/STIX)
-- เทสต์ 331 เคส (pytest) · CI 6 jobs (+lint/type) + coverage gate + ML gate (Thai recall ≥ 0.85)
+- เทสต์ 339 เคส (pytest) · CI jobs (+lint/type) + coverage gate + ML gate (Thai recall ≥ 0.85) + load-test gate (k6)
 - Deploy: Docker Compose / Render blueprint / Supabase Postgres
-- ผลปัจจุบัน: Thai holdout recall **100%** (378/378) · generic **91.1%** (90 URLs)
+- ผลปัจจุบัน: Thai holdout recall **100%** (378/378) · generic real holdout **98.9%** (90 URLs) · independent real holdout **90%** (100 URLs, zero host overlap)
 
 > หมายเหตุ: ในโค้ดจริง **ไม่มี** TODO/FIXME ค้างชำระ — งานในเอกสารนี้เป็นการ **ขยายฟีเจอร์ + เตรียม production +
 > ปิด known limitations** ที่ระบุไว้ใน README/เอกสาร ไม่ใช่การตามเก็บหนี้เทคนิค
@@ -110,4 +110,4 @@
 
 ---
 
-_อัปเดตล่าสุด: 2026-06-01 · อ้างอิง v1.5.0 — ✅ ครบทุกข้อ (28/28): P0/P1/P2 implement พร้อมเทสต์, P3 implement (A8, A9, B2, B3, B7, C5, C7, C8) + design docs (B5, B6, B8)_
+_อัปเดตล่าสุด: 2026-06-07 · อ้างอิง v1.6.0 — ✅ ครบทุกข้อ (28/28): P0/P1/P2 implement พร้อมเทสต์, P3 implement (A8, A9, B2, B3, B6, B7, B8, C5, C7, C8) + design doc (B5 — federated learning, implement หลัง MOU/privacy review)_

@@ -45,7 +45,7 @@ common commands:
 
 ```bash
 make install          # python deps + pre-commit hooks
-make test             # pytest (331 tests, ~15 s)
+make test             # pytest (339 tests, ~15 s)
 make lint             # ruff check + format check
 make format           # ruff format
 make run              # backend (sqlite mode), no docker required
