@@ -101,6 +101,45 @@ def test_closest_normalized_passthrough_for_ascii(wl):
     assert dom == "obec.go.th"
 
 
+@pytest.mark.parametrize("host", [
+    "amazon.com",     # "amazon" is 3 edits from "amlo" (amlo.go.th) — proportional 3/4 = 0.75 > 0.5
+    "twitter.com",    # "twitter" is 3 edits from "tistr" (tistr.or.th) — proportional 3/5 = 0.6 > 0.5
+    "yahoo.com",      # "yahoo" is 3 edits from "ago" (ago.go.th) — closest brand too short
+    "bing.com",       # "bing" is 3 edits from "ais" (ais.co.th) — closest brand too short
+    "reddit.com",     # "reddit" is 3 edits from "audit" (audit.go.th) — proportional 3/5 = 0.6
+    "apple.com",      # "apple" is 3 edits from "amlo" (amlo.go.th) — proportional 3/4 = 0.75
+    "twitch.tv",      # "twitch" is 3 edits from "ptwit" (ptwit.ac.th) — proportional 3/5 = 0.6
+    "zoom.us",        # "zoom" is 2 edits from "opm" (opm.go.th) — closest brand too short
+    "slack.com",      # "slack" is 2 edits from "slc" (slc.ac.th) — closest brand too short
+    "grab.com",       # "grab" is 2 edits from "dra" (dra.go.th) — closest brand too short
+    "ebay.com",       # "ebay" is 2 edits from "eau" (eau.ac.th) — closest brand too short
+])
+def test_proportional_distance_prevents_false_positive_typosquat(wl, host):
+    """Common international brands must NOT be flagged as Thai-gov typosquats.
+
+    With TYPOSQUAT_MAX_DISTANCE=3 and 500+ whitelist entries, many well-known
+    brands accidentally fall within absolute edit distance 3 of some short Thai-gov
+    label. The proportional-distance gate (dist/min_len ≤ 0.50) rejects these
+    accidental collisions.
+    """
+    feat = wl.whitelist_features(host)
+    assert feat["is_typosquat"] == 0, (
+        f"{host} incorrectly flagged as typosquat of {feat['closest_domain']} "
+        f"(dist={feat['min_edit_distance']})"
+    )
+
+
+def test_whitelist_genuine_typosquat_still_detected(wl):
+    """Legitimate Thai-gov typosquats must still be caught after the proportional fix."""
+    # "0bec.com" — brand "0bec" vs "obec" (dist=1, proportion=1/4=0.25 ≤ 0.5) → typosquat
+    feat = wl.whitelist_features("0bec.com")
+    assert feat["is_typosquat"] == 1
+
+    # "obec.xyz" — TLD swap (dist=0) → always typosquat
+    feat = wl.whitelist_features("obec.xyz")
+    assert feat["is_typosquat"] == 1
+
+
 def test_whitelist_from_entries_dedupes():
     wl = Whitelist.from_entries([
         WhitelistEntry("Obec.go.th", "OBEC", "go.th"),

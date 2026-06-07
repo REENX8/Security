@@ -25,6 +25,7 @@ body {
 }
 .brand { display: flex; align-items: center; gap: 10px; }
 .shield { width: 28px; height: 28px; border-radius: 7px; object-fit: cover; display: block; }
+.brand-logo { width: 38px; height: 38px; border-radius: 8px; object-fit: contain; display: block; }
 .brand-title { font-size: 14px; font-weight: 700; }
 .brand-sub { font-size: 11px; color: var(--muted); }
 

@@ -52,12 +52,38 @@ def test_idn_homograph_requires_both_features():
     ) is None
 
 
-def test_typosquat_cred_fires_with_brand_in_message():
+def test_typosquat_cred_hard_pins_with_cheap_tld():
+    # Typosquat + login keyword + suspicious TLD → hard pin phishing.
     hit = rule_typosquat_with_login(
-        "u", _feat(is_typosquat=1, has_login_keyword=1, closest_domain="obec.go.th")
+        "u", _feat(is_typosquat=1, has_login_keyword=1,
+                   has_suspicious_tld=1, closest_domain="obec.go.th")
     )
     assert hit and hit.rule_id == "TYPOSQUAT_CRED"
+    assert hit.pin_label == "phishing"
     assert "obec.go.th" in hit.message
+
+
+def test_typosquat_cred_hard_pins_without_https():
+    # Typosquat + login keyword + plain HTTP → hard pin phishing.
+    hit = rule_typosquat_with_login(
+        "u", _feat(is_typosquat=1, has_login_keyword=1,
+                   has_https=0, closest_domain="obec.go.th")
+    )
+    assert hit and hit.rule_id == "TYPOSQUAT_CRED"
+    assert hit.pin_label == "phishing"
+
+
+def test_typosquat_cred_soft_raises_on_https_safe_tld():
+    # Typosquat + login keyword on HTTPS .com/.me → raise score but no hard pin.
+    # Avoids false-positive phishing verdict for legitimate services whose brand
+    # name happens to be within edit distance of a Thai-gov domain (e.g. line.me).
+    hit = rule_typosquat_with_login(
+        "u", _feat(is_typosquat=1, has_login_keyword=1,
+                   has_https=1, has_suspicious_tld=0, closest_domain="life.ac.th")
+    )
+    assert hit and hit.rule_id == "TYPOSQUAT_CRED"
+    assert hit.pin_label is None
+    assert hit.delta > 0
 
 
 def test_path_brand_bait_requires_cheap_tld():

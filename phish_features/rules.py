@@ -81,9 +81,24 @@ def rule_punycode_brand_match(url: str, feat: dict) -> RuleHit | None:
 
 
 def rule_typosquat_with_login(url: str, feat: dict) -> RuleHit | None:
-    """Typosquat + login keyword -- a credential phishing setup."""
-    if feat.get("is_typosquat") and feat.get("has_login_keyword"):
-        closest = feat.get("closest_domain") or "เว็บทางการ"
+    """Typosquat + login keyword -- a credential phishing setup.
+
+    Hard-pins to phishing only when at least one additional phishing signal is
+    present (cheap/abused TLD, plain HTTP, or raw-IP host). Without these, a
+    legitimate HTTPS service whose brand name coincidentally resembles a Thai-gov
+    domain (e.g. line.me ≈ life.ac.th) would be incorrectly force-classified as
+    phishing. In that case we still raise the score but leave the final verdict
+    to the ML model, which can weigh domain age and cert quality.
+    """
+    if not (feat.get("is_typosquat") and feat.get("has_login_keyword")):
+        return None
+    closest = feat.get("closest_domain") or "เว็บทางการ"
+    has_extra_signal = (
+        feat.get("has_suspicious_tld")
+        or not feat.get("has_https")
+        or feat.get("has_ip")
+    )
+    if has_extra_signal:
         return RuleHit(
             "TYPOSQUAT_CRED",
             delta=0.40,
@@ -93,7 +108,16 @@ def rule_typosquat_with_login(url: str, feat: dict) -> RuleHit | None:
                 "รูปแบบของการเก็บรหัสผ่านปลอม"
             ),
         )
-    return None
+    # Suspicious but not conclusive: raise score without forcing a verdict.
+    return RuleHit(
+        "TYPOSQUAT_CRED",
+        delta=0.20,
+        pin_label=None,
+        message=(
+            f"โดเมนคล้ายกับ {closest} และ URL มีคำที่เกี่ยวกับ login — "
+            "ตรวจสอบให้แน่ใจว่าเป็นเว็บจริงก่อนกรอกข้อมูล"
+        ),
+    )
 
 
 def rule_path_brand_impersonation(url: str, feat: dict) -> RuleHit | None:

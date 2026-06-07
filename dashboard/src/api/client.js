@@ -11,14 +11,22 @@ const BASE_URL = normalizeBase(import.meta.env.VITE_API_URL);
 const API_KEY = import.meta.env.VITE_API_KEY || "dev-local-key-change-me";
 
 async function request(path, options = {}) {
-  const resp = await fetch(`${BASE_URL}${path}`, {
-    ...options,
-    headers: {
-      "Content-Type": "application/json",
-      "X-API-Key": API_KEY,
-      ...(options.headers || {}),
-    },
-  });
+  let resp;
+  try {
+    resp = await fetch(`${BASE_URL}${path}`, {
+      ...options,
+      headers: {
+        "Content-Type": "application/json",
+        "X-API-Key": API_KEY,
+        ...(options.headers || {}),
+      },
+    });
+  } catch (_networkErr) {
+    throw new Error(
+      `ไม่สามารถเชื่อมต่อ ${BASE_URL} ได้ — ` +
+      `ตรวจสอบว่า backend กำลังทำงานอยู่ และตั้งค่า VITE_API_URL ให้ถูกต้อง`
+    );
+  }
 
   if (!resp.ok) {
     let message = `HTTP ${resp.status}`;
