@@ -37,6 +37,15 @@ router = APIRouter()
 
 _log = logging.getLogger("phish-detector")
 
+
+def _check_rate_limit(request: Request) -> str:
+    # Authenticated callers (API key present) get the higher global rate limit.
+    # Unauthenticated callers (browser extension, public) get the lower public
+    # limit to throttle abuse without penalising API consumers.
+    if request.headers.get("x-api-key"):
+        return settings.rate_limit
+    return settings.public_check_rate_limit
+
 # Bound the number of URLs scored concurrently in a batch. Scoring runs in a
 # threadpool (sklearn inference + optional network), so a small ceiling keeps
 # latency low without exhausting the default threadpool.
@@ -208,7 +217,7 @@ async def _score_and_persist(
     response_model=CheckResponse,
     summary="Analyse a URL and return a phishing verdict",
 )
-@limiter.limit(settings.public_check_rate_limit)
+@limiter.limit(_check_rate_limit)
 async def check_url(
     request: Request,
     payload: CheckRequest,
@@ -223,7 +232,7 @@ async def check_url(
     response_model=BatchCheckResponse,
     summary="Analyse a batch of URLs in one request",
 )
-@limiter.limit(settings.public_check_rate_limit)
+@limiter.limit(_check_rate_limit)
 async def check_batch(
     request: Request,
     payload: BatchCheckRequest,
