@@ -109,9 +109,13 @@ def test_digit_to_letter_ratio(extractor):
 
 
 def test_brand_on_suspicious_tld_interaction(extractor):
-    # Brand impersonated (path/typosquat) on a cheap/abused TLD fires the flag.
-    spoof = extractor.extract_dict("https://www.scb.co.th@phish.online/auth")
+    # Brand label (>= 4 chars) in path on a cheap/abused TLD fires the flag.
+    # "krungthai" in path + ".online" suspicious TLD triggers both path_brand_hit
+    # and has_suspicious_tld, so host_has_brand_and_suspicious_tld == 1.
+    spoof = extractor.extract_dict("https://phish.online/krungthai/login")
     assert spoof["host_has_brand_and_suspicious_tld"] == 1
+    assert spoof["path_brand_hit"] == 1
+    assert spoof["has_suspicious_tld"] == 1
     # Legit brand on its real Thai TLD does not.
     legit = extractor.extract_dict("https://obec.go.th/news")
     assert legit["host_has_brand_and_suspicious_tld"] == 0
