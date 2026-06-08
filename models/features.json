@@ -1,5 +1,5 @@
 {
-  "schema_version": "1.6.0",
+  "schema_version": "1.7.0",
   "ordered_features": [
     "url_length",
     "num_dots",
@@ -44,9 +44,11 @@
     "cert_san_count",
     "host_has_brand_and_suspicious_tld",
     "ip_reputation_score",
-    "asn_reputation_score"
+    "asn_reputation_score",
+    "has_encoded_ip",
+    "path_redirect_hit"
   ],
-  "n_features": 44,
+  "n_features": 46,
   "tld_type_map": {
     "go.th": 0,
     "ac.th": 1,
@@ -66,15 +68,17 @@
     "cert_validity_days": -1,
     "cert_san_count": -1,
     "ip_reputation_score": -1,
-    "asn_reputation_score": -1
+    "asn_reputation_score": -1,
+    "has_encoded_ip": 0,
+    "path_redirect_hit": 0
   },
   "whitelist_sha256": "0f1348f26de6b0f3",
-  "trained_at": "2026-06-06T12:32:41.634879Z",
+  "trained_at": "2026-06-08T14:25:42.868459Z",
   "sklearn_version": "1.5.2",
   "xgboost_version": "2.1.3",
   "metrics": {
     "train_accuracy": 1.0,
-    "test_accuracy": 0.9971,
-    "test_f1": 0.9971
+    "test_accuracy": 0.9967,
+    "test_f1": 0.9967
   }
 }

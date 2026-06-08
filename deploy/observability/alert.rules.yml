@@ -71,3 +71,29 @@ groups:
         annotations:
           summary: "Phishing score distribution drift"
           description: "Top-bucket (>=0.9) score share over 1h is >2x its 1d baseline — possible model/data drift."
+
+      - alert: PhishFeedPollingFailed
+        expr: increase(phish_feed_poll_errors_total[30m]) > 2
+        for: 5m
+        labels: { severity: warning }
+        annotations:
+          summary: "Feed polling failing repeatedly ({{ $labels.source }})"
+          description: "More than 2 feed poll errors from {{ $labels.source }} in the last 30m."
+          runbook: "docs/RUNBOOK.md#45-feed-polling-failure"
+
+      - alert: PhishModelRolledBack
+        expr: increase(phish_model_rollback_total[1h]) > 0
+        labels: { severity: critical }
+        annotations:
+          summary: "Model auto-rolled back after promotion"
+          description: "The model was automatically restored from a previous version after Thai recall dropped below threshold."
+          runbook: "docs/RUNBOOK.md#47-auto-rollback-triggered"
+
+      - alert: PhishAdversarialRateLow
+        expr: phish_adversarial_detection_rate < 0.60
+        for: 1m
+        labels: { severity: high }
+        annotations:
+          summary: "Adversarial detection rate below SLA ({{ $value | humanizePercentage }})"
+          description: "Model detects < 60% of adversarial evasion URLs. SLA target is >= 70%."
+          runbook: "docs/RUNBOOK.md#42-false-negative-incident"

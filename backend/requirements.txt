@@ -27,3 +27,4 @@ passlib==1.7.4
 # "password cannot be longer than 72 bytes" / AttributeError. Pin to the
 # last 4.0.x that passlib 1.7.4 supports.
 bcrypt==4.0.1
+email-validator>=2.0

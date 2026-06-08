@@ -12,6 +12,41 @@ or mirror it explicitly.
 
 ---
 
+## [1.7.0] — 2026-06-08
+
+### Added
+- **Real phishing feed → training pipeline** (`ml_pipeline/feed_training_export.py`): exports verified feed URLs from the DB to `data/live_feed_phishing.csv` (80% train / 20% holdout split, strictly by timestamp to prevent leakage)
+- **User accounts** with JWT authentication: `POST /api/v1/auth/register`, unified `POST /api/v1/auth/login` (admin + user), `GET /api/v1/auth/me`; `User` model with role, active flag, check_count
+- **Adversarial URL test suite** (`data/adversarial_urls.csv`): 100 hand-crafted evasion URLs across 10 techniques; CI gate via `tests/test_adversarial.py` (70% detection rate required)
+- **Adversarial evaluation script** (`ml_pipeline/adversarial_eval.py`): standalone eval with per-category breakdown and `reports/adversarial_eval.json` output
+- **SLA definition** (`docs/SLA.md`): availability, latency, detection quality targets, incident response times, data retention policy
+- **Operational runbook** (`docs/RUNBOOK.md`): step-by-step procedures for FP incidents, FN incidents, model not ready, rollback, feed failure, DB capacity, auto-rollback events
+- **Auto-rollback after promotion**: after a successful retrain, evaluates Thai holdout recall and restores the previous model if recall < `recall_rollback_threshold` (default 0.82)
+- **Feed accumulation retrain trigger** (`check_feed_accumulation`): triggers retrain when ≥ 50 new feed phishing URLs accumulate since last retrain
+- **Reload-model admin endpoint** (`POST /api/v1/admin/reload-model`): hot-swaps model, whitelist, and flushes cache without restart
+- **User management admin endpoints**: `GET /admin/users`, `PATCH /admin/users/{id}/role`, `DELETE /admin/users/{id}`
+- **New Prometheus metrics**: `phish_model_rollback_total`, `phish_user_registrations_total`, `phish_adversarial_detection_rate`
+- **New alert rules**: `PhishFeedPollingFailed`, `PhishModelRolledBack`, `PhishAdversarialRateLow`
+- New lexical features: `has_encoded_ip` (hex/octal IP notation), `path_redirect_hit` (open-redirect pattern)
+- New rules: `SUBDOMAIN_CAMOUFLAGE` (+0.35, pin=phishing), `REDIRECT_CONFUSION` (+0.20)
+- Alembic migration `0003_user_accounts` (users table + user_id FK on url_checks)
+- `email-validator` dependency added
+
+### Changed
+- **Feature schema**: v1.6.0 → v1.7.0 (2 new features: 44 → 46)
+- `collect_dataset.py`: consumes `data/live_feed_phishing.csv` when available
+- `evaluate.py`: reports live-feed holdout recall (`data/live_feed_holdout.csv`) with 80% gate
+- `config.py` (ml_pipeline): new constants `LIVE_FEED_CSV`, `LIVE_FEED_HOLDOUT_CSV`, `FEED_RETRAIN_THRESHOLD`, `FEED_EXPORT_MIN_AGE_HOURS`, `LIVE_FEED_RECALL_MIN_THRESHOLD`
+- `config.py` (backend): new fields `recall_rollback_threshold`, `feed_retrain_threshold`
+- `phish_features/homoglyph.py`: 11 additional confusable mappings (Devanagari, Cyrillic, IPA)
+- Auth router: supports both admin credentials and user email+password login
+- Model retrained against schema v1.7.0
+
+### Security
+- Rate limit on registration endpoint (3/minute per IP)
+- SSRF guard applied to all webhook URLs (existing, enforced in notifier)
+- JWT claims now include `user_id` and `role` for user accounts
+
 ## [Unreleased]
 
 ## [1.6.1] — ML quality, security hardening (2026-06-08)

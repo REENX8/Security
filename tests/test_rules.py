@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+from phish_features.lexical import _has_encoded_ip, _has_redirect_in_path
 from phish_features.rules import (
     RulesEngine,
     rule_at_trick,
@@ -9,6 +10,8 @@ from phish_features.rules import (
     rule_ip_with_login,
     rule_path_brand_impersonation,
     rule_punycode_brand_match,
+    rule_redirect_confusion,
+    rule_subdomain_camouflage,
     rule_typosquat_with_login,
     rule_whitelisted_exact,
 )
@@ -147,3 +150,69 @@ def test_engine_phishing_pin_overrules_safe_pin():
     )
     result = engine.evaluate("u", feat)
     assert result.pinned_label == "phishing"
+
+
+# --- v1.7 new features ---
+
+def test_hex_ip_detected():
+    assert _has_encoded_ip("0x5f0a0b01") == 1
+    assert _has_encoded_ip("0xdeadbeef") == 1
+    assert _has_encoded_ip("0x4014d2ab") == 1
+    assert _has_encoded_ip("0x7f000001") == 1
+
+
+def test_octal_ip_detected():
+    assert _has_encoded_ip("0337.012.013.001") == 1
+    assert _has_encoded_ip("0177.0000.0000.0001") == 1
+    assert _has_encoded_ip("010.020.030.040") == 1
+
+
+def test_normal_host_not_flagged_as_encoded_ip():
+    assert _has_encoded_ip("krungthai.com") == 0
+    assert _has_encoded_ip("8.8.8.8") == 0
+    assert _has_encoded_ip("192.168.1.1") == 0
+    assert _has_encoded_ip("") == 0
+
+
+def test_redirect_in_path_detected():
+    assert _has_redirect_in_path("http://evil.xyz/redirect?url=https://krungthai.com/login") == 1
+    assert _has_redirect_in_path("http://safe.com/safe/https://evil.com/phish") == 1
+    assert _has_redirect_in_path("http://track.com/go?next=https://bank.com") == 1
+    assert _has_redirect_in_path("http://cdn.com/?goto=https://obec.go.th") == 1
+
+
+def test_redirect_in_path_not_false_positive():
+    assert _has_redirect_in_path("https://krungthai.com/login") == 0
+    assert _has_redirect_in_path("http://evil.xyz/page?user=foo&pass=bar") == 0
+
+
+def test_subdomain_camouflage_rule_fires():
+    feat = _feat(num_subdomains=3, path_brand_hit=1, is_typosquat=0)
+    hit = rule_subdomain_camouflage("http://krungthai.com.evil.xyz/login", feat)
+    assert hit is not None
+    assert hit.rule_id == "SUBDOMAIN_CAMOUFLAGE"
+    assert hit.pin_label == "phishing"
+
+
+def test_subdomain_camouflage_does_not_fire_without_brand_in_path():
+    feat = _feat(num_subdomains=3, path_brand_hit=0, is_typosquat=0)
+    assert rule_subdomain_camouflage("u", feat) is None
+
+
+def test_subdomain_camouflage_does_not_fire_for_typosquat():
+    # When is_typosquat=1 the TYPOSQUAT_CRED rule handles it; no double-fire.
+    feat = _feat(num_subdomains=3, path_brand_hit=1, is_typosquat=1)
+    assert rule_subdomain_camouflage("u", feat) is None
+
+
+def test_redirect_confusion_rule_fires():
+    feat = _feat(path_redirect_hit=1, has_login_keyword=1)
+    hit = rule_redirect_confusion("http://evil.xyz/go?redirect=http://bank.com/login", feat)
+    assert hit is not None
+    assert hit.rule_id == "REDIRECT_CONFUSION"
+    assert hit.pin_label is None  # raise score but don't force label
+
+
+def test_redirect_confusion_does_not_fire_without_login_keyword():
+    feat = _feat(path_redirect_hit=1, has_login_keyword=0)
+    assert rule_redirect_confusion("u", feat) is None

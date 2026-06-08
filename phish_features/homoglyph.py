@@ -66,6 +66,19 @@ CONFUSABLE_FOLD: dict[str, str] = {
     # Digits often substituted for letters
     "๑": "1",  # THAI DIGIT ONE (rare but seen in shortened links)
     "๐": "0",  # THAI DIGIT ZERO
+    # Additional Cyrillic look-alikes (v1.7)
+    "ь": "b",  # CYRILLIC SMALL LETTER SOFT SIGN
+    "ъ": "b",  # CYRILLIC SMALL LETTER HARD SIGN
+    "й": "u",  # CYRILLIC SMALL LETTER SHORT I
+    # Devanagari letters used in brand-name spoofs
+    "क": "k",  # DEVANAGARI LETTER KA
+    "ट": "t",  # DEVANAGARI LETTER TTA
+    "ड": "d",  # DEVANAGARI LETTER DDA
+    "र": "r",  # DEVANAGARI LETTER RA
+    # IPA extensions that look like common Latin letters
+    "ɑ": "a",  # LATIN SMALL LETTER ALPHA
+    "ɡ": "g",  # LATIN SMALL LETTER SCRIPT G
+    "ɪ": "i",  # LATIN LETTER SMALL CAPITAL I
 }
 
 

@@ -10,13 +10,13 @@
     0.9397,
     0.998
   ],
-  "mean_score": 0.9821,
+  "mean_score": 0.9687,
   "median_score": 1.0,
   "missed_count": 1,
   "missed_urls": [
     {
       "url": "https://robnhodlogen.gitbook.io/account",
-      "score": 0.0049,
+      "score": 0.0,
       "closest_domain": "citibank.co.th",
       "min_edit_distance": 4,
       "is_typosquat": 0,

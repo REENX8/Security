@@ -5,7 +5,7 @@
 [![Schema](https://img.shields.io/badge/feature%20schema-v1.6.0-informational)](phish_features/schema.py)
 [![Thai recall](https://img.shields.io/badge/Thai%20holdout%20recall-100%25%20(378%2F378)-success)](reports/evaluation_summary.json)
 [![Features](https://img.shields.io/badge/features-44-informational)](phish_features/schema.py)
-[![Tests](https://img.shields.io/badge/tests-<!--M:test_count-->480<!--/M-->%20passing-success)](tests/)
+[![Tests](https://img.shields.io/badge/tests-<!--M:test_count-->512<!--/M-->%20passing-success)](tests/)
 
 **ผู้พัฒนา:** [REENX8](https://github.com/REENX8) (asdawesdzd22@gmail.com)
 
@@ -74,7 +74,7 @@
 > ตัวเลขความแม่นยำในเอกสารนี้ถูกฉีดอัตโนมัติจาก `reports/evaluation_summary.json`
 > ด้วย `make sync-docs` (ดู [ความแม่นยำของโมเดล](#ความแม่นยำของโมเดล)) จึงไม่มีวันค้างอีก
 
-**Feature Schema v<!--M:schema_version-->1.6.0<!--/M--> — <!--M:n_features-->44<!--/M--> features** — สัญญา feature-matrix ล่าสุด:
+**Feature Schema v<!--M:schema_version-->1.7.0<!--/M--> — <!--M:n_features-->46<!--/M--> features** — สัญญา feature-matrix ล่าสุด:
 - **ใหม่ใน v1.6.0 — IP/ASN reputation (B8):** `ip_reputation_score`, `asn_reputation_score` — สัดส่วน verdict ที่เป็นอันตรายสะสมต่อ IP/ASN (0..1; -1 = ไม่มีประวัติ) ป้อนจาก reputation store ตอน serve ทำให้ช่วง hosting ที่มีประวัติเสียดัน URL ใหม่ขึ้นได้ตั้งแต่ครั้งแรก (เป็น class-neutral เมื่อไม่รู้ → Thai-recall gate ยังผ่าน; ปิดเป็นค่าเริ่มต้นด้วย `IP_REPUTATION_ENABLED`)
 - **v1.5.0 — 5 features ที่ไม่ต้องเรียก network เพิ่ม:** `cert_is_lets_encrypt`, `cert_validity_days`, `cert_san_count` (อ่านจาก TLS handshake เดิม — cert ฟรี DV อายุ 90 วันพบมากใน phishing), `digit_to_letter_ratio` (โฮสต์ที่สร้างด้วยอัลกอริทึมมักมีตัวเลขปนตัวอักษรเยอะ), `host_has_brand_and_suspicious_tld` (แบรนด์ที่เชื่อถือถูกปลอมบน TLD ราคาถูก/น่าสงสัย)
 - ฟีเจอร์ v1.5 ทำให้ URL ที่เคยหลุด (`thaid-app.net/auth/login`) ถูกจับได้ → Thai recall ขึ้นจาก 99.7% เป็น <!--M:thai_recall_pct-->100%<!--/M-->
@@ -126,7 +126,7 @@
 > ตัวเลขด้านล่างฉีดจาก `reports/evaluation_summary.json` ด้วย `make sync-docs`
 > (CI รัน `--check` กันค้าง) — รันใหม่ได้ด้วย `make evaluate`
 
-### 🎯 Primary — Thai-targeting phishing holdout (schema v<!--M:schema_version-->1.6.0<!--/M-->)
+### 🎯 Primary — Thai-targeting phishing holdout (schema v<!--M:schema_version-->1.7.0<!--/M-->)
 | เกณฑ์                              | repo v1.2.0 | **repo ปัจจุบัน** |
 |------------------------------------|-------------|-----------------|
 | Holdout size                       | 66 URLs     | **<!--M:thai_holdout_n-->378<!--/M--> URLs** |

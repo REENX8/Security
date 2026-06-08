@@ -99,6 +99,26 @@ THAI_RECALL_MIN_THRESHOLD = float(
 )
 
 
+# Live-feed phishing corpus written by feed_training_export.py.
+# 80% goes to training (LIVE_FEED_CSV), 20% to holdout (LIVE_FEED_HOLDOUT_CSV).
+LIVE_FEED_CSV = os.path.join(DATA_DIR, "live_feed_phishing.csv")
+LIVE_FEED_HOLDOUT_CSV = os.path.join(DATA_DIR, "live_feed_holdout.csv")
+LIVE_FEED_HOLDOUT_METRICS_JSON = os.path.join(REPORTS_DIR, "live_feed_holdout_metrics.json")
+
+# Minimum number of new phishing URLs from feeds that triggers an immediate
+# auto-retrain (in addition to the time-based feedback trigger).
+FEED_RETRAIN_THRESHOLD = int(os.environ.get("PHISH_FEED_RETRAIN_THRESHOLD", "50"))
+
+# Minimum age (hours) before a feed URL is eligible for export to training.
+# Avoids ephemeral URLs that disappear before the model ever sees them.
+FEED_EXPORT_MIN_AGE_HOURS = int(os.environ.get("PHISH_FEED_EXPORT_MIN_AGE_HOURS", "24"))
+
+# Minimum recall on the live-feed holdout before the model is promoted.
+LIVE_FEED_RECALL_MIN_THRESHOLD = float(
+    os.environ.get("LIVE_FEED_RECALL_MIN_THRESHOLD", "0.80")
+)
+
+
 def ensure_dirs() -> None:
     for path in (DATA_DIR, MODELS_DIR, REPORTS_DIR, RAW_DIR):
         os.makedirs(path, exist_ok=True)

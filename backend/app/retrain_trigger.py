@@ -22,7 +22,7 @@ from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.config import settings
-from app.models import Feedback
+from app.models import Feedback, UrlCheck
 
 logger = logging.getLogger("phish-detector")
 
@@ -37,8 +37,29 @@ async def _feedback_count(session: AsyncSession) -> int:
     ).scalar_one()
 
 
+async def _feed_phishing_count_since(session: AsyncSession, since: datetime) -> int:
+    """Count url_checks rows that came from a feed and were labeled phishing."""
+    try:
+        return (
+            await session.execute(
+                select(func.count())
+                .select_from(UrlCheck)
+                .where(UrlCheck.label == "phishing")
+                .where(UrlCheck.checked_at >= since)
+                .where(UrlCheck.features["feed_source"].as_string() != None)  # noqa: E711
+            )
+        ).scalar_one()
+    except Exception:  # noqa: BLE001
+        return 0
+
+
 async def _run_retrain_bg(app_state) -> None:
-    """Run the gated retrain off the event loop, then hot-swap on success."""
+    """Run the gated retrain off the event loop, then hot-swap on success.
+
+    After promotion, immediately evaluates the Thai holdout and auto-rolls
+    back if recall drops below settings.recall_rollback_threshold.
+    """
+
     from app.ml.loader import load_scorer
     from ml_pipeline.feedback_retrain import run as run_retrain
 
@@ -52,15 +73,74 @@ async def _run_retrain_bg(app_state) -> None:
             ),
         )
         if ok:
+            # Auto-rollback: evaluate Thai holdout recall before accepting.
+            rolled_back = False
             try:
-                app_state.scorer = load_scorer()
-                logger.info("scorer hot-reloaded after auto-retrain")
-            except Exception as exc:  # noqa: BLE001 - keep the old model
-                logger.error("scorer reload failed (%s) -- keeping previous model", exc)
+                recall = await asyncio.get_event_loop().run_in_executor(
+                    None, _check_thai_recall_sync
+                )
+                threshold = getattr(settings, "recall_rollback_threshold", 0.82)
+                if recall is not None and recall < threshold:
+                    await asyncio.get_event_loop().run_in_executor(
+                        None, _rollback_model_sync
+                    )
+                    rolled_back = True
+                    logger.warning(
+                        "AUTO-ROLLBACK: post-promote recall=%.3f < threshold=%.2f, "
+                        "restored previous model",
+                        recall, threshold,
+                    )
+                    try:
+                        from app.metrics import MODEL_ROLLBACK
+                        MODEL_ROLLBACK.inc()
+                    except Exception:  # noqa: BLE001
+                        pass
+            except Exception as exc:  # noqa: BLE001
+                logger.warning("recall check after promotion failed (%s) -- keeping promoted model", exc)
+
+            if not rolled_back:
+                try:
+                    app_state.scorer = load_scorer()
+                    logger.info("scorer hot-reloaded after auto-retrain")
+                except Exception as exc:  # noqa: BLE001
+                    logger.error("scorer reload failed (%s) -- keeping previous model", exc)
     except Exception as exc:  # noqa: BLE001
         logger.warning("auto-retrain failed: %s", exc)
     finally:
         app_state.retrain_in_progress = False
+
+
+def _check_thai_recall_sync() -> float | None:
+    """Synchronously evaluate Thai holdout recall on the newly promoted model."""
+    import sys
+    sys.path.insert(0, str(__import__("pathlib").Path(__file__).resolve().parents[2]))
+    try:
+        from ml_pipeline.config import THAI_HOLDOUT_CSV
+        from ml_pipeline.evaluate import evaluate_thai_holdout
+        from ml_pipeline.train import load_model_and_scaler
+        if not __import__("os").path.exists(THAI_HOLDOUT_CSV):
+            return None
+        model, scaler = load_model_and_scaler()
+        metrics = evaluate_thai_holdout(model, scaler)
+        return metrics.get("recall_phishing_threshold")
+    except Exception:  # noqa: BLE001
+        return None
+
+
+def _rollback_model_sync() -> None:
+    """Restore the previous model from models/previous/."""
+    import shutil
+    from pathlib import Path
+
+    from ml_pipeline.config import MODELS_DIR
+    prev = Path(MODELS_DIR) / "previous"
+    if not prev.exists():
+        return
+    for fname in ("ensemble.pkl", "scaler.pkl", "features.json"):
+        src = prev / fname
+        dst = Path(MODELS_DIR) / fname
+        if src.exists():
+            shutil.copy2(src, dst)
 
 
 async def _update_fn_fp_gauges(session: AsyncSession) -> None:
@@ -92,6 +172,40 @@ async def _update_fn_fp_gauges(session: AsyncSession) -> None:
         )
     except Exception as exc:  # noqa: BLE001
         logger.warning("FN/FP gauge update failed: %s", exc)
+
+
+async def check_feed_accumulation(app_state, session: AsyncSession) -> bool:
+    """Trigger a retrain when enough new feed phishing URLs have accumulated.
+
+    Separate from the feedback-volume trigger: counts url_checks rows from
+    feeds since the last retrain and fires when >= settings.feed_retrain_threshold.
+    """
+    if not settings.feedback_retrain_enabled:
+        return False
+
+    async with _retrain_lock:
+        if getattr(app_state, "retrain_in_progress", False):
+            return False
+
+        threshold = getattr(settings, "feed_retrain_threshold", 50)
+        last_retrain = getattr(app_state, "last_retrain_at", None)
+        since = last_retrain if last_retrain else (
+            datetime.now(timezone.utc) - timedelta(days=30)
+        )
+        count = await _feed_phishing_count_since(session, since)
+        if count < threshold:
+            return False
+
+        app_state.retrain_in_progress = True
+        app_state.last_retrain_at = datetime.now(timezone.utc)
+
+    logger.info(
+        "[retrain] feed accumulation trigger: %d new feed URLs since last retrain "
+        "(threshold %d)",
+        count, threshold,
+    )
+    asyncio.create_task(_run_retrain_bg(app_state))
+    return True
 
 
 async def maybe_trigger_retrain(app_state, session: AsyncSession) -> bool:

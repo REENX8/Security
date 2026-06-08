@@ -202,6 +202,12 @@ class Settings(BaseSettings):
     # model. Keep True in production -- it is the floor that prevents a bad
     # feedback batch from degrading the live model.
     feedback_promote_requires_gate: bool = Field(default=True)
+    # Auto-rollback threshold: if Thai holdout recall drops below this after
+    # a model promotion, the previous model is automatically restored.
+    recall_rollback_threshold: float = Field(default=0.82)
+    # Feed accumulation trigger: retrain when this many new feed phishing URLs
+    # arrive since the last retrain.
+    feed_retrain_threshold: int = Field(default=50)
 
     @property
     def model_path(self) -> str:

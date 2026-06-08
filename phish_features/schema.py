@@ -41,7 +41,11 @@ from __future__ import annotations
 #             serve time (from the reputation store) and simulated in training,
 #             exactly like the WHOIS/TLS features -- so a hosting range with a
 #             bad track record raises a brand-new URL even on first sighting.
-FEATURE_SCHEMA_VERSION = "1.6.0"
+#   v1.7.0 -- 2 new adversarial-evasion features:
+#             has_encoded_ip (hex 0x.../octal 0NNN. notation — bypasses naive
+#             dotted-decimal IP regex) and path_redirect_hit (open-redirect
+#             pattern in path/query). Both are deterministic, no network lookups.
+FEATURE_SCHEMA_VERSION = "1.7.0"
 
 # The exact, ordered list of numeric features fed to the model.
 # Index position IS the contract -- never reorder, only append + bump version.
@@ -105,6 +109,9 @@ ORDERED_FEATURES: list[str] = [
     # --- v1.6 IP/ASN reputation (supplied as overrides; -1 = unknown) ---
     "ip_reputation_score",            # bad-verdict share on the host's IP (0..1; -1 unknown)
     "asn_reputation_score",           # bad-verdict share on the host's ASN (0..1; -1 unknown)
+    # --- v1.7 adversarial-evasion features (deterministic, no network) ---
+    "has_encoded_ip",      # 1 if host uses hex (0x12345678) or octal (0177.012...) IP notation
+    "path_redirect_hit",   # 1 if URL path/query contains an open-redirect pattern
 ]
 
 N_FEATURES = len(ORDERED_FEATURES)
@@ -139,6 +146,9 @@ IMPUTED_DEFAULTS: dict[str, float] = {
     # state, so the model must learn it as neutral (it appears in both classes).
     "ip_reputation_score": -1,
     "asn_reputation_score": -1,
+    # v1.7 adversarial-evasion: 0 = not present (dominant state).
+    "has_encoded_ip": 0,
+    "path_redirect_hit": 0,
 }
 
 # Known Thai domain registrars (lower-cased substrings matched against the
