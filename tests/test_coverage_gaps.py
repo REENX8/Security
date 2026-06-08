@@ -8,8 +8,14 @@ from __future__ import annotations
 import datetime as _dt
 from unittest.mock import MagicMock, patch
 
-import pytest
-
+from phish_features.domain import (
+    _coerce_date,
+    _raw_whois,
+    whois_features,
+)
+from phish_features.domain import (
+    _imputed as domain_imputed,
+)
 from phish_features.homoglyph import (
     CONFUSABLE_FOLD,
     _script_of,
@@ -17,23 +23,14 @@ from phish_features.homoglyph import (
     fold_confusables,
     has_mixed_script,
     has_punycode,
-    normalize_for_lookup,
 )
 from phish_features.tls import (
     _cert_san_count,
     _cert_validity_days,
-    _imputed as tls_imputed,
     _issuer_is_free_ca,
     _raw_tls,
     tls_features,
 )
-from phish_features.domain import (
-    _coerce_date,
-    _imputed as domain_imputed,
-    _raw_whois,
-    whois_features,
-)
-
 
 # ============================================================
 # homoglyph.py — script detection branches

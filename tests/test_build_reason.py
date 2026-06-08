@@ -10,8 +10,6 @@ import urllib.error
 from pathlib import Path
 from unittest.mock import MagicMock, patch
 
-import pytest
-
 _BACKEND = str(Path(__file__).resolve().parents[1] / "backend")
 if _BACKEND not in sys.path:
     sys.path.insert(0, _BACKEND)
@@ -23,7 +21,6 @@ os.environ.setdefault("API_KEY", "test-key")
 
 from app.ml.scorer import _build_reason  # noqa: E402
 from app.notifier import _post_sync  # noqa: E402
-
 
 # ============================================================
 # _build_reason — covers lines 32-34, 42-49, 60-67, 72, 74, 79, 81
@@ -208,7 +205,7 @@ class TestPostSync:
         captured_headers = {}
 
         def capture_urlopen(req, timeout=None):
-            captured_headers.update({k: v for k, v in req.headers.items()})
+            captured_headers.update(dict(req.headers.items()))
             mock_resp = MagicMock()
             mock_resp.__enter__ = lambda s: s
             mock_resp.__exit__ = MagicMock(return_value=False)
