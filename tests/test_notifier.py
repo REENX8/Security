@@ -67,6 +67,19 @@ def test_no_alert_when_not_phishing():
     asyncio.run(_run())
 
 
+def test_no_alert_when_no_closest_domain():
+    async def _run():
+        engine, maker = await _make_session()
+        async with maker() as session:
+            out = await maybe_alert(
+                session, url="http://x", label="phishing", score=0.95,
+                closest_domain=None, reason="",
+            )
+            assert out == []
+        await engine.dispose()
+    asyncio.run(_run())
+
+
 def test_no_alert_when_brand_not_watched():
     async def _run():
         engine, maker = await _make_session()

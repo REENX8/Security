@@ -87,3 +87,19 @@ class TestScorer:
         assert any(s in reason for s in (
             "หลายภาษา", "Cyrillic", "Punycode", "ปลอม", "คล้ายกับ",
         )), f"reason did not explain lookalike attack: {reason!r}"
+
+
+def test_metrics_exception_does_not_break_scoring():
+    """Verify that a failing RULE_FIRED counter never propagates to the caller."""
+    from unittest.mock import MagicMock, patch
+    from app.ml.loader import load_scorer
+
+    scorer = load_scorer()
+    # Patch RULE_FIRED so its .labels() call raises an exception.
+    bad_counter = MagicMock()
+    bad_counter.labels.side_effect = RuntimeError("metrics exploded")
+    with patch("app.metrics.RULE_FIRED", bad_counter):
+        result = scorer.score("http://obec.com/phishing")
+    # Scoring must succeed even when metrics blow up.
+    assert "label" in result
+    assert result["score"] >= 0.0

@@ -73,6 +73,10 @@ class TestScriptOf:
     def test_katakana_is_cjk(self):
         assert _script_of("ア") == "CJK"  # KATAKANA
 
+    def test_devanagari_returns_other(self):
+        # Devanagari (क) is not in any of the named script buckets → "Other"
+        assert _script_of("क") == "Other"
+
 
 class TestDecodeIdn:
     def test_passthrough_no_punycode(self):
@@ -86,6 +90,12 @@ class TestDecodeIdn:
         result = decode_idn("xn--invalid---999zzz.com")
         # Must not raise; must contain the original label or something valid.
         assert "." in result
+
+    def test_empty_ace_prefix_label_kept(self):
+        # "xn--" with no encoded body raises UnicodeError → exception handler
+        # preserves the original label (exercises except branch in decode_idn).
+        result = decode_idn("xn--.example.com")
+        assert "xn--" in result  # original label preserved
 
     def test_valid_punycode_decoded(self):
         assert decode_idn("xn--mnchen-3ya.de") == "münchen.de"
@@ -122,6 +132,17 @@ class TestHasMixedScript:
         result = has_mixed_script("xn--qxam.com")
         # Either way must not raise; single-script labels are not flagged.
         assert isinstance(result, bool)
+
+
+class TestHasPunycode:
+    def test_empty_host_returns_false(self):
+        assert has_punycode("") is False
+
+    def test_plain_ascii_returns_false(self):
+        assert has_punycode("obec.go.th") is False
+
+    def test_punycode_label_returns_true(self):
+        assert has_punycode("xn--mnchen-3ya.de") is True
 
 
 class TestFoldConfusables:
@@ -207,8 +228,13 @@ class TestCertSanCount:
 
     def test_non_sequence_san_returns_imputed(self):
         from phish_features.schema import IMPUTED_DEFAULTS
-        # If san is not iterable as a sequence (edge case).
+        # None is falsy → caught by `if not san:` before len().
         assert _cert_san_count({"subjectAltName": None}) == int(IMPUTED_DEFAULTS["cert_san_count"])
+
+    def test_integer_san_raises_typeerror_returns_imputed(self):
+        from phish_features.schema import IMPUTED_DEFAULTS
+        # 42 is truthy (passes `if not san:`) but len(42) raises TypeError.
+        assert _cert_san_count({"subjectAltName": 42}) == int(IMPUTED_DEFAULTS["cert_san_count"])
 
 
 class TestRawTls:

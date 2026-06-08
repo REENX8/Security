@@ -255,3 +255,83 @@ def test_asn_provider_exception_is_swallowed():
     assert rep is not None
     assert rep["asn"] is None
     assert rep["as_name"] == ""
+
+
+def test_resolve_public_ip_via_getaddrinfo():
+    import socket
+    from unittest.mock import patch
+    from app.ip_reputation import _resolve_public_ip
+    # Mock host_is_safe=True so the host passes the guard, then make inet_aton
+    # fail (it's a hostname, not a literal), and getaddrinfo returns a public IP.
+    with patch("app.ip_reputation.host_is_safe", return_value=True), \
+         patch("socket.inet_aton", side_effect=OSError("not a literal")), \
+         patch("socket.getaddrinfo",
+               return_value=[(None, None, None, None, ("8.8.8.8", 0))]):
+        result = _resolve_public_ip("dns-hostname.example")
+    assert result == "8.8.8.8"
+
+
+def test_resolve_public_ip_all_resolved_ips_blocked():
+    import socket
+    from unittest.mock import patch
+    from app.ip_reputation import _resolve_public_ip
+    # All getaddrinfo results are private IPs → function returns None (line 56)
+    with patch("app.ip_reputation.host_is_safe", return_value=True), \
+         patch("socket.inet_aton", side_effect=OSError("not a literal")), \
+         patch("socket.getaddrinfo",
+               return_value=[(None, None, None, None, ("10.0.0.1", 0))]):
+        result = _resolve_public_ip("internal-host.example")
+    assert result is None
+
+
+def test_record_ip_verdict_empty_ip_returns_early():
+    async def _run():
+        engine, maker = await _make_session()
+        async with maker() as session:
+            # Empty IP — must return immediately without raising or writing.
+            await record_ip_verdict(session, ip="", asn=64500,
+                                    label="phishing", score=0.9)
+            assert (await session.execute(select(IpReputation))).first() is None
+        await engine.dispose()
+    asyncio.run(_run())
+
+
+def test_record_ip_verdict_updates_asn_name_when_previously_empty():
+    async def _run():
+        engine, maker = await _make_session()
+        async with maker() as session:
+            # First call: asn_row created with empty as_name
+            await record_ip_verdict(session, ip="203.0.113.10", asn=64501,
+                                    as_name="", label="safe", score=0.1)
+            # Second call: as_name now provided — should update asn_row
+            await record_ip_verdict(session, ip="203.0.113.10", asn=64501,
+                                    as_name="NEW-AS", label="safe", score=0.1)
+            asn_row = (
+                await session.execute(
+                    select(AsnReputation).where(AsnReputation.asn == 64501)
+                )
+            ).scalar_one()
+            assert asn_row.as_name == "NEW-AS"
+        await engine.dispose()
+    asyncio.run(_run())
+
+
+def test_record_ip_verdict_existing_ip_null_asn():
+    async def _run():
+        engine, maker = await _make_session()
+        async with maker() as session:
+            # First call: create ip_row with asn
+            await record_ip_verdict(session, ip="203.0.113.11", asn=64502,
+                                    as_name="AS-Y", label="safe", score=0.1)
+            # Second call: asn=None — must not overwrite the existing asn
+            await record_ip_verdict(session, ip="203.0.113.11", asn=None,
+                                    label="phishing", score=0.9)
+            ip_row = (
+                await session.execute(
+                    select(IpReputation).where(IpReputation.ip == "203.0.113.11")
+                )
+            ).scalar_one()
+            assert ip_row.total_count == 2
+            assert ip_row.asn == 64502  # original asn preserved
+        await engine.dispose()
+    asyncio.run(_run())
