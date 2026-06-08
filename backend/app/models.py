@@ -56,6 +56,12 @@ class UrlCheck(Base):
         default=lambda: dt.datetime.now(dt.timezone.utc),
         index=True,
     )
+    user_id: Mapped[uuid.UUID | None] = mapped_column(
+        Uuid(as_uuid=True),
+        ForeignKey("users.id", ondelete="SET NULL"),
+        nullable=True,
+        index=True,
+    )
 
     def as_dict(self) -> dict:
         return {
@@ -69,6 +75,7 @@ class UrlCheck(Base):
             "closest_domain": self.closest_domain,
             "edit_distance": self.edit_distance,
             "checked_at": self.checked_at.isoformat(),
+            "user_id": str(self.user_id) if self.user_id else None,
         }
 
 
@@ -296,6 +303,41 @@ class AsnReputation(Base):
         default=lambda: dt.datetime.now(dt.timezone.utc),
         index=True,
     )
+
+
+class UserRole(str, enum.Enum):
+    user = "user"
+    admin = "admin"
+
+
+class User(Base):
+    """Registered user account."""
+
+    __tablename__ = "users"
+
+    id: Mapped[uuid.UUID] = mapped_column(
+        Uuid(as_uuid=True), primary_key=True, default=uuid.uuid4
+    )
+    email: Mapped[str] = mapped_column(
+        String(254), unique=True, nullable=False, index=True
+    )
+    password_hash: Mapped[str] = mapped_column(String(256), nullable=False)
+    display_name: Mapped[str] = mapped_column(String(128), default="")
+    role: Mapped[UserRole] = mapped_column(
+        Enum(UserRole, name="user_role_enum"),
+        default=UserRole.user,
+        index=True,
+    )
+    is_active: Mapped[bool] = mapped_column(Boolean, default=True)
+    created_at: Mapped[dt.datetime] = mapped_column(
+        DateTime(timezone=True),
+        default=lambda: dt.datetime.now(dt.timezone.utc),
+        index=True,
+    )
+    last_login_at: Mapped[dt.datetime | None] = mapped_column(
+        DateTime(timezone=True), nullable=True
+    )
+    check_count: Mapped[int] = mapped_column(Integer, default=0)
 
 
 class FeedIngestionRecord(Base):

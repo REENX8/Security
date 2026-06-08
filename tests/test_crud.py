@@ -20,7 +20,7 @@ os.environ.setdefault("API_KEY", "test-key")
 import pytest  # noqa: E402
 from app.crud import get_history, get_stats, insert_check  # noqa: E402
 from app.database import Base  # noqa: E402
-from app.models import Label, UrlCheck  # noqa: E402
+from app.models import Label  # noqa: E402
 from sqlalchemy.ext.asyncio import async_sessionmaker, create_async_engine  # noqa: E402
 
 

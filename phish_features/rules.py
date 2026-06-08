@@ -225,6 +225,50 @@ def rule_login_keyword_dense(url: str, feat: dict) -> RuleHit | None:
     return None
 
 
+def rule_subdomain_camouflage(url: str, feat: dict) -> RuleHit | None:
+    """Brand in subdomain chain but host is unrelated -- subdomain camouflage.
+
+    e.g. ``www.krungthai.com.verify-now.xyz`` — the trusted brand appears as a
+    subdomain label to fool visual inspection while the actual registrable domain
+    is ``verify-now.xyz``.
+    """
+    if (
+        feat.get("num_subdomains", 0) >= 2
+        and feat.get("path_brand_hit") == 1
+        and not feat.get("is_typosquat")
+    ):
+        return RuleHit(
+            "SUBDOMAIN_CAMOUFLAGE",
+            delta=0.35,
+            pin_label="phishing",
+            message=(
+                "ชื่อแบรนด์ทางการปรากฏเป็น subdomain ของโดเมนที่ไม่เกี่ยวข้อง — "
+                "เทคนิคที่ใช้หลอกให้ผู้ใช้เข้าใจผิดว่าเป็นเว็บจริง"
+            ),
+        )
+    return None
+
+
+def rule_redirect_confusion(url: str, feat: dict) -> RuleHit | None:
+    """Open-redirect pattern combined with credential keyword.
+
+    Attackers chain open-redirect endpoints on legitimate or semi-trusted
+    hosts to bypass reputation checks, then land on a phishing page that
+    harvests credentials.
+    """
+    if feat.get("path_redirect_hit") == 1 and feat.get("has_login_keyword"):
+        return RuleHit(
+            "REDIRECT_CONFUSION",
+            delta=0.20,
+            pin_label=None,
+            message=(
+                "URL มีรูปแบบ open-redirect และคำที่เกี่ยวกับ login — "
+                "อาจถูกใช้เพื่อเปลี่ยนเส้นทางไปยังหน้าฟิชชิง"
+            ),
+        )
+    return None
+
+
 DEFAULT_RULES: tuple[Rule, ...] = (
     rule_whitelisted_exact,       # safety net first
     rule_at_trick,
@@ -233,6 +277,8 @@ DEFAULT_RULES: tuple[Rule, ...] = (
     rule_login_keyword_dense,     # high credential-keyword density
     rule_typosquat_with_login,
     rule_path_brand_impersonation,
+    rule_subdomain_camouflage,
+    rule_redirect_confusion,
     rule_ip_with_login,
     rule_cheap_tld_no_https,
 )
@@ -311,4 +357,6 @@ __all__ = [
     "SUSPICIOUS_TLDS",
     "rule_https_lookalike",
     "rule_login_keyword_dense",
+    "rule_subdomain_camouflage",
+    "rule_redirect_confusion",
 ]

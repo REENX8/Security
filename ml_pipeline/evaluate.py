@@ -37,6 +37,9 @@ from ml_pipeline.config import (
     EVALUATION_SUMMARY_JSON,
     GENERIC_HOLDOUT_CSV,
     INDEPENDENT_HOLDOUT_METRICS_JSON,
+    LIVE_FEED_HOLDOUT_CSV,
+    LIVE_FEED_HOLDOUT_METRICS_JSON,
+    LIVE_FEED_RECALL_MIN_THRESHOLD,
     METRICS_JSON,
     MODEL_PATH,
     RANDOM_SEED,
@@ -260,12 +263,20 @@ def main() -> None:
         print(f"[eval] no Thai-specific holdout found at {THAI_HOLDOUT_CSV} "
               "(expected — Thai-targeting phishing is rare in public feeds)")
 
+    live_feed_holdout_metrics: dict | None = None
+    if os.path.exists(LIVE_FEED_HOLDOUT_CSV):
+        live_feed_holdout_metrics = evaluate_live_feed_holdout(model, scaler)
+    else:
+        print(f"[eval] no live-feed holdout found at {LIVE_FEED_HOLDOUT_CSV} "
+              "(run ml_pipeline.feed_training_export to populate it)")
+
     write_evaluation_summary(
         metrics,
         real_holdout_metrics,
         thai_holdout_metrics,
         cv_metrics,
         independent_holdout_metrics,
+        live_feed_holdout_metrics,
     )
 
 
@@ -407,6 +418,26 @@ def evaluate_thai_holdout(model, scaler) -> dict:
     )
 
 
+def evaluate_live_feed_holdout(model, scaler) -> dict:
+    result = _eval_holdout_csv(
+        LIVE_FEED_HOLDOUT_CSV,
+        LIVE_FEED_HOLDOUT_METRICS_JSON,
+        "HOLDOUT EVAL ON LIVE-FEED PHISHING URLS",
+        model,
+        scaler,
+        missed_csv_path=os.path.join(REPORTS_DIR, "missed_live_feed_urls.csv"),
+    )
+    recall = result.get("recall_phishing_threshold", 0.0)
+    n = result.get("sample_size", 0)
+    print(f"[eval] live-feed holdout recall={recall:.3f} n={n}")
+    if recall < LIVE_FEED_RECALL_MIN_THRESHOLD:
+        print(
+            f"[eval] WARNING: live-feed holdout recall {recall:.3f} "
+            f"< threshold {LIVE_FEED_RECALL_MIN_THRESHOLD:.2f}"
+        )
+    return result
+
+
 def _plot_alignment(
     real_recall: float | None,
     thai_recall: float | None,
@@ -446,6 +477,7 @@ def write_evaluation_summary(
     thai_holdout_metrics: dict | None,
     cv_metrics: dict | None = None,
     independent_holdout_metrics: dict | None = None,
+    live_feed_holdout_metrics: dict | None = None,
 ) -> None:
     """Write a consolidated evaluation_summary.json that makes grader intent clear.
 
@@ -533,6 +565,7 @@ def write_evaluation_summary(
         "thai_targeting_holdout": thai_holdout_metrics,
         "generic_real_holdout": real_holdout_metrics,
         "independent_real_holdout": independent_holdout_metrics,
+        "live_feed_holdout": live_feed_holdout_metrics,
         "cross_validation": cv_metrics,
     }
     with open(EVALUATION_SUMMARY_JSON, "w", encoding="utf-8") as fh:

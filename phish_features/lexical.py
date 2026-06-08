@@ -19,6 +19,14 @@ _IPV4_RE = re.compile(r"^(?:\d{1,3}\.){3}\d{1,3}(?::\d+)?$")
 # Bracketed IPv6 literal, e.g. [2001:db8::1]
 _IPV6_RE = re.compile(r"^\[[0-9a-fA-F:]+\](?::\d+)?$")
 
+# Hex IP: 0x followed by exactly 8 hex digits (full 32-bit IPv4 in hex).
+_HEX_IP_RE = re.compile(r"^0x[0-9a-fA-F]{8}$", re.IGNORECASE)
+# Octal quad: four dot-separated octets each starting with 0 and having 1-3 octal digits.
+_OCTAL_OCTET_RE = re.compile(r"^0[0-7]{1,3}$")
+
+# Common open-redirect parameter names.
+_REDIRECT_PARAMS = frozenset({"redirect", "url", "next", "goto", "return", "redir", "to"})
+
 # Public suffixes we treat as multi-label (so num_subdomains is meaningful).
 _MULTI_LABEL_SUFFIXES = (
     "go.th",
@@ -107,6 +115,35 @@ def _count_query_params(query: str) -> int:
     return query.count("&") + 1
 
 
+def _has_encoded_ip(host: str) -> int:
+    """Detect hex (0x12345678) or octal (0177.0012.0001.0001) IP notation."""
+    bare = host.split(":")[0]  # strip optional port
+    if _HEX_IP_RE.match(bare):
+        return 1
+    parts = bare.split(".")
+    if len(parts) == 4 and all(_OCTAL_OCTET_RE.match(p) for p in parts):
+        return 1
+    return 0
+
+
+def _has_redirect_in_path(url: str) -> int:
+    """Detect open-redirect patterns in path or query string."""
+    parsed = urlparse(url)
+    path_lower = (parsed.path or "").lower()
+    query_lower = (parsed.query or "").lower()
+    # URL-in-path: attacker hides destination in path
+    if "http://" in path_lower or "https://" in path_lower:
+        return 1
+    # Redirect param with a URL value
+    for segment in query_lower.split("&"):
+        key = segment.split("=", 1)[0].lstrip("?")
+        if key in _REDIRECT_PARAMS and "=" in segment:
+            val = segment.split("=", 1)[1]
+            if val.startswith("http"):
+                return 1
+    return 0
+
+
 def extract_lexical(url: str) -> dict:
     """Return the lexical feature block for ``url``."""
     norm = normalize_url(url)
@@ -152,4 +189,7 @@ def extract_lexical(url: str) -> dict:
         "digit_to_letter_ratio": round(
             host_digits / host_letters if host_letters else float(host_digits), 6
         ),
+        # v1.7 adversarial-evasion features
+        "has_encoded_ip": _has_encoded_ip(host),
+        "path_redirect_hit": _has_redirect_in_path(norm),
     }

@@ -2,9 +2,10 @@
 
 from __future__ import annotations
 
+import re
 from typing import Any, Literal
 
-from pydantic import BaseModel, Field, field_validator
+from pydantic import BaseModel, EmailStr, Field, field_validator
 
 
 class CheckRequest(BaseModel):
@@ -163,3 +164,46 @@ class FeedbackListResponse(BaseModel):
     limit: int
     offset: int
     items: list[FeedbackOut]
+
+
+# --- User accounts ---
+
+_PASSWORD_RE = re.compile(r"[0-9!@#$%^&*()_+\-=\[\]{};':\"\\|,.<>\/?]")
+
+
+class RegisterRequest(BaseModel):
+    email: EmailStr
+    password: str = Field(..., min_length=8, max_length=128)
+    display_name: str = Field(default="", max_length=128)
+
+    @field_validator("password")
+    @classmethod
+    def password_complexity(cls, v: str) -> str:
+        if not _PASSWORD_RE.search(v):
+            raise ValueError("password must contain at least one digit or special character")
+        return v
+
+
+class UserOut(BaseModel):
+    id: str
+    email: str
+    display_name: str
+    role: str
+    created_at: str
+    check_count: int
+
+
+class MeResponse(UserOut):
+    last_login_at: str | None = None
+
+
+class UserListResponse(BaseModel):
+    total: int
+    limit: int
+    offset: int
+    items: list[UserOut]
+
+
+class UserRolePatch(BaseModel):
+    role: Literal["user", "admin"]
+

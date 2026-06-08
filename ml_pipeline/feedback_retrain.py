@@ -120,8 +120,8 @@ def _compare_staged_vs_live() -> bool:
 
     try:
         import joblib
-        import ml_pipeline.evaluate as _evaluate
 
+        import ml_pipeline.evaluate as _evaluate
         from ml_pipeline.config import THAI_HOLDOUT_CSV
 
         live_model = joblib.load(live_model_path)

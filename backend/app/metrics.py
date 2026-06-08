@@ -89,6 +89,24 @@ RULE_FIRED = Counter(
     registry=REGISTRY,
 )
 
+MODEL_ROLLBACK = Counter(
+    "phish_model_rollback_total",
+    "Number of automatic model rollbacks after a failed promotion.",
+    registry=REGISTRY,
+)
+
+USER_REGISTRATIONS = Counter(
+    "phish_user_registrations_total",
+    "Number of new user registrations.",
+    registry=REGISTRY,
+)
+
+ADVERSARIAL_DETECTION_RATE = Gauge(
+    "phish_adversarial_detection_rate",
+    "Fraction of adversarial URLs detected (0..1). Updated after each eval run.",
+    registry=REGISTRY,
+)
+
 
 def render_metrics() -> tuple[bytes, str]:
     """Return ``(body, content_type)`` for the /metrics response."""

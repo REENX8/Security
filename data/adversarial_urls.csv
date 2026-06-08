@@ -1,0 +1,101 @@
+url,expected_label,evasion_technique,notes
+http://xn--krungtha-n2b.com/login,phishing,punycode_thai_brand,Punycode homoglyph of krungthai using Thai character in label
+http://xn--krngtha1-q2b.com/signin,phishing,punycode_thai_brand,Punycode with digit substitution
+http://xn--krungthai-b9b.com/account,phishing,punycode_thai_brand,Punycode confusable in krungthai
+http://xn--krugtha1-n2b.com/verify,phishing,punycode_thai_brand,Punycode variant with missing n
+http://xn--obec-x3b.go.th.evil.xyz/login,phishing,punycode_thai_brand,Punycode obec subdomain on evil TLD
+http://xn--scb-p3b.co.th.secure.click/verify,phishing,punycode_thai_brand,Punycode SCB lookalike
+http://xn--ktb-8fb.com/account,phishing,punycode_thai_brand,Punycode KTB (Krungthai Bank) variant
+http://xn--kasikorn-q2b.com/login,phishing,punycode_thai_brand,Punycode kasikornbank homoglyph
+http://xn--baangkok-o2b.go.th/signin,phishing,punycode_thai_brand,Punycode Bangkok lookalike
+http://xn--kkbank-8b.com/secure,phishing,punycode_thai_brand,Short punycode brand variant
+http://www.krungthai.com.verify-now.xyz/login,phishing,subdomain_depth,Trusted brand as subdomain of evil TLD
+http://secure.krungthai.com.account-check.top/verify,phishing,subdomain_depth,Deep subdomain chain hiding real registrable domain
+http://login.obec.go.th.phish-kit.xyz/auth,phishing,subdomain_depth,Government domain as deep subdomain
+http://portal.scb.co.th.update-account.click/signin,phishing,subdomain_depth,SCB portal in subdomain chain
+http://my.ktb.co.th.secure-verify.online/account,phishing,subdomain_depth,KTB in deep subdomain
+http://app.kasikornbank.com.auth-now.top/login,phishing,subdomain_depth,Kasikornbank as subdomain
+http://api.truemoney.com.wallet-verify.xyz/secure,phishing,subdomain_depth,TrueMoney wallet phish
+http://m.bay.co.th.confirm-data.site/verify,phishing,subdomain_depth,Bangkok Bank mobile subdomain trick
+http://www.moph.go.th.th-verify.click/login,phishing,subdomain_depth,Ministry of Public Health subdomain
+http://service.dbd.go.th.dbd-secure.online/account,phishing,subdomain_depth,DBD government subdomain
+http://kr%75ngthai.com.evil.xyz/login,phishing,url_encoding,Hex-encoded 'u' in krungthai bypasses naive string match
+http://krungt%68ai.com/verify,phishing,url_encoding,Hex-encoded 'h' in krungthai
+http://obec.g%6F.th.evil-verify.xyz/account,phishing,url_encoding,Hex-encoded 'o' in obec.go.th used as subdomain on evil TLD
+http://krungthai%2Ecom.phish.xyz/login,phishing,url_encoding,Encoded dot between brand and real TLD
+http://scb%2Eco%2Eth.evil.xyz/signin,phishing,url_encoding,Both dots encoded in SCB domain
+http://kr%75ngt%68ai.com/verify,phishing,url_encoding,Multiple hex-encoded characters in krungthai
+http://bay%2Eco%2Eth.secure-now.click/auth,phishing,url_encoding,Bay (Bangkok Bank) domain fully encoded
+http://truem%6Fney.com.verify.xyz/wallet,phishing,url_encoding,Encoded 'o' in truemoney
+http://ktb%2Eco%2Eth.phishing.top/login,phishing,url_encoding,KTB domain with encoded dots
+http://mob%69lebank.th.evil.xyz/account,phishing,url_encoding,Encoded 'i' in mobilebank
+http://safe-looking.com/https://krungthai.com/auth,phishing,login_path_camouflage,Real brand URL buried in path of unrelated domain
+http://evil.xyz/redirect?url=https://krungthai.com/login,phishing,login_path_camouflage,Open redirect with brand URL as parameter value
+http://tracker.com/go?next=https://obec.go.th/signin,phishing,login_path_camouflage,Redirect param 'next' pointing to government login
+http://analytics.evil.xyz/click?goto=https://scb.co.th/verify,phishing,login_path_camouflage,Redirect via 'goto' param to SCB
+http://cdn.phish.xyz/assets/https://kasikornbank.com/account,phishing,login_path_camouflage,Brand URL as path component after assets
+http://phish.xyz/?return=https://bay.co.th/auth,phishing,login_path_camouflage,Return-redirect to Bangkok Bank auth page
+http://legit-looking.com/api/https://ktb.co.th/login,phishing,login_path_camouflage,Brand URL in API path
+http://seo-bait.xyz/search/krungthai/login/https://krungthai.com,phishing,login_path_camouflage,Brand name and URL both in path
+http://phish.click/to?redirect=https://truemoney.com/wallet,phishing,login_path_camouflage,Redirect param with truemoney wallet URL
+http://open-redir.xyz/?to=https://moph.go.th/login,phishing,login_path_camouflage,Open redirect to government health ministry login
+http://krungthai-verify.top/login,phishing,zero_day_tld,Brand name with hyphen on abused .top TLD
+http://obec-login.click/account,phishing,zero_day_tld,Government brand on .click TLD
+http://scb-secure.app/signin,phishing,zero_day_tld,SCB on .app with secure keyword
+http://kasikornbank-update.xyz/verify,phishing,zero_day_tld,Kasikornbank on .xyz
+http://ktb-thailand.online/secure,phishing,zero_day_tld,KTB on .online
+http://truemoney-wallet.site/account,phishing,zero_day_tld,TrueMoney wallet on .site
+http://bay-banking.store/login,phishing,zero_day_tld,Bay banking on .store
+http://moph-th.buzz/login,phishing,zero_day_tld,MOPH on .buzz TLD
+http://dbd-register.vip/account,phishing,zero_day_tld,DBD on .vip TLD
+http://krungthai-mobile.cc/verify,phishing,zero_day_tld,Krungthai mobile on .cc
+http://evil.xyz/redirect?to=https://krungthai.com/login,phishing,redirect_confusion,Standard redirect confusion to krungthai login
+http://track.evil.com/click?url=https://obec.go.th/account,phishing,redirect_confusion,Tracker redirect to OBEC government site
+http://link.phish.xyz/?next=https://scb.co.th/verify,phishing,redirect_confusion,Next-param redirect to SCB verification
+http://api.bad-actor.com/v1?goto=https://bay.co.th/auth,phishing,redirect_confusion,API-style redirect to Bangkok Bank
+http://cdn.evil.cc/?redir=https://kasikornbank.com/login,phishing,redirect_confusion,CDN-style redirect to Kasikornbank
+http://go.phish.top/out?return=https://truemoney.com/wallet,phishing,redirect_confusion,Return-redirect to TrueMoney wallet
+http://shortener.xyz/r?u=https://ktb.co.th/account,phishing,redirect_confusion,URL-shortener style redirect
+http://proxy.phish.click/?redirect=https://moph.go.th/login,phishing,redirect_confusion,Proxy-style redirect to government login
+http://share.evil.online/s?to=https://dbd.go.th/register,phishing,redirect_confusion,Share-style redirect to government register
+http://out.phish.site/?url=https://krungthai.com/signin,phishing,redirect_confusion,Outlink redirect to krungthai signin
+http://krüng†hai.com/login,phishing,homoglyph_not_in_fold,Devanagari/special chars in krungthai not in basic fold
+http://ĸrungthai.com/account,phishing,homoglyph_not_in_fold,Latin letter Kra (U+0138) instead of k
+http://krungthаi.com/verify,phishing,homoglyph_not_in_fold,Cyrillic 'а' (U+0430) replacing Latin 'a' in krungthai
+http://kruпgthai.com/signin,phishing,homoglyph_not_in_fold,Cyrillic 'п' (U+043F) replacing 'n' in krungthai
+http://оbec.go.th.evil.xyz/login,phishing,homoglyph_not_in_fold,Cyrillic 'о' replacing Latin 'o' in obec
+http://kаsikornbank.com/account,phishing,homoglyph_not_in_fold,Cyrillic 'а' in kasikornbank
+http://ѕcb.co.th.phish.xyz/verify,phishing,homoglyph_not_in_fold,Cyrillic DZE 'ѕ' replacing 's' in scb
+http://kтb.co.th.evil.click/login,phishing,homoglyph_not_in_fold,Cyrillic 'т' replacing 't' in ktb
+http://truemоney.com/wallet,phishing,homoglyph_not_in_fold,Cyrillic 'о' replacing 'o' in truemoney
+http://bаy.co.th.secure.top/auth,phishing,homoglyph_not_in_fold,Cyrillic 'а' replacing 'a' in bay
+http://krungthai.com@evil.xyz/login,phishing,at_trick,At-sign trick: real brand before @, attack domain after
+http://krungthai.com@phish.top:80/account,phishing,at_trick,At-trick with port specification
+http://obec.go.th@steal-creds.xyz/signin,phishing,at_trick,Government domain as userinfo before @
+http://scb.co.th@192.168.1.1/verify,phishing,at_trick,Brand in userinfo, private IP as actual host
+http://kasikornbank.com@evil.click/auth,phishing,at_trick,Kasikornbank as userinfo before evil domain
+http://ktb.co.th@phisher.xyz:8080/secure,phishing,at_trick,KTB userinfo with non-standard port
+http://truemoney.com@wallet-steal.top/account,phishing,at_trick,TrueMoney userinfo before phishing domain
+http://bay.co.th@steal.online/login,phishing,at_trick,Bangkok Bank in userinfo
+http://moph.go.th@phish.site/signin,phishing,at_trick,Government health site as userinfo
+http://dbd.go.th@credentials.cc/account,phishing,at_trick,DBD government as userinfo
+https://www-krungthai-secure.com/login,phishing,free_tls_legit_looking,HTTPS with legit-looking domain structure targeting krungthai
+https://secure-krungthai-banking.com/account,phishing,free_tls_legit_looking,Free TLS on convincing krungthai phishing domain
+https://krungthai-online-banking.com/verify,phishing,free_tls_legit_looking,Online banking subdomain-style phish
+https://my-scb-account.com/signin,phishing,free_tls_legit_looking,My-SCB account phishing with HTTPS
+https://kasikorn-secure-login.com/auth,phishing,free_tls_legit_looking,Kasikorn secure login phish
+https://ktb-internet-banking.com/login,phishing,free_tls_legit_looking,KTB internet banking phish
+https://truemoney-wallet-secure.com/account,phishing,free_tls_legit_looking,TrueMoney wallet with security keyword
+https://obec-student-portal.com/login,phishing,free_tls_legit_looking,OBEC student portal phish
+https://th-government-portal.com/signin,phishing,free_tls_legit_looking,Generic Thai government portal phish
+https://moph-health-verify.com/account,phishing,free_tls_legit_looking,Ministry of health verification phish
+http://0x5f0a0b01/krungthai/login,phishing,ip_camouflage,Hex IP address notation (0x5f0a0b01) bypasses dotted-decimal IP check
+http://0x4014d2ab/login,phishing,ip_camouflage,Another hex IP for phishing host
+http://0x7f000001/verify,phishing,ip_camouflage,Hex loopback address in phishing URL
+http://0337.012.013.001/account,phishing,ip_camouflage,Octal IP address notation
+http://0177.0000.0000.0001/login,phishing,ip_camouflage,Octal loopback IP
+http://0x41414141/signin,phishing,ip_camouflage,Hex IP with repeated pattern
+http://010.020.030.040/verify,phishing,ip_camouflage,Octal quad IP notation
+http://0x80000001/account,phishing,ip_camouflage,High-bit hex IP
+http://0100.0200.0300.0100/login,phishing,ip_camouflage,Octal quad with larger values
+http://0xdeadbeef/secure,phishing,ip_camouflage,Classic deadbeef hex IP in phishing URL

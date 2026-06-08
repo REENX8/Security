@@ -3,7 +3,6 @@
 from __future__ import annotations
 
 import csv
-from math import exp, log
 
 
 class _StubGen:
@@ -73,8 +72,9 @@ def test_dedup_multiple_urls_deduplicated_independently(tmp_path, monkeypatch):
 
 
 def test_temporal_decay_recent_entry_gets_high_weight(tmp_path, monkeypatch):
-    import ml_pipeline.collect_dataset as cd
     from datetime import datetime, timezone
+
+    import ml_pipeline.collect_dataset as cd
 
     monkeypatch.setattr(cd, "FEEDBACK_CSV", str(tmp_path / "fb.csv"))
     recent = datetime.now(timezone.utc).isoformat()
@@ -88,8 +88,9 @@ def test_temporal_decay_recent_entry_gets_high_weight(tmp_path, monkeypatch):
 
 
 def test_temporal_decay_old_entry_gets_low_weight(tmp_path, monkeypatch):
-    import ml_pipeline.collect_dataset as cd
     from datetime import datetime, timedelta, timezone
+
+    import ml_pipeline.collect_dataset as cd
 
     monkeypatch.setattr(cd, "FEEDBACK_CSV", str(tmp_path / "fb.csv"))
     # ~270 days ago = 3 half-lives, expected weight ≈ 0.125
@@ -117,6 +118,7 @@ def test_invalid_correct_verdict_rejected_by_schema():
     """correct_verdict must be one of safe / suspicious / phishing."""
     import sys
     from pathlib import Path
+
     import pytest
     from pydantic import ValidationError
 

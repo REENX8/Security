@@ -26,6 +26,7 @@ from ml_pipeline.config import (
     GENERIC_PHISH_SEED_CSV,
     GENERIC_SEED_TRAIN_FRACTION,
     GENERIC_TRAIN_MAX,
+    LIVE_FEED_CSV,
     OPENPHISH_URL,
     PHISHTANK_URL,
     RANDOM_SEED,
@@ -226,6 +227,21 @@ def _load_generic_phish_seed() -> list[str]:
     return urls
 
 
+def _load_live_feed_phishing() -> list[str]:
+    """Load live-feed phishing URLs accumulated by feed_training_export.py."""
+    if not os.path.exists(LIVE_FEED_CSV):
+        return []
+    urls: list[str] = []
+    import csv as _csv
+    with open(LIVE_FEED_CSV, newline="", encoding="utf-8") as fh:
+        for row in _csv.DictReader(fh):
+            u = (row.get("url") or "").strip()
+            if u.startswith(("http://", "https://")):
+                urls.append(u)
+    print(f"[dataset] live-feed phishing rows: {len(urls)}")
+    return urls
+
+
 def _load_feedback_rows(gen, exclude_urls: set[str]) -> list[dict]:
     """Load confirmed-feedback labels exported from the DB as TRAINING rows.
 
@@ -383,6 +399,19 @@ def main(use_feeds: bool = True) -> None:
     print(f"[dataset] real phishing -- train: {len(real_train)}  "
           f"holdout: {len(real_holdout)}  thai-holdout: {len(thai_holdout)}")
 
+    # --- live-feed phishing (training only; holdout maintained separately) ---
+    live_feed_train: list[dict] = []
+    live_feed_urls = _load_live_feed_phishing()
+    if live_feed_urls:
+        holdout_url_set = {r["url"] for r in (thai_holdout + real_holdout + generic_holdout)}
+        live_feed_urls = [u for u in live_feed_urls if u not in holdout_url_set]
+        for url in live_feed_urls:
+            net = gen.sim_network(1, url.startswith("https://"))
+            live_feed_train.append({"url": url, "label": 1, **net, "sample_weight": 1.0})
+        thai_live = sum(1 for u in live_feed_urls if _is_thai_targeting(u))
+        print(f"[dataset] live-feed phishing rows: {len(live_feed_train)} "
+              f"({thai_live} thai, {len(live_feed_train) - thai_live} generic)")
+
     # --- confirmed-feedback rows (training only; never the holdout) ---
     holdout_urls = {r["url"] for r in (thai_holdout + real_holdout + generic_holdout)}
     feedback_rows = _load_feedback_rows(gen, exclude_urls=holdout_urls)
@@ -392,13 +421,14 @@ def main(use_feeds: bool = True) -> None:
     # --- synthetic phishing top-up to balance the classes (training only) ---
     need = (n_legit + len(feedback_legit)
             - len(real_train) - len(thai_train) - len(feedback_phish)
-            - len(generic_train))
+            - len(generic_train) - len(live_feed_train))
     synth_phish = gen.generate(n_legit=0, n_phish=max(need, 0))
     print(f"[dataset] synthetic phishing rows: {len(synth_phish)}")
 
     rows.extend(real_train)
     rows.extend(thai_train)
     rows.extend(generic_train)
+    rows.extend(live_feed_train)
     rows.extend(feedback_rows)
     rows.extend(synth_phish)
     # Default sample_weight=1.0 for all non-feedback rows (which don't have

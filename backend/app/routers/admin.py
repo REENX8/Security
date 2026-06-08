@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import logging
 import threading
+import uuid
 
 from fastapi import APIRouter, Depends, HTTPException, Query, Request
 from sqlalchemy import func, select
@@ -13,8 +14,11 @@ from starlette.concurrency import run_in_threadpool
 from app.config import settings
 from app.database import get_session
 from app.deps import verify_api_key
-from app.models import DbWhitelistEntry
+from app.models import DbWhitelistEntry, User, UserRole
 from app.schemas import (
+    UserListResponse,
+    UserOut,
+    UserRolePatch,
     WhitelistBulkIn,
     WhitelistBulkResult,
     WhitelistEntryIn,
@@ -278,3 +282,124 @@ async def delete_whitelist_entry(
     await session.commit()
     await _hot_reload_whitelist(request, session)
     logger.info("whitelist: removed %s", domain)
+
+
+# ---------------------------------------------------------------------------
+# User management (admin only)
+# ---------------------------------------------------------------------------
+
+def _user_to_schema(user: User) -> UserOut:
+    return UserOut(
+        id=str(user.id),
+        email=user.email,
+        display_name=user.display_name,
+        role=user.role.value,
+        created_at=user.created_at.isoformat(),
+        check_count=user.check_count,
+    )
+
+
+@router.get(
+    "/admin/users",
+    response_model=UserListResponse,
+    dependencies=[Depends(verify_api_key)],
+    summary="List all registered users",
+    tags=["admin"],
+)
+async def list_users(
+    limit: int = Query(default=50, ge=1, le=200),
+    offset: int = Query(default=0, ge=0),
+    session: AsyncSession = Depends(get_session),
+) -> UserListResponse:
+    total = (await session.execute(select(func.count()).select_from(User))).scalar_one()
+    rows = (
+        await session.execute(select(User).order_by(User.created_at.desc()).limit(limit).offset(offset))
+    ).scalars().all()
+    return UserListResponse(
+        total=int(total),
+        limit=limit,
+        offset=offset,
+        items=[_user_to_schema(u) for u in rows],
+    )
+
+
+@router.patch(
+    "/admin/users/{user_id}/role",
+    response_model=UserOut,
+    dependencies=[Depends(verify_api_key)],
+    summary="Change a user's role",
+    tags=["admin"],
+)
+async def update_user_role(
+    user_id: str,
+    body: UserRolePatch,
+    session: AsyncSession = Depends(get_session),
+) -> UserOut:
+    user = (
+        await session.execute(select(User).where(User.id == uuid.UUID(user_id)))
+    ).scalar_one_or_none()
+    if user is None:
+        raise HTTPException(status_code=404, detail="User not found.")
+    user.role = UserRole(body.role)
+    await session.commit()
+    return _user_to_schema(user)
+
+
+@router.delete(
+    "/admin/users/{user_id}",
+    status_code=204,
+    response_model=None,
+    dependencies=[Depends(verify_api_key)],
+    summary="Deactivate a user account (soft delete)",
+    tags=["admin"],
+)
+async def deactivate_user(
+    user_id: str,
+    session: AsyncSession = Depends(get_session),
+) -> None:
+    user = (
+        await session.execute(select(User).where(User.id == uuid.UUID(user_id)))
+    ).scalar_one_or_none()
+    if user is None:
+        raise HTTPException(status_code=404, detail="User not found.")
+    user.is_active = False
+    await session.commit()
+
+
+@router.post(
+    "/admin/reload-model",
+    dependencies=[Depends(verify_api_key)],
+    summary="Reload the ML model and whitelist from disk",
+    tags=["admin"],
+)
+async def reload_model(
+    request: Request,
+    session: AsyncSession = Depends(get_session),
+) -> dict:
+    """Hot-reload the ensemble model, whitelist, and flush the cache."""
+    from app.ml.loader import load_scorer
+
+    try:
+        request.app.state.scorer = load_scorer()
+        logger.info("model hot-reloaded via admin endpoint")
+    except Exception as exc:  # noqa: BLE001
+        raise HTTPException(status_code=500, detail=f"Model reload failed: {exc}") from exc
+
+    await _hot_reload_whitelist(request, session)
+
+    # Flush the check cache if one is attached to app state.
+    cache = getattr(request.app.state, "check_cache", None)
+    if cache is not None:
+        try:
+            cache.clear()
+        except Exception:  # noqa: BLE001
+            pass
+
+    scorer = request.app.state.scorer
+    feat_json = getattr(scorer, "features_json", {}) or {}
+    return {
+        "status": "reloaded",
+        "schema_version": feat_json.get("schema_version", "unknown"),
+        "trained_at": feat_json.get("trained_at", "unknown"),
+        "test_f1": feat_json.get("test_f1", None),
+    }
