@@ -1,0 +1,14 @@
+# Test-only dependencies.
+# Install alongside backend + ml_pipeline requirements:
+#   pip install -r requirements-test.txt
+#
+# cffi: required by python-jose/cryptography rust bindings (used in backend auth).
+#       Without it, conftest.py panics at import time.
+# pytest-asyncio: enables @pytest.mark.asyncio and asyncio_mode = auto (pytest.ini).
+# matplotlib, pandas: needed by ml_pipeline/tune_threshold.py (threshold analysis).
+# aiosqlite: in-memory async SQLite for DB-backed unit tests.
+cffi>=1.15
+pytest-asyncio>=0.23
+matplotlib>=3.8
+pandas>=2.1
+aiosqlite>=0.19
