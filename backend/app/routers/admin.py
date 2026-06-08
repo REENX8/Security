@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import logging
+import threading
 
 from fastapi import APIRouter, Depends, HTTPException, Query, Request
 from sqlalchemy import func, select
@@ -53,7 +54,15 @@ async def _hot_reload_whitelist(request: Request, session: AsyncSession) -> None
         )
         for r in rows
     ]
-    scorer.extractor.whitelist = Whitelist.from_entries(entries)
+    new_whitelist = Whitelist.from_entries(entries)
+    # Acquire the whitelist lock before swapping so concurrent scorer.score()
+    # calls running in a threadpool never see a half-replaced object.
+    wl_lock: threading.Lock = getattr(request.app.state, "whitelist_lock", None)
+    if wl_lock is not None:
+        with wl_lock:
+            scorer.extractor.whitelist = new_whitelist
+    else:
+        scorer.extractor.whitelist = new_whitelist
     logger.info("whitelist hot-reloaded: %d entries", len(entries))
 
 

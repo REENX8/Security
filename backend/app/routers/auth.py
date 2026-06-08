@@ -5,6 +5,7 @@
 # module's globals. Stringized annotations would make FastAPI fail to resolve
 # the `LoginRequest` body param (same bug that 422'd /check). Keep them real.
 
+import secrets
 from datetime import datetime, timedelta, timezone
 
 from fastapi import APIRouter, HTTPException, Request
@@ -47,8 +48,8 @@ async def login(request: Request, body: LoginRequest) -> TokenResponse:
             status_code=503,
             detail="Server-side auth is not configured. Set ADMIN_PASSWORD_HASH.",
         )
-    # Constant-time username + password check to resist timing attacks.
-    username_ok = body.username == settings.admin_username
+    # Constant-time check for both username and password to resist timing attacks.
+    username_ok = secrets.compare_digest(body.username, settings.admin_username)
     password_ok = _pwd.verify(body.password, settings.admin_password_hash) if settings.admin_password_hash else False
     if not (username_ok and password_ok):
         raise HTTPException(status_code=401, detail="Invalid credentials.")

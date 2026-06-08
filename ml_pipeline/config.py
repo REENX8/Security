@@ -3,6 +3,9 @@
 from __future__ import annotations
 
 import os
+import random as _random
+
+import numpy as _np
 
 # Repo root (this file lives in <root>/ml_pipeline/).
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
@@ -42,6 +45,11 @@ REAL_HOLDOUT_FRACTION = 0.30
 
 # Reproducibility.
 RANDOM_SEED = 42
+
+# Lock global RNG state so any library that uses the global RNG (e.g. numpy
+# random draws inside sklearn internals) produces the same results every run.
+_random.seed(RANDOM_SEED)
+_np.random.seed(RANDOM_SEED)
 
 # Dataset target size (balanced across the two classes).
 TARGET_ROWS = 12000

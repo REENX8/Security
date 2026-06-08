@@ -143,10 +143,17 @@ def main() -> None:
 
     X = frame[ORDERED_FEATURES].astype(float)
     y = frame["label"].astype(int)
+    sw = frame["sample_weight"].astype(float) if "sample_weight" in frame.columns else None
 
-    X_train, X_test, y_train, y_test = train_test_split(
-        X, y, test_size=0.2, stratify=y, random_state=RANDOM_SEED
-    )
+    if sw is not None:
+        X_train, X_test, y_train, y_test, sw_train, _ = train_test_split(
+            X, y, sw, test_size=0.2, stratify=y, random_state=RANDOM_SEED
+        )
+    else:
+        X_train, X_test, y_train, y_test = train_test_split(
+            X, y, test_size=0.2, stratify=y, random_state=RANDOM_SEED
+        )
+        sw_train = None
     print(f"[train] train={len(X_train)}  test={len(X_test)}")
 
     # Fit on plain arrays so the scaler/model carry no feature-name metadata
@@ -162,8 +169,14 @@ def main() -> None:
 
     base = build_ensemble(hp or None)
     print("[train] fitting calibrated RandomForest + XGBoost ensemble (cv=5) ...")
-    model = CalibratedClassifierCV(base, method="isotonic", cv=5)
-    model.fit(X_train_s, y_train.to_numpy())
+    # Pass cv random_state so calibration fold splits are reproducible.
+    from sklearn.model_selection import StratifiedKFold as _SKF
+    model = CalibratedClassifierCV(
+        base, method="isotonic",
+        cv=_SKF(5, shuffle=True, random_state=RANDOM_SEED),
+    )
+    sw_arr = sw_train.to_numpy() if sw_train is not None else None
+    model.fit(X_train_s, y_train.to_numpy(), sample_weight=sw_arr)
 
     train_pred = model.predict(X_train_s)
     test_pred = model.predict(X_test_s)

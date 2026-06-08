@@ -19,6 +19,8 @@ import seaborn as sns
 from sklearn.metrics import (
     ConfusionMatrixDisplay,
     accuracy_score,
+    brier_score_loss,
+    calibration_curve,
     classification_report,
     confusion_matrix,
     f1_score,
@@ -121,6 +123,30 @@ def main() -> None:
     fig.savefig(roc_path, dpi=120)
     plt.close(fig)
     print(f"[eval] saved {roc_path}")
+
+    # --- calibration quality (Brier score + reliability diagram) ---
+    try:
+        brier = brier_score_loss(y, y_proba)
+        print(f"[eval] calibration_brier_score={brier:.4f}")
+        if brier > 0.10:
+            print(f"[eval] WARNING: Brier score {brier:.4f} > 0.10 -- confidence "
+                  "scores may be poorly calibrated on this test split")
+        frac_pos, mean_pred = calibration_curve(y, y_proba, n_bins=10)
+        fig, ax = plt.subplots(figsize=(5.5, 4.5))
+        ax.plot(mean_pred, frac_pos, "s-", color="#3b82f6", label=f"Brier={brier:.4f}")
+        ax.plot([0, 1], [0, 1], "--", color="#94a3b8", lw=1, label="Perfect")
+        ax.set_xlabel("Mean predicted probability")
+        ax.set_ylabel("Fraction of positives")
+        ax.set_title("Calibration Curve")
+        ax.legend(loc="lower right")
+        fig.tight_layout()
+        cal_path = f"{REPORTS_DIR}/calibration_curve.png"
+        fig.savefig(cal_path, dpi=120)
+        plt.close(fig)
+        print(f"[eval] saved {cal_path}")
+        metrics["calibration_brier_score"] = round(brier, 4)
+    except Exception as exc:  # noqa: BLE001
+        print(f"[eval] calibration skipped ({exc})")
 
     # --- feature importance (from the RF member) ---
     try:

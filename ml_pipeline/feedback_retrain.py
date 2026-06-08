@@ -62,6 +62,7 @@ async def _export(since_days: int) -> list[dict]:
                 "url": r.url,
                 "label": "1" if r.correct_verdict == "phishing" else "0",
                 "source": "feedback",
+                "created_at": r.created_at.isoformat(),
             }
             for r in rows
         ]
@@ -73,7 +74,7 @@ async def _export(since_days: int) -> list[dict]:
 def _write_csv(rows: list[dict]) -> None:
     FEEDBACK_CSV.parent.mkdir(parents=True, exist_ok=True)
     with FEEDBACK_CSV.open("w", newline="", encoding="utf-8") as fh:
-        writer = csv.DictWriter(fh, fieldnames=["url", "label", "source"])
+        writer = csv.DictWriter(fh, fieldnames=["url", "label", "source", "created_at"])
         writer.writeheader()
         writer.writerows(rows)
     logger.info("wrote %d rows to %s", len(rows), FEEDBACK_CSV)
@@ -90,6 +91,66 @@ def _run_step(module_args: tuple[str, ...], env: dict) -> bool:
     if result.returncode != 0:
         logger.error("step '%s' failed:\n%s", module_args[0], result.stderr[-2000:])
         return False
+    return True
+
+
+def _compare_staged_vs_live() -> bool:
+    """Compare staged model vs live model on Thai holdout before promoting.
+
+    If the staged model's Thai recall is more than 2 pp below the live model's
+    recall, block promotion to prevent silent regressions.  Returns True when
+    it is safe to promote (or when comparison is impossible / inconclusive).
+    """
+    import json
+
+    staged_metrics_path = STAGING_REPORTS_DIR / "thai_holdout_metrics.json"
+    if not staged_metrics_path.exists():
+        return True  # no Thai holdout available — can't compare, allow
+
+    with staged_metrics_path.open(encoding="utf-8") as fh:
+        staged = json.load(fh)
+    staged_recall = staged.get("recall_phishing_threshold")
+    if staged_recall is None:
+        return True
+
+    live_model_path = LIVE_MODELS_DIR / "ensemble.pkl"
+    live_scaler_path = LIVE_MODELS_DIR / "scaler.pkl"
+    if not live_model_path.exists() or not live_scaler_path.exists():
+        return True  # first-ever promote — no baseline to compare against
+
+    try:
+        import joblib
+        import ml_pipeline.evaluate as _evaluate
+
+        from ml_pipeline.config import THAI_HOLDOUT_CSV
+
+        live_model = joblib.load(live_model_path)
+        live_scaler = joblib.load(live_scaler_path)
+        live_metrics = _evaluate._eval_holdout_csv(
+            THAI_HOLDOUT_CSV,
+            str(STAGING_REPORTS_DIR / "live_thai_holdout_metrics.json"),
+            "LIVE MODEL THAI HOLDOUT (A/B comparison)",
+            live_model,
+            live_scaler,
+        )
+        live_recall = live_metrics.get("recall_phishing_threshold", 0.0)
+    except Exception as exc:  # noqa: BLE001
+        logger.warning("A/B comparison failed (%s) -- allowing promote", exc)
+        return True
+
+    if staged_recall < live_recall - 0.02:
+        logger.error(
+            "PROMOTION_BLOCKED: staged_recall=%.3f < live_recall=%.3f - 0.02 "
+            "(staged model regresses on Thai holdout vs current live model)",
+            staged_recall,
+            live_recall,
+        )
+        return False
+    logger.info(
+        "A/B compare OK: staged_recall=%.3f  live_recall=%.3f",
+        staged_recall,
+        live_recall,
+    )
     return True
 
 
@@ -154,7 +215,9 @@ def _retrain(enforce_gate: bool = True) -> bool:
             )
             return False
 
-    logger.info("staged model passed the gate -- promoting")
+    logger.info("staged model passed the gate -- running A/B comparison vs live model")
+    if not _compare_staged_vs_live():
+        return False
     return _promote()
 
 
