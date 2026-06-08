@@ -146,3 +146,25 @@ def test_webhook_retries_on_transport_failure():
             assert out[0].attempts == 1
         await engine.dispose()
     asyncio.run(_run())
+
+
+def test_ssrf_blocked_returns_delivery_with_error():
+    async def _run():
+        engine, maker = await _make_session()
+        async with maker() as session:
+            session.add(
+                BrandWatch(brand="krungthai", webhook_url="http://192.168.1.1/hook", enabled=True)
+            )
+            await session.commit()
+
+            # SSRF guard returns False (private IP) — must return an error delivery.
+            with patch("app.net_guard.url_is_safe", return_value=False):
+                out = await maybe_alert(
+                    session, url="http://phish", label="phishing", score=0.95,
+                    closest_domain="krungthai.com", reason="lookalike",
+                )
+            assert len(out) == 1
+            assert out[0].error == "SSRF_BLOCKED"
+            assert out[0].attempts == 0
+        await engine.dispose()
+    asyncio.run(_run())

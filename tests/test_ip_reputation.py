@@ -223,3 +223,35 @@ def test_feature_scores_high_for_dirty_ip():
             assert scores["asn_reputation_score"] == pytest.approx(1.0)
         await engine.dispose()
     asyncio.run(_run())
+
+
+def test_resolve_public_ip_hostname_resolves():
+    # Passing a hostname that isn't an IP literal exercises getaddrinfo path.
+    # We use "localhost" which resolves to 127.0.0.1 — a blocked private addr.
+    from app.ip_reputation import _resolve_public_ip
+    result = _resolve_public_ip("localhost")
+    assert result is None  # loopback is blocked
+
+
+def test_resolve_public_ip_getaddrinfo_failure():
+    import socket
+    from unittest.mock import patch
+    from app.ip_reputation import _resolve_public_ip
+    with patch("socket.getaddrinfo", side_effect=OSError("no route")):
+        # The function first tries inet_aton (fails on hostname), then getaddrinfo
+        result = _resolve_public_ip("unresolvable.internal")
+    assert result is None
+
+
+def test_asn_provider_exception_is_swallowed():
+    class _BadProvider:
+        name = "bad"
+        def lookup(self, ip):
+            raise RuntimeError("provider exploded")
+
+    from app.ip_reputation import resolve_ip_asn
+    rep = resolve_ip_asn("http://8.8.8.8/login", _BadProvider())
+    # Exception must not propagate; asn/as_name fall back to defaults
+    assert rep is not None
+    assert rep["asn"] is None
+    assert rep["as_name"] == ""
