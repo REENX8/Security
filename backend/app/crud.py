@@ -3,16 +3,26 @@
 from __future__ import annotations
 
 import datetime as dt
+import uuid as _uuid
 from collections import Counter, defaultdict
 
-from sqlalchemy import func, select
+from sqlalchemy import func, select, update
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.models import Label, UrlCheck
+from app.models import Label, UrlCheck, User
 
 
-async def insert_check(session: AsyncSession, result: dict) -> UrlCheck:
-    """Persist a scoring result and return the stored row."""
+async def insert_check(
+    session: AsyncSession,
+    result: dict,
+    user_id: _uuid.UUID | None = None,
+) -> UrlCheck:
+    """Persist a scoring result and return the stored row.
+
+    When ``user_id`` is supplied the row is attributed to that account and the
+    user's ``check_count`` is incremented so per-user history and usage stats
+    stay in sync.
+    """
     row = UrlCheck(
         url=result["url"][:2048],
         score=result["score"],
@@ -22,8 +32,17 @@ async def insert_check(session: AsyncSession, result: dict) -> UrlCheck:
         rules=result.get("rules"),
         closest_domain=result.get("closest_domain"),
         edit_distance=result.get("edit_distance"),
+        user_id=user_id,
     )
     session.add(row)
+    if user_id is not None:
+        # Atomic increment in the DB so concurrent checks don't clobber the
+        # counter (read-modify-write in Python would lose updates).
+        await session.execute(
+            update(User)
+            .where(User.id == user_id)
+            .values(check_count=User.check_count + 1)
+        )
     await session.commit()
     await session.refresh(row)
     return row
@@ -37,9 +56,12 @@ async def get_history(
     search: str | None = None,
     date_from: dt.datetime | None = None,
     date_to: dt.datetime | None = None,
+    user_id: _uuid.UUID | None = None,
 ) -> tuple[int, list[UrlCheck]]:
     """Return ``(total, rows)`` for a filtered, paginated history query."""
     conditions = []
+    if user_id is not None:
+        conditions.append(UrlCheck.user_id == user_id)
     if label:
         conditions.append(UrlCheck.label == Label(label))
     if search:

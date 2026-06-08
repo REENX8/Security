@@ -1,0 +1,66 @@
+{
+  "total": 110,
+  "detected": 110,
+  "missed": 0,
+  "detection_rate": 1.0,
+  "passed": true,
+  "threshold": 0.7,
+  "missed_urls": [],
+  "by_category": {
+    "at_trick": {
+      "n": 10,
+      "detected": 10,
+      "rate": 1.0
+    },
+    "encoded_ip_host": {
+      "n": 10,
+      "detected": 10,
+      "rate": 1.0
+    },
+    "free_tls_legit_looking": {
+      "n": 10,
+      "detected": 10,
+      "rate": 1.0
+    },
+    "homoglyph_not_in_fold": {
+      "n": 10,
+      "detected": 10,
+      "rate": 1.0
+    },
+    "ip_camouflage": {
+      "n": 10,
+      "detected": 10,
+      "rate": 1.0
+    },
+    "login_path_camouflage": {
+      "n": 10,
+      "detected": 10,
+      "rate": 1.0
+    },
+    "punycode_thai_brand": {
+      "n": 10,
+      "detected": 10,
+      "rate": 1.0
+    },
+    "redirect_confusion": {
+      "n": 10,
+      "detected": 10,
+      "rate": 1.0
+    },
+    "subdomain_depth": {
+      "n": 10,
+      "detected": 10,
+      "rate": 1.0
+    },
+    "url_encoding": {
+      "n": 10,
+      "detected": 10,
+      "rate": 1.0
+    },
+    "zero_day_tld": {
+      "n": 10,
+      "detected": 10,
+      "rate": 1.0
+    }
+  }
+}

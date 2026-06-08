@@ -4,8 +4,10 @@ from __future__ import annotations
 
 from phish_features.rules import (
     RulesEngine,
+    rule_encoded_ip_host,
     rule_https_lookalike,
     rule_login_keyword_dense,
+    rule_self_signed_login,
 )
 
 
@@ -22,6 +24,8 @@ def _feat(**kwargs) -> dict:
         "has_ip": 0,
         "has_https": 1,
         "cert_is_lets_encrypt": 0,
+        "is_self_signed": 0,
+        "has_encoded_ip": 0,
         "min_edit_distance": 999,
         "closest_domain": None,
     }
@@ -109,8 +113,66 @@ def test_login_keyword_dense_does_not_fire_below_three():
 
 
 # ---------------------------------------------------------------------------
+# ENCODED_IP_HOST
+# ---------------------------------------------------------------------------
+
+def test_encoded_ip_host_fires():
+    hit = rule_encoded_ip_host("http://0x7f000001/login", _feat(has_encoded_ip=1))
+    assert hit is not None
+    assert hit.rule_id == "ENCODED_IP_HOST"
+    assert hit.pin_label == "phishing"
+    assert hit.delta == 0.45
+
+
+def test_encoded_ip_host_no_fire_when_absent():
+    assert rule_encoded_ip_host("http://example.com/login", _feat(has_encoded_ip=0)) is None
+
+
+# ---------------------------------------------------------------------------
+# SELF_SIGNED_CRED
+# ---------------------------------------------------------------------------
+
+def test_self_signed_login_fires():
+    hit = rule_self_signed_login(
+        "https://1.2.3.4/login", _feat(is_self_signed=1, has_login_keyword=1)
+    )
+    assert hit is not None
+    assert hit.rule_id == "SELF_SIGNED_CRED"
+    assert hit.pin_label == "phishing"
+    assert hit.delta == 0.35
+
+
+def test_self_signed_login_no_fire_without_credential():
+    assert rule_self_signed_login(
+        "u", _feat(is_self_signed=1, has_login_keyword=0)
+    ) is None
+
+
+def test_self_signed_login_no_fire_with_ca_cert():
+    assert rule_self_signed_login(
+        "u", _feat(is_self_signed=0, has_login_keyword=1)
+    ) is None
+
+
+# ---------------------------------------------------------------------------
 # Engine integration: new rules active in DEFAULT_RULES
 # ---------------------------------------------------------------------------
+
+def test_engine_includes_encoded_ip_host():
+    engine = RulesEngine()
+    result = engine.evaluate("http://0x7f000001/login", _feat(has_encoded_ip=1))
+    assert "ENCODED_IP_HOST" in result.applied_ids()
+    assert result.pinned_label == "phishing"
+
+
+def test_engine_includes_self_signed_cred():
+    engine = RulesEngine()
+    result = engine.evaluate(
+        "https://1.2.3.4/login", _feat(is_self_signed=1, has_login_keyword=1)
+    )
+    assert "SELF_SIGNED_CRED" in result.applied_ids()
+    assert result.pinned_label == "phishing"
+
 
 def test_engine_includes_https_lookalike():
     engine = RulesEngine()

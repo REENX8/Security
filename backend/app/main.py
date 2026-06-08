@@ -507,6 +507,7 @@ async def root() -> dict:
             "POST /api/v1/check/batch",
             "GET  /api/v1/stats",
             "GET  /api/v1/history",
+            "GET  /api/v1/me/history",
             "GET  /api/v1/admin/whitelist",
             "POST /api/v1/admin/whitelist",
             "DELETE /api/v1/admin/whitelist/{domain}",

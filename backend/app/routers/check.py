@@ -9,6 +9,7 @@
 
 import asyncio
 import logging
+import uuid
 
 from fastapi import APIRouter, Depends, Request
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -19,7 +20,7 @@ from app.config import settings
 from app.content_check import content_score_adjustment
 from app.crud import insert_check
 from app.database import get_session
-from app.deps import get_scorer
+from app.deps import get_scorer, optional_user_id
 from app.errors import AppError
 from app.metrics import CACHE_SIZE, CHECK_LATENCY, CHECKS_TOTAL, NETWORK_TIMEOUT
 from app.notifier import maybe_alert
@@ -151,15 +152,20 @@ async def _score_url(request: Request, url: str) -> dict:
     return {**result, "cached": False}
 
 
-async def _persist_observability(session: AsyncSession, result: dict) -> None:
+async def _persist_observability(
+    session: AsyncSession, result: dict, user_id: uuid.UUID | None = None
+) -> None:
     """Best-effort history + campaign + webhook work. Never blocks a verdict.
 
     Persisting history, clustering the campaign and firing a webhook are all
     observability concerns. A failure in any one of them must never stop the
     verdict from reaching the user. Scoring is the contract; this is extra.
+
+    When ``user_id`` is set (a signed-in user), the stored check is attributed
+    to that account so it shows up in their personal history.
     """
     try:
-        await insert_check(session, result)
+        await insert_check(session, result, user_id=user_id)
     except Exception as exc:  # noqa: BLE001 - any DB driver/network error
         _log.warning("history persist skipped (db unreachable): %s", exc)
 
@@ -206,13 +212,16 @@ async def _persist_observability(session: AsyncSession, result: dict) -> None:
 
 
 async def _score_and_persist(
-    request: Request, session: AsyncSession, url: str
+    request: Request,
+    session: AsyncSession,
+    url: str,
+    user_id: uuid.UUID | None = None,
 ) -> dict:
     """Score one URL with caching, persistence and metric updates."""
     result = await _score_url(request, url)
     # Cache hits were already persisted on their first sighting; don't dup.
     if not result.get("cached"):
-        await _persist_observability(session, result)
+        await _persist_observability(session, result, user_id=user_id)
     return result
 
 
@@ -226,8 +235,9 @@ async def check_url(
     request: Request,
     payload: CheckRequest,
     session: AsyncSession = Depends(get_session),
+    user_id: uuid.UUID | None = Depends(optional_user_id),
 ) -> CheckResponse:
-    result = await _score_and_persist(request, session, payload.url)
+    result = await _score_and_persist(request, session, payload.url, user_id=user_id)
     return CheckResponse(**result)
 
 
@@ -241,6 +251,7 @@ async def check_batch(
     request: Request,
     payload: BatchCheckRequest,
     session: AsyncSession = Depends(get_session),
+    user_id: uuid.UUID | None = Depends(optional_user_id),
 ) -> BatchCheckResponse:
     if len(payload.urls) > settings.batch_max_size:
         raise AppError(
@@ -263,6 +274,6 @@ async def check_batch(
     results = []
     for result in scored:
         if not result.get("cached"):
-            await _persist_observability(session, result)
+            await _persist_observability(session, result, user_id=user_id)
         results.append(CheckResponse(**result))
     return BatchCheckResponse(count=len(results), results=results)

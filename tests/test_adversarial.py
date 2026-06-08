@@ -14,6 +14,7 @@ from __future__ import annotations
 import csv
 import os
 import sys
+from collections import defaultdict
 from pathlib import Path
 
 import pytest
@@ -31,6 +32,7 @@ _MODEL = _REPO / "models" / "ensemble.pkl"
 
 SCORE_THRESHOLD = 0.50
 SUITE_DETECTION_RATE = 0.70  # overall gate
+PER_TECHNIQUE_RATE = 0.50   # no single evasion technique may collapse below this
 
 
 def _load_cases() -> list[tuple[str, str, str]]:
@@ -84,4 +86,35 @@ def test_adversarial_overall_detection_rate(scorer):
     assert rate >= SUITE_DETECTION_RATE, (
         f"Adversarial detection rate {rate:.1%} < {SUITE_DETECTION_RATE:.0%} gate "
         f"({detected}/{len(cases)} detected)"
+    )
+
+
+def test_adversarial_per_technique_floor(scorer):
+    """No single evasion technique may regress below PER_TECHNIQUE_RATE.
+
+    The overall gate can stay green while one technique silently collapses to
+    0%. A per-category floor catches that regression so a blind spot in one
+    evasion family is surfaced instead of averaged away.
+    """
+    cases = _load_cases()
+    if not cases:
+        pytest.skip("No adversarial CSV found")
+
+    by_tech: dict[str, list[int]] = defaultdict(list)
+    for url, _, technique in cases:
+        result = scorer.score(url)
+        label = result.get("label", "unknown")
+        score = float(result.get("score", 0.0))
+        hit = 1 if (label == "phishing" or score >= SCORE_THRESHOLD) else 0
+        by_tech[technique].append(hit)
+
+    weak = {
+        tech: sum(hits) / len(hits)
+        for tech, hits in by_tech.items()
+        if sum(hits) / len(hits) < PER_TECHNIQUE_RATE
+    }
+    assert not weak, (
+        "Evasion techniques below the per-technique floor "
+        f"({PER_TECHNIQUE_RATE:.0%}): "
+        + ", ".join(f"{t}={r:.0%}" for t, r in sorted(weak.items()))
     )

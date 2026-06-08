@@ -249,6 +249,48 @@ def rule_subdomain_camouflage(url: str, feat: dict) -> RuleHit | None:
     return None
 
 
+def rule_encoded_ip_host(url: str, feat: dict) -> RuleHit | None:
+    """Host written as a hex/octal IP literal — pure obfuscation.
+
+    ``http://0x7f000001/`` or ``http://0177.0.0.1/`` resolve to a raw IP but
+    sidestep the naive dotted-decimal IP regex (``has_ip``). There is no
+    legitimate reason to address a host this way, so it is a high-precision
+    phishing signal. ``has_encoded_ip`` is the v1.7.0 deterministic feature; no
+    rule consumed it until now, so the model carried this alone.
+    """
+    if feat.get("has_encoded_ip"):
+        return RuleHit(
+            "ENCODED_IP_HOST",
+            delta=0.45,
+            pin_label="phishing",
+            message=(
+                "URL ใช้หมายเลข IP แบบเข้ารหัส (เลขฐานสิบหก/ฐานแปด) แทนชื่อโดเมน — "
+                "เทคนิคซ่อนปลายทางจริงที่ไม่มีการใช้งานปกติ"
+            ),
+        )
+    return None
+
+
+def rule_self_signed_login(url: str, feat: dict) -> RuleHit | None:
+    """Self-signed certificate on a page asking for credentials.
+
+    A real login portal is served behind a CA-issued certificate. A
+    self-signed cert collecting credentials is a near-certain phishing /
+    man-in-the-middle setup, so pin to phishing.
+    """
+    if feat.get("is_self_signed") and feat.get("has_login_keyword"):
+        return RuleHit(
+            "SELF_SIGNED_CRED",
+            delta=0.35,
+            pin_label="phishing",
+            message=(
+                "หน้าเข้าสู่ระบบนี้ใช้ใบรับรอง TLS แบบ self-signed ที่ไม่น่าเชื่อถือ — "
+                "เว็บทางการจะใช้ใบรับรองจากผู้ออกใบรับรองที่ตรวจสอบได้"
+            ),
+        )
+    return None
+
+
 def rule_redirect_confusion(url: str, feat: dict) -> RuleHit | None:
     """Open-redirect pattern combined with credential keyword.
 
@@ -279,7 +321,9 @@ DEFAULT_RULES: tuple[Rule, ...] = (
     rule_path_brand_impersonation,
     rule_subdomain_camouflage,
     rule_redirect_confusion,
+    rule_encoded_ip_host,         # hex/octal IP literal host
     rule_ip_with_login,
+    rule_self_signed_login,       # self-signed cert + credential keyword
     rule_cheap_tld_no_https,
 )
 
@@ -359,4 +403,6 @@ __all__ = [
     "rule_login_keyword_dense",
     "rule_subdomain_camouflage",
     "rule_redirect_confusion",
+    "rule_encoded_ip_host",
+    "rule_self_signed_login",
 ]
