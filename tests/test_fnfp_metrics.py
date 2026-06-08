@@ -6,7 +6,6 @@ import asyncio
 import os
 import sys
 import types
-from datetime import datetime, timezone
 from pathlib import Path
 from unittest.mock import AsyncMock, patch
 
@@ -81,7 +80,7 @@ def test_fn_gauge_updated_on_retrain_trigger():
 
 def test_fp_gauge_updated_on_retrain_trigger():
     from app import retrain_trigger
-    from app.metrics import FALSE_NEGATIVE_RATE, FALSE_POSITIVE_RATE
+    from app.metrics import FALSE_POSITIVE_RATE
 
     async def _run():
         engine, maker = _make_session_factory()

@@ -234,8 +234,8 @@ def test_resolve_public_ip_hostname_resolves():
 
 
 def test_resolve_public_ip_getaddrinfo_failure():
-    import socket
     from unittest.mock import patch
+
     from app.ip_reputation import _resolve_public_ip
     with patch("socket.getaddrinfo", side_effect=OSError("no route")):
         # The function first tries inet_aton (fails on hostname), then getaddrinfo
@@ -258,8 +258,8 @@ def test_asn_provider_exception_is_swallowed():
 
 
 def test_resolve_public_ip_via_getaddrinfo():
-    import socket
     from unittest.mock import patch
+
     from app.ip_reputation import _resolve_public_ip
     # Mock host_is_safe=True so the host passes the guard, then make inet_aton
     # fail (it's a hostname, not a literal), and getaddrinfo returns a public IP.
@@ -272,8 +272,8 @@ def test_resolve_public_ip_via_getaddrinfo():
 
 
 def test_resolve_public_ip_all_resolved_ips_blocked():
-    import socket
     from unittest.mock import patch
+
     from app.ip_reputation import _resolve_public_ip
     # All getaddrinfo results are private IPs → function returns None (line 56)
     with patch("app.ip_reputation.host_is_safe", return_value=True), \

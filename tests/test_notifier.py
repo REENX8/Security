@@ -7,7 +7,6 @@ import sys
 from pathlib import Path
 from unittest.mock import patch
 
-import pytest
 import sqlalchemy as sa
 
 # Add backend to sys.path so app.* is importable without conftest.

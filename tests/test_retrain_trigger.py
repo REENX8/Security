@@ -8,8 +8,6 @@ import types
 from pathlib import Path
 from unittest.mock import AsyncMock, patch
 
-import pytest
-
 # Add backend to sys.path so app.* is importable without conftest.
 _BACKEND = str(Path(__file__).resolve().parents[1] / "backend")
 if _BACKEND not in sys.path:

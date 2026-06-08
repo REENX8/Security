@@ -16,11 +16,11 @@ matplotlib.use("Agg")  # headless
 import matplotlib.pyplot as plt
 import pandas as pd
 import seaborn as sns
+from sklearn.calibration import calibration_curve
 from sklearn.metrics import (
     ConfusionMatrixDisplay,
     accuracy_score,
     brier_score_loss,
-    calibration_curve,
     classification_report,
     confusion_matrix,
     f1_score,
@@ -125,8 +125,10 @@ def main() -> None:
     print(f"[eval] saved {roc_path}")
 
     # --- calibration quality (Brier score + reliability diagram) ---
+    brier_rounded: float | None = None
     try:
         brier = brier_score_loss(y, y_proba)
+        brier_rounded = round(brier, 4)
         print(f"[eval] calibration_brier_score={brier:.4f}")
         if brier > 0.10:
             print(f"[eval] WARNING: Brier score {brier:.4f} > 0.10 -- confidence "
@@ -144,7 +146,6 @@ def main() -> None:
         fig.savefig(cal_path, dpi=120)
         plt.close(fig)
         print(f"[eval] saved {cal_path}")
-        metrics["calibration_brier_score"] = round(brier, 4)
     except Exception as exc:  # noqa: BLE001
         print(f"[eval] calibration skipped ({exc})")
 
@@ -185,6 +186,8 @@ def main() -> None:
             "not a reliable estimate of real-world performance."
         ),
     }
+    if brier_rounded is not None:
+        metrics["calibration_brier_score"] = brier_rounded
     with open(METRICS_JSON, "w", encoding="utf-8") as fh:
         json.dump(metrics, fh, indent=2)
     print(f"[eval] saved {METRICS_JSON}")

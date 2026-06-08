@@ -92,6 +92,7 @@ class TestScorer:
 def test_metrics_exception_does_not_break_scoring():
     """Verify that a failing RULE_FIRED counter never propagates to the caller."""
     from unittest.mock import MagicMock, patch
+
     from app.ml.loader import load_scorer
 
     scorer = load_scorer()
