@@ -70,6 +70,24 @@ THRESHOLD_AB = Counter(
     labelnames=("variant", "label"),  # variant: "a" | "b"
     registry=REGISTRY,
 )
+FALSE_NEGATIVE_RATE = Gauge(
+    "phish_false_negative_rate",
+    "Fraction of recent feedback where the model said 'safe' but user "
+    "corrected to 'phishing' (trailing 7-day window, updated at retrain time).",
+    registry=REGISTRY,
+)
+FALSE_POSITIVE_RATE = Gauge(
+    "phish_false_positive_rate",
+    "Fraction of recent feedback where the model said 'phishing' but user "
+    "corrected to 'safe' (trailing 7-day window, updated at retrain time).",
+    registry=REGISTRY,
+)
+RULE_FIRED = Counter(
+    "phish_rule_fired_total",
+    "Number of times each named rule fired during scoring.",
+    labelnames=("rule_id",),
+    registry=REGISTRY,
+)
 
 
 def render_metrics() -> tuple[bytes, str]:

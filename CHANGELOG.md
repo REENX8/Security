@@ -14,6 +14,68 @@ or mirror it explicitly.
 
 ## [Unreleased]
 
+## [1.6.1] — ML quality, security hardening (2026-06-08)
+
+### Added
+
+- **HTTPS_LOOKALIKE rule** (`phish_features/rules.py`): fires when a URL uses
+  HTTPS with a free DV certificate (Let's Encrypt) alongside a typosquat, brand
+  path hit, or login keyword. Delta +0.30, pin phishing. Closes the biggest rule
+  gap for modern phishing kits that obtain free TLS certs to appear legitimate.
+- **LOGIN_KEYWORD_DENSE rule** (`phish_features/rules.py`): fires when ≥ 3
+  credential keywords appear in the URL (`login`, `verify`, `account`, etc.).
+  Delta +0.25, no hard pin. Catches credential-stuffed phishing kits that use
+  benign-looking hosts.
+- **Feedback deduplication** (`ml_pipeline/collect_dataset.py`): same URL
+  reported multiple times is now deduplicated via majority-vote before training,
+  preventing popular-campaign over-representation. Tied verdicts are discarded.
+- **Temporal decay for feedback labels** (`ml_pipeline/collect_dataset.py`,
+  `ml_pipeline/feedback_retrain.py`): each feedback row carries an exponential
+  decay weight (half-life 90 days) so stale verdicts count less during training.
+- **A/B model comparison before promotion** (`ml_pipeline/feedback_retrain.py`):
+  before promoting a staged model, its Thai holdout recall is compared to the
+  currently-live model's recall. Promotion is blocked if the staged model's recall
+  drops more than 2 pp below the live model, preventing silent regressions.
+- **Calibration Brier score** (`ml_pipeline/evaluate.py`): Brier score computed
+  on the test split; reliability diagram saved to `reports/calibration_curve.png`.
+  A WARNING is logged if Brier > 0.10.
+- **Reproducible calibration CV** (`ml_pipeline/train.py`): `CalibratedClassifierCV`
+  now uses `StratifiedKFold(random_state=RANDOM_SEED)` so fold splits are identical
+  across runs.
+- **Sample weight pass-through** (`ml_pipeline/train.py`, `feature_engineering.py`):
+  `sample_weight` column from `dataset.csv` is passed to `model.fit()`, enabling
+  temporal decay to influence training.
+- **Global RNG seed** (`ml_pipeline/config.py`): `random.seed(42)` and
+  `numpy.random.seed(42)` locked at import time to improve reproducibility.
+- **Per-URL debug logging** (`backend/app/ml/scorer.py`): each scored URL emits
+  a `DEBUG`-level log line with score, label, and rules that fired. Enabled with
+  `LOG_LEVEL=DEBUG`; zero overhead otherwise.
+- **False-negative/false-positive rate gauges** (`backend/app/metrics.py`,
+  `backend/app/retrain_trigger.py`): Prometheus gauges `phish_false_negative_rate`
+  and `phish_false_positive_rate` updated at each auto-retrain trigger from
+  trailing 7-day feedback window.
+- **Rule firing counter** (`backend/app/metrics.py`, `backend/app/ml/scorer.py`):
+  `phish_rule_fired_total{rule_id}` Counter incremented each time a named rule
+  fires, enabling audit of which rules are most active.
+
+### Fixed
+
+- **Timing-safe username comparison** (`backend/app/routers/auth.py`): replaced
+  `==` with `secrets.compare_digest` to resist timing-based username enumeration.
+- **JWT subject validation** (`backend/app/deps.py`): `sub` claim is now compared
+  against `settings.admin_username` instead of truthy check — any non-empty JWT
+  subject can no longer bypass authentication.
+- **Webhook SSRF** (`backend/app/notifier.py`): webhook URL is checked with
+  `net_guard.url_is_safe()` before the outbound POST; private/loopback/reserved
+  addresses are rejected with a `SSRF_BLOCKED` delivery record.
+- **Retrain race condition** (`backend/app/retrain_trigger.py`): the
+  check-then-set on `retrain_in_progress` is now wrapped in an `asyncio.Lock`
+  so concurrent feedback submissions cannot launch duplicate retrains.
+- **Whitelist hot-reload thread safety** (`backend/app/routers/admin.py`,
+  `backend/app/main.py`): a `threading.Lock` (stored on `app.state.whitelist_lock`)
+  protects in-place whitelist replacement from concurrent reads in the scorer
+  threadpool.
+
 ## [1.6.0] — visual fingerprinting + IP/ASN reputation + ML-ops gates (2026-06-07)
 
 ### Added

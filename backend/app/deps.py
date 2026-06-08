@@ -34,7 +34,7 @@ async def require_auth(
                 settings.jwt_secret,
                 algorithms=[settings.jwt_algorithm],
             )
-            if payload.get("sub"):
+            if payload.get("sub") == settings.admin_username:
                 return
         except Exception:  # noqa: BLE001
             pass

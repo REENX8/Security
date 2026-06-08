@@ -131,6 +131,26 @@ async def maybe_alert(
     if not watch.webhook_url:
         return []  # watched without a webhook = "track only"
 
+    # SSRF guard: refuse to POST to private/loopback/reserved addresses.
+    from app.net_guard import url_is_safe
+    if not url_is_safe(watch.webhook_url):
+        logger.warning(
+            "watchlist webhook SSRF_BLOCKED: brand=%s url=%s",
+            brand, watch.webhook_url,
+        )
+        delivery = WebhookDelivery(
+            brand=brand,
+            url_checked=url[:2048],
+            webhook_url=watch.webhook_url[:512],
+            status_code=None,
+            error="SSRF_BLOCKED",
+            attempts=0,
+        )
+        session.add(delivery)
+        await session.commit()
+        await session.refresh(delivery)
+        return [delivery]
+
     payload = {
         "schema": "phish.alert.v1",
         "brand": brand,

@@ -51,6 +51,9 @@ _FIELDS = [
     # v1.6 simulated IP/ASN reputation columns (blank for real seed rows ->
     # imputed to -1 / "unknown" by the extractor)
     "ip_reputation_score", "asn_reputation_score",
+    # sample_weight: temporal decay weight (1.0 for non-feedback rows,
+    # exp(-lambda*age_days) for feedback rows so stale labels count less)
+    "sample_weight",
 ]
 
 
@@ -226,24 +229,31 @@ def _load_generic_phish_seed() -> list[str]:
 def _load_feedback_rows(gen, exclude_urls: set[str]) -> list[dict]:
     """Load confirmed-feedback labels exported from the DB as TRAINING rows.
 
-    Rows are (url, label) pairs written by feedback_retrain.py. We attach
-    simulated network features (the URLs do not resolve offline) and drop any
-    URL already present in a holdout so feedback can never leak the eval set
-    into training. Feedback rows are training-only by construction.
+    Deduplicates by URL using majority-vote: if the same URL was reported N
+    times as phishing and M times as safe, the majority wins; ties are
+    discarded. Applies temporal decay so old feedback matters less (half-life
+    90 days). Feedback rows are training-only by construction — URLs in
+    ``exclude_urls`` (holdout set) are never folded into training.
     """
     if not os.path.exists(FEEDBACK_CSV):
         return []
     import csv as _csv
+    from datetime import datetime, timezone
+    from math import exp, log
 
-    rows: list[dict] = []
-    seen: set[str] = set()
+    HALF_LIFE_DAYS = 90.0
+    _lambda = log(2) / HALF_LIFE_DAYS
+
+    # First pass: group all (label, created_at) tuples by URL.
+    raw: dict[str, list[tuple[int, str]]] = {}
     with open(FEEDBACK_CSV, newline="", encoding="utf-8") as fh:
         for row in _csv.DictReader(fh):
             url = (row.get("url") or "").strip()
             label_raw = (row.get("label") or "").strip()
+            created_at_raw = (row.get("created_at") or "").strip()
             if not url.startswith(("http://", "https://")):
                 continue
-            if url in exclude_urls or url in seen:
+            if url in exclude_urls:
                 continue
             try:
                 label = int(label_raw)
@@ -251,11 +261,51 @@ def _load_feedback_rows(gen, exclude_urls: set[str]) -> list[dict]:
                 continue
             if label not in (0, 1):
                 continue
-            seen.add(url)
-            net = gen.sim_network(label, url.startswith("https://"))
-            rows.append({"url": url, "label": label, **net})
-    if rows:
-        print(f"[feedback] folded {len(rows)} confirmed-feedback rows into training")
+            raw.setdefault(url, []).append((label, created_at_raw))
+
+    # Second pass: majority-vote dedup + temporal decay weight.
+    rows: list[dict] = []
+    skipped_ties = 0
+    n_raw = sum(len(v) for v in raw.values())
+    now = datetime.now(timezone.utc)
+
+    for url, entries in raw.items():
+        votes_phish = sum(1 for lbl, _ in entries if lbl == 1)
+        votes_safe = len(entries) - votes_phish
+        if votes_phish == votes_safe:
+            skipped_ties += 1
+            continue  # discard ambiguous ties
+        label = 1 if votes_phish > votes_safe else 0
+
+        # Temporal weight: use the most-recent entry's timestamp.
+        best_ts: datetime | None = None
+        for _, ts_str in entries:
+            if not ts_str:
+                continue
+            try:
+                ts = datetime.fromisoformat(ts_str)
+                if ts.tzinfo is None:
+                    ts = ts.replace(tzinfo=timezone.utc)
+                if best_ts is None or ts > best_ts:
+                    best_ts = ts
+            except Exception:  # noqa: BLE001
+                pass
+
+        if best_ts is not None:
+            age_days = max(0.0, (now - best_ts).total_seconds() / 86400.0)
+            weight = exp(-_lambda * age_days)
+        else:
+            weight = 1.0
+
+        net = gen.sim_network(label, url.startswith("https://"))
+        rows.append({"url": url, "label": label,
+                     "sample_weight": round(weight, 4), **net})
+
+    if rows or skipped_ties:
+        print(
+            f"[feedback] folded {len(rows)} confirmed-feedback rows into training "
+            f"(deduplicated from {n_raw} raw rows; {skipped_ties} tied-verdict URLs skipped)"
+        )
     return rows
 
 
@@ -351,6 +401,10 @@ def main(use_feeds: bool = True) -> None:
     rows.extend(generic_train)
     rows.extend(feedback_rows)
     rows.extend(synth_phish)
+    # Default sample_weight=1.0 for all non-feedback rows (which don't have
+    # the key set).  Feedback rows already carry their temporal-decay weight.
+    for r in rows:
+        r.setdefault("sample_weight", 1.0)
     gen.rng.shuffle(rows)
 
     with open(DATASET_CSV, "w", newline="", encoding="utf-8") as fh:

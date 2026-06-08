@@ -3,9 +3,12 @@
 from __future__ import annotations
 
 import datetime as dt
+import logging
 
 from app.config import settings
 from phish_features import ORDERED_FEATURES, FeatureExtractor, RulesEngine
+
+logger = logging.getLogger("phish-detector")
 
 
 def label_from_score(score: float) -> str:
@@ -137,6 +140,19 @@ class Scorer:
             reason = " · ".join(rules_messages[:3])
         else:
             reason = _build_reason(feat, label, is_whitelisted)
+
+        # Increment rule-firing counter for observability.
+        try:
+            from app.metrics import RULE_FIRED
+            for hit in rules_out.hits:
+                RULE_FIRED.labels(rule_id=hit.rule_id).inc()
+        except Exception:  # noqa: BLE001 - metrics must never break scoring
+            pass
+
+        logger.debug(
+            "score url=%s score=%.3f label=%s rules=%s",
+            url, score, label, rules_out.applied_ids(),
+        )
 
         return {
             "url": url,

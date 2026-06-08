@@ -186,10 +186,51 @@ def rule_cheap_tld_no_https(url: str, feat: dict) -> RuleHit | None:
     return None
 
 
+def rule_https_lookalike(url: str, feat: dict) -> RuleHit | None:
+    """HTTPS + free cert + brand/credential signal -- modern phishing kit."""
+    if (
+        feat.get("has_https")
+        and feat.get("cert_is_lets_encrypt")
+        and (
+            feat.get("is_typosquat")
+            or feat.get("path_brand_hit")
+            or feat.get("has_login_keyword")
+        )
+    ):
+        return RuleHit(
+            "HTTPS_LOOKALIKE",
+            delta=0.30,
+            pin_label="phishing",
+            message=(
+                "URL ใช้ HTTPS พร้อมใบรับรองฟรี (Let's Encrypt) "
+                "และมีสัญญาณการปลอมแปลงแบรนด์ — "
+                "รูปแบบที่พบบ่อยในชุดฟิชชิงยุคใหม่"
+            ),
+        )
+    return None
+
+
+def rule_login_keyword_dense(url: str, feat: dict) -> RuleHit | None:
+    """High concentration of credential keywords raises suspicion."""
+    if feat.get("num_login_keywords", 0) >= 3:
+        return RuleHit(
+            "LOGIN_KEYWORD_DENSE",
+            delta=0.25,
+            pin_label=None,
+            message=(
+                "URL มีคำที่เกี่ยวกับการเข้าสู่ระบบหลายคำ "
+                "(เช่น login/verify/account/password) ซึ่งเป็นรูปแบบชุดฟิชชิงที่ใช้บ่อย"
+            ),
+        )
+    return None
+
+
 DEFAULT_RULES: tuple[Rule, ...] = (
     rule_whitelisted_exact,       # safety net first
     rule_at_trick,
     rule_punycode_brand_match,
+    rule_https_lookalike,         # HTTPS + free cert + brand/credential signal
+    rule_login_keyword_dense,     # high credential-keyword density
     rule_typosquat_with_login,
     rule_path_brand_impersonation,
     rule_ip_with_login,
@@ -268,4 +309,6 @@ __all__ = [
     "DEFAULT_RULES",
     "LOGIN_KEYWORDS",
     "SUSPICIOUS_TLDS",
+    "rule_https_lookalike",
+    "rule_login_keyword_dense",
 ]

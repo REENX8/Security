@@ -55,6 +55,9 @@ def build_feature_frame(
         rec["url"] = url
         rec["closest_domain"] = feat.get("closest_domain")
         rec["tld_type"] = feat.get("tld_type")
+        # Preserve temporal-decay weight from the dataset CSV (default 1.0).
+        sw_raw = row.get("sample_weight", "")
+        rec["sample_weight"] = float(sw_raw) if sw_raw not in ("", None) else 1.0
         records.append(rec)
 
     out = pd.DataFrame.from_records(records)
