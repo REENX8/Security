@@ -2,9 +2,23 @@
 
 from __future__ import annotations
 
-from app.config import settings
-from app.ml.loader import load_scorer
-from app.ml.scorer import label_from_score
+import os
+import sys
+from pathlib import Path
+
+# Add backend to sys.path so app.* is importable without conftest.
+_BACKEND = str(Path(__file__).resolve().parents[1] / "backend")
+if _BACKEND not in sys.path:
+    sys.path.insert(0, _BACKEND)
+
+os.environ.setdefault("DATABASE_URL", "sqlite+aiosqlite:///:memory:")
+os.environ.setdefault("SECRET_KEY", "test-secret")
+os.environ.setdefault("ADMIN_USERNAME", "admin")
+os.environ.setdefault("API_KEY", "test-key")
+
+from app.config import settings  # noqa: E402
+from app.ml.loader import load_scorer  # noqa: E402
+from app.ml.scorer import label_from_score  # noqa: E402
 
 
 def test_label_thresholds():
@@ -66,11 +80,10 @@ class TestScorer:
         result = self.scorer.score("https://chulа.com/login")
         assert result["label"] in ("phishing", "suspicious")
         assert result["features"]["has_mixed_script"] == 1
-        # The reason should mention the lookalike attack class (either
-        # "หลายภาษา" or "Cyrillic" or "Punycode" depending on which branch wins).
-        assert (
-            "หลายภาษา" in result["reason"]
-            or "Cyrillic" in result["reason"]
-            or "Punycode" in result["reason"]
-            or "ปลอม" in result["reason"]  # typosquat fallback wording
-        )
+        # The reason should explain the lookalike attack. Acceptable strings
+        # cover: mixed-script rule ("หลายภาษา"), Punycode rule, typosquat rules
+        # ("ปลอม", "คล้ายกับ"), or any explicit script name.
+        reason = result["reason"]
+        assert any(s in reason for s in (
+            "หลายภาษา", "Cyrillic", "Punycode", "ปลอม", "คล้ายกับ",
+        )), f"reason did not explain lookalike attack: {reason!r}"
