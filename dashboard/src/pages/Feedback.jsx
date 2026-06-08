@@ -2,7 +2,7 @@ import { useState } from "react";
 import Layout from "../components/Layout.jsx";
 import { Skeleton } from "../components/Skeleton.jsx";
 import { useFeedback } from "../api/queries.js";
-import { getFeedbackExportUrl } from "../api/client.js";
+import { exportFeedbackCsv } from "../api/client.js";
 import LabelBadge from "../components/LabelBadge.jsx";
 
 const LIMIT = 50;
@@ -25,6 +25,7 @@ export default function Feedback() {
   const [verdictGiven, setVerdictGiven] = useState("");
   const [correctVerdict, setCorrectVerdict] = useState("");
   const [offset, setOffset] = useState(0);
+  const [exporting, setExporting] = useState(false);
 
   const params = {
     verdict_given: verdictGiven || undefined,
@@ -37,7 +38,24 @@ export default function Feedback() {
   const total = data?.total ?? 0;
   const items = data?.items ?? [];
 
-  const exportUrl = `${getFeedbackExportUrl()}?x-api-key=${import.meta.env.VITE_API_KEY || "dev-local-key-change-me"}`;
+  async function handleExport() {
+    setExporting(true);
+    try {
+      const blob = await exportFeedbackCsv();
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = "feedback.csv";
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      URL.revokeObjectURL(url);
+    } catch (err) {
+      alert(`Export ล้มเหลว: ${err.message}`);
+    } finally {
+      setExporting(false);
+    }
+  }
 
   return (
     <Layout title="รายงานผลผิดพลาด">
@@ -70,13 +88,13 @@ export default function Feedback() {
           </div>
           <div className="ml-auto flex items-center gap-2">
             <span className="text-xs text-slate-500">ทั้งหมด {total} รายการ</span>
-            <a
-              href={exportUrl}
-              download="feedback.csv"
-              className="rounded-lg border border-slate-700 px-3 py-2 text-xs font-medium text-slate-300 hover:bg-slate-800"
+            <button
+              onClick={handleExport}
+              disabled={exporting}
+              className="rounded-lg border border-slate-700 px-3 py-2 text-xs font-medium text-slate-300 hover:bg-slate-800 disabled:opacity-50"
             >
-              Export CSV
-            </a>
+              {exporting ? "กำลัง Export…" : "Export CSV"}
+            </button>
           </div>
         </div>
       </div>

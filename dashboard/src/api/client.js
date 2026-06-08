@@ -109,8 +109,27 @@ export function submitFeedback(data) {
   });
 }
 
-export function getFeedbackExportUrl() {
-  return `${BASE_URL}/api/v1/feedback/export`;
+export async function exportFeedbackCsv() {
+  let resp;
+  try {
+    resp = await fetch(`${BASE_URL}/api/v1/feedback/export`, {
+      headers: { "X-API-Key": API_KEY },
+    });
+  } catch (_networkErr) {
+    throw new Error(
+      `ไม่สามารถเชื่อมต่อ ${BASE_URL} ได้ — ` +
+      `ตรวจสอบว่า backend กำลังทำงานอยู่ และตั้งค่า VITE_API_URL ให้ถูกต้อง`
+    );
+  }
+  if (!resp.ok) {
+    let message = `HTTP ${resp.status}`;
+    try {
+      const body = await resp.json();
+      message = body.error || message;
+    } catch (_) { /* ignore */ }
+    throw new Error(message);
+  }
+  return resp.blob();
 }
 
 // --- Brand watchlist ---

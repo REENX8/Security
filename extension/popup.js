@@ -74,9 +74,14 @@ function renderResult(result) {
         btn.dataset.selectedChoice = btn.dataset.choice;
       });
     });
+    const validationEl = node.querySelector("[data-feedback-validation]");
     node.querySelector("[data-submit-feedback]").addEventListener("click", async () => {
       const selected = node.querySelector("[data-choice].selected");
-      if (!selected) { alert("กรุณาเลือกผลที่ถูกต้อง"); return; }
+      if (!selected) {
+        if (validationEl) { validationEl.hidden = false; }
+        return;
+      }
+      if (validationEl) { validationEl.hidden = true; }
       const comment = node.querySelector("[data-comment]").value.trim();
       const statusEl = node.querySelector("[data-feedback-status]");
       try {
@@ -101,22 +106,26 @@ function renderResult(result) {
 
 async function _submitFeedback(result, correctVerdict, comment) {
   const settings = await getSettings();
-  // Use the same backend `endpoint` as the check call (see api.js/storage.js).
-  // /api/v1/feedback is public, so no API key is sent.
   const endpoint = (settings.endpoint || "http://localhost:8000").replace(/\/+$/, "");
-  const resp = await fetch(`${endpoint}/api/v1/feedback`, {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-    },
-    body: JSON.stringify({
-      url: result.url,
-      verdict_given: result.label,
-      correct_verdict: correctVerdict,
-      comment,
-      source: "extension",
-    }),
-  });
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), 5000);
+  let resp;
+  try {
+    resp = await fetch(`${endpoint}/api/v1/feedback`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        url: result.url,
+        verdict_given: result.label,
+        correct_verdict: correctVerdict,
+        comment,
+        source: "extension",
+      }),
+      signal: controller.signal,
+    });
+  } finally {
+    clearTimeout(timer);
+  }
   if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
 }
 
