@@ -11,3 +11,7 @@ seaborn==0.13.2
 requests==2.32.3
 Levenshtein==0.26.1
 python-whois==0.9.5
+# Optional: hyperparameter search for `python -m ml_pipeline.train --tune`
+# (make train-tune). The trainer degrades gracefully to default hyperparameters
+# if optuna is absent, so this is only needed when you actually run a search.
+optuna==4.9.0
