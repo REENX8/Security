@@ -77,14 +77,14 @@
 **Feature Schema v<!--M:schema_version-->1.7.0<!--/M--> — <!--M:n_features-->46<!--/M--> features** — สัญญา feature-matrix ล่าสุด:
 - **ใหม่ใน v1.6.0 — IP/ASN reputation (B8):** `ip_reputation_score`, `asn_reputation_score` — สัดส่วน verdict ที่เป็นอันตรายสะสมต่อ IP/ASN (0..1; -1 = ไม่มีประวัติ) ป้อนจาก reputation store ตอน serve ทำให้ช่วง hosting ที่มีประวัติเสียดัน URL ใหม่ขึ้นได้ตั้งแต่ครั้งแรก (เป็น class-neutral เมื่อไม่รู้ → Thai-recall gate ยังผ่าน; ปิดเป็นค่าเริ่มต้นด้วย `IP_REPUTATION_ENABLED`)
 - **v1.5.0 — 5 features ที่ไม่ต้องเรียก network เพิ่ม:** `cert_is_lets_encrypt`, `cert_validity_days`, `cert_san_count` (อ่านจาก TLS handshake เดิม — cert ฟรี DV อายุ 90 วันพบมากใน phishing), `digit_to_letter_ratio` (โฮสต์ที่สร้างด้วยอัลกอริทึมมักมีตัวเลขปนตัวอักษรเยอะ), `host_has_brand_and_suspicious_tld` (แบรนด์ที่เชื่อถือถูกปลอมบน TLD ราคาถูก/น่าสงสัย)
-- ฟีเจอร์ v1.5 ทำให้ URL ที่เคยหลุด (`thaid-app.net/auth/login`) ถูกจับได้ → Thai recall ขึ้นจาก 99.7% เป็น <!--M:thai_recall_pct-->100%<!--/M-->
+- ฟีเจอร์ v1.5 ทำให้ URL ที่เคยหลุด (`thaid-app.net/auth/login`) ถูกจับได้ → Thai recall ขึ้นจาก 99.7% เป็น <!--M:thai_recall_pct-->99.74%<!--/M-->
 
 **Visual fingerprinting สำหรับโซนเทา (ใหม่ใน v1.6.0 — B6)** — URL ที่ได้คะแนนก้ำกึ่ง (0.3–0.7) ถูก screenshot แล้วทำ perceptual hash (dHash แบบ pure-Python) เทียบกับคลังหน้าเว็บหน่วยงานจริง; ถ้าหน้าตาเหมือนแต่อยู่บนโฮสต์ที่ไม่ใช่ทางการจะดันคะแนนขึ้นแบบมีขอบเขต `[+0.15, +0.35]` — มี SSRF guard, fail-open, ทำเฉพาะโซนเทา, ปิดเป็นค่าเริ่มต้น (`VISUAL_FINGERPRINT_ENABLED`), renderer แบบ pluggable (NullRenderer เริ่มต้น / Playwright แบบ opt-in)
 
-**Thai-targeting seed corpus ขยายใหญ่ (215 → <!--M:seed_count-->1,261<!--/M--> URLs, holdout 66 → <!--M:thai_holdout_n-->378<!--/M-->)** — v1.3.0 เพิ่ม programmatic brand-expander ที่ผลิต 8 รูปแบบ phishing ต่อแบรนด์อย่าง deterministic ครอบคลุม **160+ แบรนด์ไทย** (banks, ministries, มหาวิทยาลัย, รัฐวิสาหกิจ, e-commerce, logistics, telecom) — holdout ที่ใหญ่ขึ้นเกือบ 6 เท่าทำให้ 95% CI ของ Thai recall แคบลงเหลือ <!--M:thai_recall_ci-->[0.990, 1.000]<!--/M--> และเลิกพึ่ง sample เล็กไปได้
+**Thai-targeting seed corpus ขยายใหญ่ (215 → <!--M:seed_count-->1,261<!--/M--> URLs, holdout 66 → <!--M:thai_holdout_n-->378<!--/M-->)** — v1.3.0 เพิ่ม programmatic brand-expander ที่ผลิต 8 รูปแบบ phishing ต่อแบรนด์อย่าง deterministic ครอบคลุม **160+ แบรนด์ไทย** (banks, ministries, มหาวิทยาลัย, รัฐวิสาหกิจ, e-commerce, logistics, telecom) — holdout ที่ใหญ่ขึ้นเกือบ 6 เท่าทำให้ 95% CI ของ Thai recall แคบลงเหลือ <!--M:thai_recall_ci-->[0.985, 1.000]<!--/M--> และเลิกพึ่ง sample เล็กไปได้
 
 **ความแม่นยำสูงและตรงเป้า** — โมเดลฝึกบน Thai-targeting seed corpus <!--M:seed_count-->1,261<!--/M--> รายการ + synthetic 12,000 rows anchored กับ 500+ Thai gov/edu/state-bank domains
-จับ phishing ที่เลียนแบบเว็บราชการ/การศึกษา/ธนาคารไทยจาก holdout ได้ **<!--M:thai_recall-->100% (378/378)<!--/M-->** ที่ threshold ≥ 0.7
+จับ phishing ที่เลียนแบบเว็บราชการ/การศึกษา/ธนาคารไทยจาก holdout ได้ **<!--M:thai_recall-->99.74% (378/378)<!--/M-->** ที่ threshold ≥ 0.7
 มี **CI gate ที่ recall ≥ 0.85** — ถ้าโมเดลใหม่ตกต่ำกว่าค่านี้ build จะ fail ทันที
 
 **Redis cache + continuous retraining (ใหม่ใน v1.5)** — ตั้ง `REDIS_URL` เพื่อแชร์ cache ข้าม replica (fallback เป็น in-process อัตโนมัติ); `POST /api/v1/admin/retrain` ฝึกใหม่จาก feedback แบบ staged + ผ่าน eval-gate ก่อน promote แล้ว hot-swap โมเดลโดยไม่ต้อง restart
@@ -130,8 +130,8 @@
 | เกณฑ์                              | repo v1.2.0 | **repo ปัจจุบัน** |
 |------------------------------------|-------------|-----------------|
 | Holdout size                       | 66 URLs     | **<!--M:thai_holdout_n-->378<!--/M--> URLs** |
-| Recall ที่ threshold ≥ 0.7         | 100% (66/66) | **<!--M:thai_recall-->100% (378/378)<!--/M-->** |
-| 95% CI (phishing threshold)        | [0.95, 1.00] | **<!--M:thai_recall_ci-->[0.990, 1.000]<!--/M-->** |
+| Recall ที่ threshold ≥ 0.7         | 100% (66/66) | **<!--M:thai_recall-->99.74% (378/378)<!--/M-->** |
+| 95% CI (phishing threshold)        | [0.95, 1.00] | **<!--M:thai_recall_ci-->[0.985, 1.000]<!--/M-->** |
 | CV F1 (5-fold synthetic)           | 0.998 ± 0.001 | **0.999 ± 0.000** |
 
 ชุดทดสอบนี้คือ 30% ของ curated Thai-targeting phishing seed (`data/thai_phishing_seed.csv`, **<!--M:seed_count-->1,261<!--/M--> รายการ**) ที่ถูก hold out ก่อนการฝึก โดย hold out ครอบคลุม **160+ แบรนด์ไทย** (cap 8 URLs/แบรนด์) — CI ที่แคบ ยืนยันว่าค่า recall ไม่ใช่ผลของ sample ที่เล็กเกินไป

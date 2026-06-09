@@ -154,6 +154,49 @@ def rule_punycode_brand_match(url: str, feat: dict) -> RuleHit | None:
     return None
 
 
+def rule_punycode_credential(url: str, feat: dict) -> RuleHit | None:
+    """IDN (punycode) host requesting credentials — homograph credential phish.
+
+    ``rule_punycode_brand_match`` only pins when the decoded label folds within
+    edit-distance 2 of a known brand. Attackers defeat that by picking a
+    confusable that does NOT fold cleanly while the rendered URL still reads
+    like the brand: ``xn--baangkok-o2b.go.th`` decodes to ``baangŶkok``
+    (distance 9 from ``bangkok.go.th``), yet the address bar looks like Bangkok
+    city government. A punycode host that also asks for credentials is an IDN
+    homograph phishing setup. Mirroring ``rule_typosquat_with_login``'s
+    conservatism, pin phishing only when an extra phishing signal is present
+    (plain HTTP, cheap/abused TLD, or raw-IP host); otherwise raise the score
+    and leave the final verdict to the model. No legitimate Thai gov/edu/bank
+    host in scope uses a punycode label, so the false-positive surface is tiny.
+    """
+    if not (feat.get("has_punycode") and feat.get("has_login_keyword")):
+        return None
+    has_extra_signal = (
+        not feat.get("has_https")
+        or feat.get("has_suspicious_tld")
+        or feat.get("has_ip")
+    )
+    if has_extra_signal:
+        return RuleHit(
+            "IDN_CRED",
+            delta=0.45,
+            pin_label="phishing",
+            message=(
+                "โฮสต์เป็นชื่อโดเมนแบบ Punycode (IDN) และ URL ขอข้อมูล login — "
+                "เทคนิค IDN homograph เพื่อหลอกให้กรอกรหัสผ่านในหน้าเลียนแบบ"
+            ),
+        )
+    return RuleHit(
+        "IDN_CRED",
+        delta=0.25,
+        pin_label=None,
+        message=(
+            "โฮสต์เป็นชื่อโดเมนแบบ Punycode (IDN) และมีคำที่เกี่ยวกับ login — "
+            "ตรวจสอบให้แน่ใจว่าเป็นเว็บจริงก่อนกรอกข้อมูล"
+        ),
+    )
+
+
 def rule_typosquat_with_login(url: str, feat: dict) -> RuleHit | None:
     """Typosquat + login keyword -- a credential phishing setup.
 
@@ -390,6 +433,7 @@ DEFAULT_RULES: tuple[Rule, ...] = (
     rule_whitelisted_exact,       # safety net first
     rule_at_trick,
     rule_punycode_brand_match,
+    rule_punycode_credential,     # IDN homograph + credential request
     rule_https_lookalike,         # HTTPS + free cert + brand/credential signal
     rule_login_keyword_dense,     # high credential-keyword density
     rule_typosquat_with_login,
@@ -474,6 +518,7 @@ __all__ = [
     "DEFAULT_RULES",
     "LOGIN_KEYWORDS",
     "SUSPICIOUS_TLDS",
+    "rule_punycode_credential",
     "rule_https_lookalike",
     "rule_login_keyword_dense",
     "rule_subdomain_camouflage",
