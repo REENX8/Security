@@ -1,0 +1,47 @@
+url,category,notes
+https://www.obec.go.th,thai_gov,Ministry of Education
+https://www.mof.go.th,thai_gov,Ministry of Finance
+https://www.rd.go.th,thai_gov,Revenue Department
+https://www.dopa.go.th,thai_gov,Department of Provincial Administration
+https://www.moph.go.th,thai_gov,Ministry of Public Health
+https://www.mua.go.th,thai_gov,Ministry of Higher Education
+https://www.dbd.go.th,thai_gov,Department of Business Development
+https://www.boi.go.th,thai_gov,Board of Investment
+https://www.chula.ac.th,thai_edu,Chulalongkorn University
+https://www.ku.ac.th,thai_edu,Kasetsart University
+https://www.mahidol.ac.th,thai_edu,Mahidol University
+https://www.cmu.ac.th,thai_edu,Chiang Mai University
+https://www.tu.ac.th,thai_edu,Thammasat University
+https://www.scb.co.th,thai_bank,Siam Commercial Bank
+https://www.kasikornbank.com,thai_bank,Kasikornbank
+https://www.krungsri.com,thai_bank,Bank of Ayudhya
+https://www.bangkokbank.com,thai_bank,Bangkok Bank
+https://www.ktb.co.th,thai_bank,Krung Thai Bank
+https://www.baac.or.th,thai_bank,BAAC
+https://www.ptt.com,thai_corp,PTT
+https://www.ais.co.th,thai_corp,AIS
+https://www.cp.co.th,thai_corp,CP Group
+https://www.google.com,global,Google
+https://www.youtube.com,global,YouTube
+https://www.facebook.com,global,Facebook
+https://www.wikipedia.org,global,Wikipedia
+https://www.github.com,global,GitHub
+https://www.microsoft.com,global,Microsoft
+https://www.apple.com,global,Apple
+https://www.amazon.com,global,Amazon
+https://www.netflix.com,global,Netflix
+https://www.cloudflare.com,global,Cloudflare
+https://www.linkedin.com,global,LinkedIn
+https://www.paypal.com,global,PayPal
+https://accounts.google.com/signin,login_page,Google sign-in (login keyword on legit host)
+https://github.com/login,login_page,GitHub login
+https://login.microsoftonline.com,login_page,Microsoft login (login subdomain)
+https://www.facebook.com/login,login_page,Facebook login path
+https://signin.aws.amazon.com,login_page,AWS sign-in subdomain
+https://secure.bangkokbank.com,login_page,Bank secure subdomain
+https://mail.google.com,subdomain,Gmail (deep subdomain)
+https://drive.google.com,subdomain,Google Drive
+https://console.cloud.google.com,subdomain,GCP console (multi-label host)
+https://support.apple.com/en-us/account,keyword_path,Apple support account path
+https://www.dropbox.com/account/security,keyword_path,Dropbox account/security path
+https://id.line.me,login_page,LINE identity service

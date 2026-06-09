@@ -36,6 +36,74 @@ drives them comes from users via the dashboard/extension/API (`routers/feedback.
 and `routers/learn.py` teaches users what to report — together they close the
 loop from "user spots a miss" → "model improves".
 
+## 2b. Retraining locally (from scratch)
+
+Everything below runs **offline** — `collect_dataset` builds the corpus from the
+committed seed CSVs plus a synthetic generator and *simulates* the WHOIS/TLS/
+reputation features, so no network is required. The pipeline is **deterministic**:
+the same committed corpus + fixed `RANDOM_SEED` produces a byte-identical model
+every run. A retrain therefore only changes the model when the underlying **data**
+changes (see step 4).
+
+**0. Install (once).** Optuna and seaborn are needed for `--tune` and
+`evaluate`; both ship in `ml_pipeline/requirements.txt`.
+
+```bash
+pip install -e .
+pip install -r backend/requirements.txt
+pip install -r ml_pipeline/requirements.txt
+```
+
+**1. Standard retrain (fast, deterministic).**
+
+```bash
+make train          # build_whitelist + collect_dataset --no-feeds + train
+```
+
+Writes `models/{ensemble.pkl,scaler.pkl,features.json}`.
+
+**2. Best-effort retrain with hyperparameter search (slow).**
+
+```bash
+make train-tune              # Optuna 100-trial search, then the final calibrated fit
+make train-tune TRIALS=200   # more thorough
+```
+
+The search is seeded (reproducible). On the current corpus it lifts CV-F1 only
+marginally over the defaults (~0.9991 vs ~0.9983) because the test split is at
+ceiling; what matters is the **independent real-world holdout** in step 3.
+
+**3. MANDATORY verification before keeping a retrained model.**
+
+```bash
+make evaluate                            # Thai / generic / independent holdout recall + reports/
+python -m ml_pipeline.adversarial_eval   # battle test — must stay 110/110 (>=70% gate)
+python -m pytest tests/test_benign_fp.py # 0 legitimate sites blocked (false-positive gate)
+make test                                # full suite
+```
+
+Keep the new model **only if** all hold: Thai holdout recall ≥ 85% (currently
+100%), adversarial detection unchanged, **benign false positives = 0**, and the
+independent real-world holdout recall is ≥ the current model's. Otherwise discard
+it: `git checkout -- models/`.
+
+> The benign FP guard (`KNOWN_GOOD_DOMAIN` rule in `phish_features/rules.py`)
+> protects legitimate brand portals **regardless of the model**, so a retrain can
+> never silently reintroduce those false positives.
+
+**4. Getting a genuinely *different* model.** Because training is deterministic
+on the committed corpus, a meaningfully different model needs **new data**:
+
+- **Real feed data** — set `EXTERNAL_FEEDS_ENABLED=true` so the backend ingests
+  OpenPhish/PhishTank, then `python -m ml_pipeline.feed_training_export` writes
+  `data/live_feed_phishing.csv`, which `collect_dataset` picks up automatically
+  on the next `make train`.
+- **User feedback** — confirmed reports drive the feedback-retrain loop (§2).
+
+**5. Deploy.** Replace the three files in `models/`, then hot-reload without a
+restart via `POST /api/v1/admin/reload-model` (or just restart the backend).
+Commit the new `models/*` so the change persists.
+
 ## 3. Threshold tuning (C10)
 
 - Offline: `make tune-threshold` (`ml_pipeline/tune_threshold.py`) sweeps

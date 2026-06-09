@@ -66,6 +66,17 @@ class FeedPoller:
             return_exceptions=True,
         )
 
+        # Newly-ingested feed phishing URLs may have pushed the accumulated
+        # volume past the retrain threshold. Check now (gated + debounced
+        # inside) so a fresh batch of confirmed phishing feeds the model
+        # without waiting for the periodic feedback-retrain timer.
+        try:
+            from app.retrain_trigger import check_feed_accumulation
+            async with SessionLocal() as session:
+                await check_feed_accumulation(self._state, session)
+        except Exception as exc:  # noqa: BLE001 - retrain check must not break polling
+            logger.warning("feed accumulation retrain check skipped: %s", exc)
+
     # ------------------------------------------------------------------
     # Per-source dispatch
     # ------------------------------------------------------------------
@@ -146,6 +157,14 @@ class FeedPoller:
                 result = await asyncio.get_event_loop().run_in_executor(
                     None, scorer.score, url
                 )
+                # Tag the verdict with its feed provenance so the retrain
+                # trigger (check_feed_accumulation) and the training-corpus
+                # export (ml_pipeline.feed_training_export) can find it. Both
+                # filter on features["feed_source"]; without this tag the
+                # feed→retrain pipeline never sees a single row.
+                feats = result.get("features")
+                if isinstance(feats, dict):
+                    feats["feed_source"] = source.name
                 await insert_check(session, result)
 
                 if settings.enable_campaign_tracking and result.get("label") == "phishing":

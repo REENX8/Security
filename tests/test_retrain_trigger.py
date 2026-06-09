@@ -18,7 +18,10 @@ os.environ.setdefault("SECRET_KEY", "test-secret")
 os.environ.setdefault("ADMIN_USERNAME", "admin")
 os.environ.setdefault("API_KEY", "test-key")
 
+from datetime import datetime, timedelta, timezone  # noqa: E402
+
 from app import retrain_trigger  # noqa: E402
+from app.crud import insert_check  # noqa: E402
 from app.database import Base  # noqa: E402
 from app.models import Feedback, FeedbackSource  # noqa: E402
 from sqlalchemy.ext.asyncio import async_sessionmaker, create_async_engine  # noqa: E402
@@ -47,6 +50,51 @@ async def _add_feedback(session, n: int):
 
 def _state():
     return types.SimpleNamespace(retrain_in_progress=False, retrain_baseline_count=0)
+
+
+def _feed_result(url: str):
+    """A scoring result tagged with feed provenance, as feed_ingestion writes."""
+    return {
+        "url": url,
+        "score": 0.95,
+        "label": "phishing",
+        "reason": "feed",
+        "features": {"is_typosquat": 1, "feed_source": "openphish"},
+        "rules": None,
+        "closest_domain": "obec.go.th",
+        "edit_distance": 1,
+    }
+
+
+def test_feed_phishing_count_only_counts_tagged_rows():
+    """Only url_checks carrying features['feed_source'] feed the retrain trigger.
+
+    This pins the connection that feed_ingestion stamps and the trigger reads —
+    untagged user checks must NOT inflate the feed-accumulation count.
+    """
+    async def _run():
+        engine, maker = await _make_session()
+        async with maker() as session:
+            # 3 feed-tagged phishing rows + 1 untagged user check.
+            await insert_check(session, _feed_result("http://f1.test/login"))
+            await insert_check(session, _feed_result("http://f2.test/login"))
+            await insert_check(session, _feed_result("http://f3.test/login"))
+            await insert_check(session, {
+                "url": "http://user.test/login",
+                "score": 0.91,
+                "label": "phishing",
+                "reason": "user",
+                "features": {"is_typosquat": 1},  # no feed_source
+                "rules": None,
+                "closest_domain": None,
+                "edit_distance": None,
+            })
+
+            since = datetime.now(timezone.utc) - timedelta(days=1)
+            count = await retrain_trigger._feed_phishing_count_since(session, since)
+            assert count == 3
+        await engine.dispose()
+    asyncio.run(_run())
 
 
 def test_no_trigger_when_disabled(monkeypatch):

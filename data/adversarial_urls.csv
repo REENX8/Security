@@ -99,3 +99,13 @@ http://010.020.030.040/verify,phishing,ip_camouflage,Octal quad IP notation
 http://0x80000001/account,phishing,ip_camouflage,High-bit hex IP
 http://0100.0200.0300.0100/login,phishing,ip_camouflage,Octal quad with larger values
 http://0xdeadbeef/secure,phishing,ip_camouflage,Classic deadbeef hex IP in phishing URL
+http://0x7f000001/login,phishing,encoded_ip_host,Hex IP literal (127.0.0.1) bypasses dotted-decimal IP regex
+http://0xC0A80001/verify,phishing,encoded_ip_host,Hex IP literal of 192.168.0.1 with credential keyword
+http://0xCB0071AD/account,phishing,encoded_ip_host,Hex IP literal hosting a fake account page
+http://0x97D5A8C4/signin,phishing,encoded_ip_host,Hex IP literal with signin path
+http://0xAB12CD34/secure,phishing,encoded_ip_host,Hex IP literal with secure keyword
+http://0177.0000.0000.0001/login,phishing,encoded_ip_host,Octal IP literal (127.0.0.1) for login harvest
+http://0300.0250.0000.0001/verify,phishing,encoded_ip_host,Octal IP literal of 192.168.0.1
+http://0012.0064.0001.0005/account,phishing,encoded_ip_host,Octal IP literal hosting account phishing
+http://0177.0001.0002.0003/wallet,phishing,encoded_ip_host,Octal IP literal targeting wallet credentials
+http://0010.0020.0030.0040/reset,phishing,encoded_ip_host,Octal IP literal with password-reset bait

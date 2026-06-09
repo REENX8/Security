@@ -60,6 +60,11 @@ train:  ## Retrain the model from the committed seed corpus.
 	$(PY) -m ml_pipeline.collect_dataset --no-feeds
 	$(PY) -m ml_pipeline.train
 
+train-tune:  ## Retrain with an Optuna hyperparameter search (slow). Override count with TRIALS=100.
+	$(PY) -m ml_pipeline.build_whitelist
+	$(PY) -m ml_pipeline.collect_dataset --no-feeds
+	$(PY) -m ml_pipeline.train --tune --tune-trials $(or $(TRIALS),100)
+
 evaluate:  ## Run the evaluation + write reports/.
 	$(PY) -m ml_pipeline.evaluate
 

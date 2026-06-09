@@ -12,6 +12,52 @@ or mirror it explicitly.
 
 ---
 
+## [Unreleased]
+
+### Fixed
+- **False positives on legitimate brand portals.** With WHOIS/TLS unavailable
+  (fail-open), the model alone blocked real login/console subdomains of major
+  brands — `login.microsoftonline.com`, `signin.aws.amazon.com`,
+  `console.cloud.google.com` — as phishing. New `KNOWN_GOOD_DOMAIN` rule pins
+  safe for an exact host or *true subdomain* of a curated corporate-controlled
+  domain (uses the parsed host, so the `@`-trick and lookalikes like
+  `google.com.evil.xyz` / `secure-google.com` do NOT match; user-content hosts
+  such as `amazonaws.com`/`github.io` are deliberately excluded). A phishing
+  pin from another rule still wins. Benign FP rate on the new holdout:
+  3/46 → **0/46**; adversarial detection unchanged at 110/110.
+
+- **Feed → retrain connection was dead.** `feed_ingestion` now stamps every
+  persisted feed verdict with `features["feed_source"] = <source name>`. The
+  retrain trigger (`check_feed_accumulation`) and the training-corpus export
+  (`ml_pipeline/feed_training_export.py`) both filter on `feed_source`; without
+  the tag they saw zero feed rows and never fired.
+- **Feed accumulation retrain was never invoked.** `FeedPoller.poll_once` now
+  calls `check_feed_accumulation` after each poll cycle (gated + debounced
+  internally), so a fresh batch of confirmed feed phishing actually drives a
+  retrain instead of waiting on the periodic timer.
+
+### Added
+- **Per-user check history.** `POST /api/v1/check` and `/check/batch` attribute
+  the stored check to the signed-in user (JWT `user_id`) via the new
+  `optional_user_id` dependency, incrementing `User.check_count` atomically.
+  New `GET /api/v1/me/history` (requires a user JWT via `require_user_id`)
+  returns only the caller's own checks (`crud.get_history(user_id=...)`);
+  the admin `GET /api/v1/history` remains unscoped.
+- **ML detection — two high-precision rules.** `ENCODED_IP_HOST` (+0.45, pin
+  phishing) consumes the previously rule-less `has_encoded_ip` feature to flag
+  hex/octal IP-literal hosts; `SELF_SIGNED_CRED` (+0.35, pin phishing) flags a
+  self-signed certificate on a credential-collection page.
+- **Battle testing.** New `encoded_ip_host` evasion class in
+  `data/adversarial_urls.csv` (100 → 110 cases); `tests/test_adversarial.py`
+  gains a per-technique floor (no single technique may drop below 50%) on top
+  of the existing 70% overall gate. Current rate: 110/110 (100%).
+- **Benign false-positive gate** (`data/benign_holdout.csv`, 46 real
+  legitimate sites incl. login/subdomain stress cases; `tests/test_benign_fp.py`):
+  hard gate of 0 phishing FPs + soft cap on the suspicious rate, so a future
+  change that starts blocking normal sites fails CI.
+- **SLA.** Detection-quality table documents the per-technique adversarial
+  floor and the benign false-positive gate.
+
 ## [1.7.0] — 2026-06-08
 
 ### Added

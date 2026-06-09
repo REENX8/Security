@@ -34,6 +34,8 @@ Effective: 2026-06-08 | Version: 1.7.0
 | False positive rate | < 2% | > 3% | Monitored via feedback |
 | False negative rate | < 10% (feedback-based) | > 15% | Monitored via feedback |
 | Adversarial detection rate | ≥ 70% | < 60% | CI gate (adversarial_eval.py) |
+| Adversarial per-technique floor | ≥ 50% each | any technique < 50% | CI gate (test_adversarial.py) |
+| Benign false-positive gate | 0 legit sites blocked | any phishing FP | CI gate (test_benign_fp.py) |
 | Live feed holdout recall | ≥ 80% | < 75% | evaluate.py gate |
 
 ---

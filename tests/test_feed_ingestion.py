@@ -181,6 +181,47 @@ async def test_phishtank_parse_and_ingest(client):
 
 
 # ---------------------------------------------------------------------------
+# Feed provenance tagging (feed -> retrain connection)
+# ---------------------------------------------------------------------------
+
+@pytest.mark.asyncio
+async def test_ingested_rows_tagged_with_feed_source(client):
+    """Every persisted feed URL carries features['feed_source'] = source name.
+
+    Without this tag the retrain trigger and the training-corpus export (both
+    filter on feed_source) would never see feed-ingested URLs.
+    """
+    state = _make_state()
+    poller = FeedPoller(state)
+    source = _make_source(name="openphish")
+
+    mock_resp = MagicMock()
+    mock_resp.text = "http://phish-tag.example.com/login"
+    mock_resp.raise_for_status = MagicMock()
+
+    with patch("app.feed_ingestion.insert_check", new_callable=AsyncMock) as mock_insert, \
+         patch("app.feed_ingestion.record_campaign", new_callable=AsyncMock), \
+         patch("app.feed_ingestion.maybe_alert", new_callable=AsyncMock), \
+         patch("httpx.AsyncClient") as mock_client_cls:
+
+        mock_client = AsyncMock()
+        mock_client.__aenter__ = AsyncMock(return_value=mock_client)
+        mock_client.__aexit__ = AsyncMock(return_value=False)
+        mock_client.get = AsyncMock(return_value=mock_resp)
+        mock_client_cls.return_value = mock_client
+        mock_insert.return_value = MagicMock()
+
+        from app.database import SessionLocal
+        async with SessionLocal() as session:
+            await poller._poll_openphish(source, session)
+
+        # insert_check(session, result) — pull the result it was handed.
+        assert mock_insert.await_count == 1
+        result = mock_insert.await_args.args[1]
+        assert result["features"]["feed_source"] == "openphish"
+
+
+# ---------------------------------------------------------------------------
 # Deduplication
 # ---------------------------------------------------------------------------
 
