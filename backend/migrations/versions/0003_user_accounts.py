@@ -25,9 +25,27 @@ def upgrade() -> None:
     is_pg = bind.dialect.name == "postgresql"
 
     # Create user_role_enum (PostgreSQL only; SQLite uses VARCHAR).
+    #
+    # On PostgreSQL the type is created here, idempotently (checkfirst=True),
+    # and the column below references it with create_type=False so that
+    # op.create_table does NOT emit its own second, unguarded CREATE TYPE.
+    # That second statement is what raised
+    #   asyncpg.exceptions.DuplicateObjectError: type "user_role_enum" already exists
+    # because the baseline migration's Base.metadata.create_all() already
+    # created the type. IMPORTANT: create_type=False is only honoured by
+    # postgresql.ENUM — the generic sa.Enum silently ignores it and still
+    # emits CREATE TYPE — so the PG column must use postgresql.ENUM.
     if is_pg:
+        from sqlalchemy.dialects import postgresql
+
         user_role_enum = sa.Enum("user", "admin", name="user_role_enum")
         user_role_enum.create(bind, checkfirst=True)
+        role_type: sa.types.TypeEngine = postgresql.ENUM(
+            "user", "admin", name="user_role_enum", create_type=False
+        )
+    else:
+        # SQLite has no native ENUM; the generic type renders as VARCHAR.
+        role_type = sa.Enum("user", "admin", name="user_role_enum")
 
     op.create_table(
         "users",
@@ -37,7 +55,7 @@ def upgrade() -> None:
         sa.Column("display_name", sa.String(128), server_default=""),
         sa.Column(
             "role",
-            sa.Enum("user", "admin", name="user_role_enum", create_constraint=False),
+            role_type,
             server_default="user",
             nullable=False,
         ),
