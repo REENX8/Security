@@ -15,6 +15,17 @@ or mirror it explicitly.
 ## [Unreleased]
 
 ### Fixed
+- **False positives on legitimate brand portals.** With WHOIS/TLS unavailable
+  (fail-open), the model alone blocked real login/console subdomains of major
+  brands — `login.microsoftonline.com`, `signin.aws.amazon.com`,
+  `console.cloud.google.com` — as phishing. New `KNOWN_GOOD_DOMAIN` rule pins
+  safe for an exact host or *true subdomain* of a curated corporate-controlled
+  domain (uses the parsed host, so the `@`-trick and lookalikes like
+  `google.com.evil.xyz` / `secure-google.com` do NOT match; user-content hosts
+  such as `amazonaws.com`/`github.io` are deliberately excluded). A phishing
+  pin from another rule still wins. Benign FP rate on the new holdout:
+  3/46 → **0/46**; adversarial detection unchanged at 110/110.
+
 - **Feed → retrain connection was dead.** `feed_ingestion` now stamps every
   persisted feed verdict with `features["feed_source"] = <source name>`. The
   retrain trigger (`check_feed_accumulation`) and the training-corpus export
@@ -40,7 +51,12 @@ or mirror it explicitly.
   `data/adversarial_urls.csv` (100 → 110 cases); `tests/test_adversarial.py`
   gains a per-technique floor (no single technique may drop below 50%) on top
   of the existing 70% overall gate. Current rate: 110/110 (100%).
-- **SLA.** Detection-quality table documents the per-technique adversarial floor.
+- **Benign false-positive gate** (`data/benign_holdout.csv`, 46 real
+  legitimate sites incl. login/subdomain stress cases; `tests/test_benign_fp.py`):
+  hard gate of 0 phishing FPs + soft cap on the suspicious rate, so a future
+  change that starts blocking normal sites fails CI.
+- **SLA.** Detection-quality table documents the per-technique adversarial
+  floor and the benign false-positive gate.
 
 ## [1.7.0] — 2026-06-08
 

@@ -26,10 +26,84 @@ from __future__ import annotations
 import dataclasses
 import re
 from collections.abc import Callable, Iterable
+from urllib.parse import urlparse
 
 from .schema import LOGIN_KEYWORDS, SUSPICIOUS_TLDS
 
 Adjustment = "RuleHit"  # forward reference (resolved at runtime)
+
+
+# Registrable domains that are corporate-controlled and do NOT delegate
+# subdomains to untrusted users. An exact-host or true-subdomain match is
+# pinned safe so legitimate brand portals (login/console/signin subdomains)
+# are never blocked as phishing — including when the WHOIS/TLS signals that
+# would otherwise vouch for them are unavailable (fail-open).
+#
+# SAFETY: only domains whose every subdomain is operator-controlled belong
+# here. User-content hosts (amazonaws.com, github.io, blogspot.com,
+# web.app, azurewebsites.net, *.herokuapp.com, …) are DELIBERATELY excluded —
+# listing one would let an attacker host phishing on a "safe" subdomain.
+KNOWN_GOOD_DOMAINS: frozenset[str] = frozenset({
+    # Google
+    "google.com", "youtube.com", "gmail.com", "googleapis.com",
+    # Microsoft
+    "microsoft.com", "microsoftonline.com", "office.com", "live.com",
+    "windows.com", "bing.com", "outlook.com",
+    # Apple
+    "apple.com", "icloud.com",
+    # Amazon (corporate domain only — NOT amazonaws.com user content)
+    "amazon.com",
+    # Meta
+    "facebook.com", "instagram.com", "whatsapp.com",
+    # Other major global services
+    "netflix.com", "linkedin.com", "paypal.com", "x.com", "twitter.com",
+    "github.com", "cloudflare.com", "dropbox.com", "wikipedia.org",
+    "line.me",
+    # Thai banks / large corporates (public brand domains)
+    "scb.co.th", "kasikornbank.com", "krungsri.com", "bangkokbank.com",
+    "ktb.co.th", "baac.or.th", "bot.or.th", "ttbbank.com",
+    "ptt.com", "ais.co.th", "cp.co.th", "true.th",
+})
+
+
+def _parsed_host(url: str) -> str:
+    """Lower-cased hostname with port stripped. Honours the ``@`` trick.
+
+    ``urlparse('https://google.com@evil.xyz').hostname`` correctly returns
+    ``evil.xyz`` (the real destination), so this never treats a credential-
+    embedded lookalike as the trusted brand.
+    """
+    try:
+        host = urlparse(url if "://" in (url or "") else f"http://{url}").hostname or ""
+    except ValueError:
+        return ""
+    return host.lower().strip(".")
+
+
+def rule_known_good_domain(url: str, feat: dict) -> RuleHit | None:
+    """Pin safe for an exact host or true subdomain of a trusted brand domain.
+
+    ``console.cloud.google.com`` ends with ``.google.com`` (Google-controlled),
+    so it is pinned safe; ``google.com.evil.xyz`` and ``secure-google.com`` do
+    NOT match (their registrable domain is the attacker's). A phishing pin from
+    another rule still wins (see RulesEngine.evaluate), so this is a safety net,
+    not an override of real attack indicators.
+    """
+    host = _parsed_host(url)
+    if not host:
+        return None
+    for good in KNOWN_GOOD_DOMAINS:
+        if host == good or host.endswith("." + good):
+            return RuleHit(
+                "KNOWN_GOOD_DOMAIN",
+                delta=-0.60,
+                pin_label="safe",
+                message=(
+                    f"โฮสต์เป็นโดเมนทางการของ {good} (หรือโดเมนย่อยที่แท้จริง) "
+                    "ซึ่งอยู่ในรายชื่อแบรนด์ที่เชื่อถือได้"
+                ),
+            )
+    return None
 
 
 @dataclasses.dataclass(frozen=True)
@@ -312,6 +386,7 @@ def rule_redirect_confusion(url: str, feat: dict) -> RuleHit | None:
 
 
 DEFAULT_RULES: tuple[Rule, ...] = (
+    rule_known_good_domain,       # trusted-brand safety net (FP guard)
     rule_whitelisted_exact,       # safety net first
     rule_at_trick,
     rule_punycode_brand_match,
@@ -405,4 +480,6 @@ __all__ = [
     "rule_redirect_confusion",
     "rule_encoded_ip_host",
     "rule_self_signed_login",
+    "rule_known_good_domain",
+    "KNOWN_GOOD_DOMAINS",
 ]

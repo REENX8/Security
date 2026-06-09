@@ -6,6 +6,7 @@ from phish_features.rules import (
     RulesEngine,
     rule_encoded_ip_host,
     rule_https_lookalike,
+    rule_known_good_domain,
     rule_login_keyword_dense,
     rule_self_signed_login,
 )
@@ -152,6 +153,61 @@ def test_self_signed_login_no_fire_with_ca_cert():
     assert rule_self_signed_login(
         "u", _feat(is_self_signed=0, has_login_keyword=1)
     ) is None
+
+
+# ---------------------------------------------------------------------------
+# KNOWN_GOOD_DOMAIN (false-positive guard for trusted brands)
+# ---------------------------------------------------------------------------
+
+def test_known_good_exact_host_pins_safe():
+    hit = rule_known_good_domain("https://google.com", _feat())
+    assert hit is not None
+    assert hit.rule_id == "KNOWN_GOOD_DOMAIN"
+    assert hit.pin_label == "safe"
+    assert hit.delta == -0.60
+
+
+def test_known_good_true_subdomain_pins_safe():
+    # Legit brand portals on deep subdomains must not be blocked.
+    for u in (
+        "https://console.cloud.google.com",
+        "https://login.microsoftonline.com",
+        "https://signin.aws.amazon.com",
+        "https://id.line.me",
+    ):
+        hit = rule_known_good_domain(u, _feat())
+        assert hit is not None and hit.pin_label == "safe", u
+
+
+def test_known_good_does_not_match_lookalikes():
+    # Registrable domain belongs to the attacker -> must NOT be pinned safe.
+    for u in (
+        "https://google.com.evil.xyz/login",      # brand as a subdomain label
+        "https://secure-google.com/login",         # hyphenated lookalike
+        "https://notgoogle.com/login",             # substring, not a subdomain
+        "http://goog1e.com/login",                 # typosquat
+    ):
+        assert rule_known_good_domain(u, _feat()) is None, u
+
+
+def test_known_good_honours_at_trick():
+    # The real host is evil.xyz; the brand before '@' must not earn a safe pin.
+    assert rule_known_good_domain("https://google.com@evil.xyz/login", _feat()) is None
+
+
+def test_known_good_excludes_user_content_hosts():
+    # amazonaws.com / github.io host untrusted user content and are deliberately
+    # NOT in the safe-list, so phishing on them is still detectable.
+    assert rule_known_good_domain("https://evil.s3.amazonaws.com/login", _feat()) is None
+    assert rule_known_good_domain("https://attacker.github.io/login", _feat()) is None
+
+
+def test_known_good_phishing_pin_still_wins():
+    # An @-trick on a known-good-looking URL: AT_TRICK pins phishing, which must
+    # override any safe pin (defence in depth).
+    engine = RulesEngine()
+    result = engine.evaluate("https://google.com@evil.xyz/login", _feat())
+    assert result.pinned_label == "phishing"
 
 
 # ---------------------------------------------------------------------------
