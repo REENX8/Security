@@ -53,6 +53,10 @@ _GOOD_PATHS = [
     "login", "auth/login", "secure/login", "myaccount",
     "verify-citizen-id", "service/login", "portal/signin",
     "auth/sso", "support/contact", "session/start",
+    # weak-tier keyword paths (v1.8): generic portal words legit sites use
+    # constantly -- lets num_strong_login_keywords separate the classes.
+    "customer/service", "billing/history", "account/settings",
+    "support/faq", "service/update",
 ]
 
 _BRAND_WORDS = ["secure", "login", "verify", "account", "service", "online",
@@ -77,6 +81,59 @@ _LEGIT_OTHER = [
     "bigc.co.th", "kasikornbank.com", "scb.co.th", "bangkokbank.com",
     "krungsri.com", "grab.com", "agoda.com", "traveloka.com",
     "ookbee.com", "wongnai.com", "jobthai.com", "blockdit.com",
+    # Thai SME / commercial long tail (v1.8 hard-benign coverage)
+    "makewebeasy.com", "tarad.com", "weloveshopping.com", "priceza.com",
+    "thaiware.com", "siamzone.com", "dek-d.com", "exteen.com",
+    "longdo.com", "tlcthai.com", "thaifranchisecenter.com", "chillpainai.com",
+    "edtguide.com", "soccersuck.com", "flashfly.net", "beartai.com",
+]
+
+# Word pools for the v1.8 hard-benign legit archetypes. The combined SME
+# labels are >= 8 chars so they never collide with a whitelisted brand
+# within typosquat distance.
+_SME_WORDS_A = [
+    "coffee", "bangkok", "siam", "smile", "happy", "golden", "sabai",
+    "thonglor", "sukhumvit", "chiangmai", "phuket", "garden", "river",
+]
+_SME_WORDS_B = [
+    "bakery", "studio", "market", "travel", "fitness", "design", "clinic",
+    "resort", "kitchen", "flowers", "organic", "wedding", "printing",
+]
+# Cheap-but-legit TLDs: real small businesses use these constantly. The
+# phishing generator also uses them, so the model must separate the classes
+# on signals other than the TLD alone.
+_SME_TLDS = ["online", "site", "shop", "store", "xyz", "info", "biz", "club", "cc"]
+
+# Benign SSO / login-portal hosts and paths: huge numbers of legitimate
+# services run login.<brand> / accounts.<brand> with OAuth redirect params.
+_SSO_SUBS = ["login.", "accounts.", "sso.", "auth.", "id.", "signin."]
+_SSO_PATHS = [
+    "oauth2/authorize?client_id={cid}&redirect_uri=https%3A%2F%2F{dom}%2Fcallback&scope=openid",
+    "oauth2/v2/auth?client_id={cid}&response_type=code",
+    "realms/main/protocol/openid-connect/auth?client_id={cid}",
+    "login?next=https%3A%2F%2F{dom}%2Fdashboard",
+    "signin?return=https%3A%2F%2F{dom}%2Faccount",
+    "adfs/ls/?wa=wsignin1.0&wtrealm=https%3A%2F%2F{dom}",
+    "cas/login?service=https%3A%2F%2F{dom}%2Fportal",
+]
+
+# Content paths that mention a trusted brand (news article, logo asset, tag
+# page). Teaches the model that a brand token in the path is NOT conclusive.
+_BRAND_PATH_TEMPLATES = [
+    "news/{brand}-budget-2026",
+    "news/{brand}-announcement",
+    "images/{brand}-logo.png",
+    "tag/{brand}",
+    "blog/{brand}-cooperation-project",
+    "gallery/{brand}/2026",
+]
+
+# utm / search query strings for the query-heavy benign archetype.
+_QUERY_HEAVY = [
+    "search?q={q}&utm_source=facebook&utm_medium=cpc&utm_campaign=summer&page=2",
+    "products?category={q}&sort=price&order=asc&page=3&per_page=24",
+    "result?q={q}&lang=th&region=bkk&utm_source=line&utm_medium=social",
+    "list?type={q}&filter=new&min=100&max=5000&rating=4&instock=1",
 ]
 
 _HOMOGLYPHS = {
@@ -273,15 +330,106 @@ class SyntheticGenerator:
 
     # ----- legitimate ---------------------------------------------------
     def gen_legit(self) -> dict:
-        # ~60% trusted Thai gov/edu, ~40% other well-known legitimate sites.
-        if self.rng.random() < 0.6:
-            domain = self.rng.choice(self.domains)
+        """Generate one legitimate URL.
+
+        v1.8: besides the dominant trusted-domain arm, a set of HARD-BENIGN
+        archetypes covers legitimate sites that share surface features with
+        phishing (cheap TLDs, login portals, brand mentions in content paths,
+        hashed asset paths, utm-heavy queries). Without them the model only
+        ever saw those signals on the phishing side and learnt each one as a
+        near-deterministic phishing tell -- the main source of false
+        positives on ordinary websites.
+        """
+        r = self.rng
+        archetype = r.choices(
+            ["trusted", "cheap_tld", "login_portal", "brand_in_path",
+             "deep_asset", "query_heavy"],
+            weights=[65, 10, 8, 6, 6, 5],
+        )[0]
+        scheme = "https" if r.random() < 0.96 else "http"
+
+        if archetype == "cheap_tld":
+            # SME on a cheap-but-legit TLD, typically aged WHOIS + free DV cert.
+            sep = "-" if r.random() < 0.25 else ""
+            host = (r.choice(_SME_WORDS_A) + sep + r.choice(_SME_WORDS_B)
+                    + "." + r.choice(_SME_TLDS))
+            if r.random() < 0.3:
+                host = "www." + host
+            # A minority carry member-area paths: real SMEs on cheap TLDs run
+            # /login and /account pages too -- the TLD+keyword combination
+            # alone must not condemn them.
+            path = r.choice(["", "menu", "about-us", "contact", "booking",
+                             "gallery", "promotion", "th/home",
+                             "login", "account", "member/login"])
+            url = f"{scheme}://{host}" + (f"/{path}" if path else "")
+            row = {"url": url, "label": 0}
+            row.update(self.sim_network(0, scheme == "https"))
+            # Small legit sites over-index on Let's Encrypt vs the big brands.
+            if row["tls_ok"] and not row["cert_is_lets_encrypt"] and r.random() < 0.45:
+                row["cert_is_lets_encrypt"] = 1
+                row["cert_validity_days"] = 90
+            return row
+
+        if archetype == "login_portal":
+            # Real SSO/OAuth portal: login subdomain + redirect query params.
+            domain = r.choice(_LEGIT_OTHER if r.random() < 0.6 else self.domains)
+            sub = r.choice(_SSO_SUBS)
+            path = r.choice(_SSO_PATHS).format(
+                cid=self._rand_str(r.randint(8, 16)), dom=domain
+            )
+            url = f"https://{sub}{domain}/{path}"
+            row = {"url": url, "label": 0}
+            row.update(self.sim_network(0, True))
+            return row
+
+        if archetype == "brand_in_path":
+            # News/content site mentioning a trusted brand in the path.
+            domain = r.choice(_LEGIT_OTHER)
+            brand = self._domain_label(r.choice(self.domains))
+            path = r.choice(_BRAND_PATH_TEMPLATES).format(brand=brand)
+            url = f"{scheme}://www.{domain}/{path}"
+            row = {"url": url, "label": 0}
+            row.update(self.sim_network(0, scheme == "https"))
+            return row
+
+        if archetype == "deep_asset":
+            # CDN-style hashed asset path: long + high entropy but benign.
+            domain = r.choice(_LEGIT_OTHER)
+            sub = r.choice(["cdn.", "static.", "assets.", "img."])
+            h1 = "".join(r.choice("0123456789abcdef") for _ in range(16))
+            h2 = "".join(r.choice("0123456789abcdef") for _ in range(8))
+            ext = r.choice(["js", "css", "png", "woff2"])
+            url = f"https://{sub}{domain}/static/{h1}/{h2}.{ext}"
+            row = {"url": url, "label": 0}
+            row.update(self.sim_network(0, True))
+            return row
+
+        if archetype == "query_heavy":
+            # Search/listing page with many utm/filter params.
+            domain = r.choice(_LEGIT_OTHER)
+            q = r.choice(["shoes", "notebook", "hotel", "mobile", "ticket"])
+            path = r.choice(_QUERY_HEAVY).format(q=q)
+            url = f"https://www.{domain}/{path}"
+            row = {"url": url, "label": 0}
+            row.update(self.sim_network(0, True))
+            return row
+
+        # trusted arm: ~60% Thai gov/edu, ~40% other well-known sites.
+        if r.random() < 0.6:
+            domain = r.choice(self.domains)
         else:
-            domain = self.rng.choice(_LEGIT_OTHER)
-        sub = self.rng.choice(["", "", "", "www.", "www.", "service.",
-                               "e.", "reg.", "intranet."])
-        path = self.rng.choice(_GOOD_PATHS)
-        scheme = "https" if self.rng.random() < 0.96 else "http"
+            domain = r.choice(_LEGIT_OTHER)
+        sub = r.choice(["", "", "", "www.", "www.", "service.",
+                        "e.", "reg.", "intranet."])
+        # ~12% two-level subdomains: big providers run console.cloud.* /
+        # signin.aws.* style hosts. Without these, num_subdomains >= 2 only
+        # ever appeared on the phishing side (subdomain_spoof archetype) and
+        # the model read subdomain depth alone as a phishing tell.
+        if r.random() < 0.12:
+            sub = r.choice(["console.cloud.", "portal.service.", "app.intranet.",
+                            "mail.student.", "api.data.", "signin.id.",
+                            "sso.account.", "admin.e."])
+        path = r.choice(_GOOD_PATHS)
         url = f"{scheme}://{sub}{domain}"
         if path:
             url += f"/{path}"
@@ -296,10 +444,14 @@ class SyntheticGenerator:
             ["typosquat", "tld_swap", "subdomain_spoof", "ip_host",
              "at_trick", "brand_stuffed", "https_ip_host", "redirect_chain",
              "idn_homoglyph", "punycode_spoof", "path_brand_spoof",
-             "long_random_subdomain", "double_dash_stuffed", "token_stuffed_path"],
+             "long_random_subdomain", "double_dash_stuffed", "token_stuffed_path",
+             "brand_expansion"],
             # v1.4: 3 new archetypes teach the model num_login_keywords,
             # host_token_count, and path_entropy signals.
-            weights=[19, 9, 9, 8, 8, 9, 4, 5, 4, 4, 10, 6, 5, 10],
+            # v1.8: brand_expansion teaches host_brand_token_hit -- the brand
+            # embedded in a longer label (kmitl-th.com, chulalongkorn-style
+            # name expansions) that edit distance cannot catch.
+            weights=[18, 9, 9, 8, 8, 9, 4, 5, 4, 4, 10, 6, 5, 9, 7],
         )[0]
         scheme = "https" if self.rng.random() < 0.55 else "http"
         path = self.rng.choice(_PHISH_PATHS)
@@ -325,7 +477,14 @@ class SyntheticGenerator:
         elif archetype == "redirect_chain":
             # attacker.xyz/redirect?to=legitimate.go.th — redirect with query param
             attacker = self._rand_str(self.rng.randint(5, 10))
-            host = f"{attacker}.{self._pick_bad_tld()}"
+            # Redirect bait also lives on plain .com hosts behind tracker-style
+            # subdomains (track.evil.com) -- the TLD must not carry the signal.
+            tld = "com" if self.rng.random() < 0.30 else self._pick_bad_tld()
+            host = f"{attacker}.{tld}"
+            if self.rng.random() < 0.50:
+                host = self.rng.choice(
+                    ["track.", "link.", "go.", "click.", "out.", "api."]
+                ) + host
         elif archetype == "idn_homoglyph":
             # Swap one Latin letter in the brand label for a Cyrillic look-alike.
             # The resulting host displays identically to the legitimate brand
@@ -373,12 +532,41 @@ class SyntheticGenerator:
             # exercises host_token_count and num_hyphens
             kws = self.rng.sample(_BRAND_WORDS, k=self.rng.randint(2, 4))
             host = "--".join([label] + kws) + "." + self._pick_bad_tld()
+        elif archetype == "brand_expansion":
+            # Brand embedded in a longer host label: kmitl-th.com,
+            # thaipolice-verify.shop, chulalongkorn-style name expansions.
+            # Plain .com is common here -- the host label IS the lure.
+            suffix = self.rng.choice(
+                ["th", "thai", "thailand", "online", "official",
+                 "center", "portal", "verify", "promo", "uni-th"]
+            )
+            sep = self.rng.choice(["-", "-", ""])
+            tld = ("com" if self.rng.random() < 0.40 else self._pick_bad_tld())
+            host = f"{label}{sep}{suffix}.{tld}"
+            if self.rng.random() < 0.30:
+                # prefix form: thai-customs.cc, energy-thai.cc
+                pre = self.rng.choice(["thai", "th", "gov"])
+                host = f"{pre}-{label}.{tld}"
+            path = self.rng.choice(
+                ["secure", "account", "admission", "subsidy", "redeem",
+                 "register", "portal", "student-login", "e-service"]
+            )
         else:  # brand_stuffed
             words = self.rng.sample(_BRAND_WORDS, k=self.rng.randint(2, 4))
             host = "-".join([label] + words) + "." + self._pick_bad_tld()
 
         if archetype == "redirect_chain":
-            url = f"{scheme}://{host}/redirect?to={domain}"
+            # Most real redirect bait carries a full URL in the param (so the
+            # path_redirect_hit feature fires, same as at serve time); keep a
+            # minority bare-domain form for variety.
+            param = self.rng.choice(["to", "url", "next", "goto", "redirect"])
+            endpoint = self.rng.choice(["redirect", "click", "go", "track", "out"])
+            if self.rng.random() < 0.75:
+                target_path = self.rng.choice(["", "/login", "/account", "/verify"])
+                url = (f"{scheme}://{host}/{endpoint}"
+                       f"?{param}=https://{domain}{target_path}")
+            else:
+                url = f"{scheme}://{host}/{endpoint}?{param}={domain}"
         elif archetype == "path_brand_spoof":
             extra = self.rng.choice(_PHISH_PATHS)
             url = f"{scheme}://{host}/{label}/{extra}"

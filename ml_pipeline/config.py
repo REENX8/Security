@@ -98,6 +98,18 @@ THAI_RECALL_MIN_THRESHOLD = float(
     os.environ.get("THAI_RECALL_MIN_THRESHOLD", "0.85")
 )
 
+# Benign false-positive gate (v1.8): the ML-only score on the committed
+# benign holdout (data/benign_holdout.csv -- legitimate sites, several of
+# which deliberately resemble risky patterns). evaluate.py fails
+# --enforce-threshold when the share of benign URLs scoring >= 0.7 exceeds
+# this. Unlike tests/test_benign_fp.py (full pipeline, rules included), this
+# gate measures the raw model so an FP regression is caught at train time.
+BENIGN_HOLDOUT_CSV = os.path.join(DATA_DIR, "benign_holdout.csv")
+BENIGN_FP_METRICS_JSON = os.path.join(REPORTS_DIR, "benign_fp_metrics.json")
+BENIGN_FP_MAX_PHISHING_RATE = float(
+    os.environ.get("BENIGN_FP_MAX_PHISHING_RATE", "0.0")
+)
+
 
 # Live-feed phishing corpus written by feed_training_export.py.
 # 80% goes to training (LIVE_FEED_CSV), 20% to holdout (LIVE_FEED_HOLDOUT_CSV).

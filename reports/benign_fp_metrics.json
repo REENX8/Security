@@ -1,0 +1,11 @@
+{
+  "sample_size": 68,
+  "fp_rate_phishing": 0.0,
+  "fp_rate_suspicious": 0.0,
+  "fp_count_phishing": 0,
+  "fp_count_suspicious": 0,
+  "mean_score": 0.0053,
+  "max_score": 0.251,
+  "flagged_urls": [],
+  "gate_max_fp_rate_phishing": 0.0
+}

@@ -24,7 +24,9 @@ def _feat(**kwargs) -> dict:
         "homoglyph_distance": 999,
         "is_typosquat": 0,
         "has_login_keyword": 0,
+        "num_strong_login_keywords": 0,
         "has_suspicious_tld": 0,
+        "has_high_risk_tld": 0,
         "path_brand_hit": 0,
         "has_ip": 0,
         "has_https": 1,
@@ -55,11 +57,11 @@ def test_idn_homograph_requires_both_features():
     ) is None
 
 
-def test_typosquat_cred_hard_pins_with_cheap_tld():
-    # Typosquat + login keyword + suspicious TLD → hard pin phishing.
+def test_typosquat_cred_hard_pins_with_high_risk_tld():
+    # Typosquat + strong credential keyword + high-risk TLD → hard pin phishing.
     hit = rule_typosquat_with_login(
-        "u", _feat(is_typosquat=1, has_login_keyword=1,
-                   has_suspicious_tld=1, closest_domain="obec.go.th")
+        "u", _feat(is_typosquat=1, num_strong_login_keywords=1,
+                   has_high_risk_tld=1, closest_domain="obec.go.th")
     )
     assert hit and hit.rule_id == "TYPOSQUAT_CRED"
     assert hit.pin_label == "phishing"
@@ -67,9 +69,9 @@ def test_typosquat_cred_hard_pins_with_cheap_tld():
 
 
 def test_typosquat_cred_hard_pins_without_https():
-    # Typosquat + login keyword + plain HTTP → hard pin phishing.
+    # Typosquat + strong credential keyword + plain HTTP → hard pin phishing.
     hit = rule_typosquat_with_login(
-        "u", _feat(is_typosquat=1, has_login_keyword=1,
+        "u", _feat(is_typosquat=1, num_strong_login_keywords=1,
                    has_https=0, closest_domain="obec.go.th")
     )
     assert hit and hit.rule_id == "TYPOSQUAT_CRED"
@@ -77,11 +79,11 @@ def test_typosquat_cred_hard_pins_without_https():
 
 
 def test_typosquat_cred_soft_raises_on_https_safe_tld():
-    # Typosquat + login keyword on HTTPS .com/.me → raise score but no hard pin.
+    # Typosquat + strong keyword on HTTPS .com/.me → raise score but no hard pin.
     # Avoids false-positive phishing verdict for legitimate services whose brand
     # name happens to be within edit distance of a Thai-gov domain (e.g. line.me).
     hit = rule_typosquat_with_login(
-        "u", _feat(is_typosquat=1, has_login_keyword=1,
+        "u", _feat(is_typosquat=1, num_strong_login_keywords=1,
                    has_https=1, has_suspicious_tld=0, closest_domain="life.ac.th")
     )
     assert hit and hit.rule_id == "TYPOSQUAT_CRED"
@@ -89,19 +91,48 @@ def test_typosquat_cred_soft_raises_on_https_safe_tld():
     assert hit.delta > 0
 
 
-def test_path_brand_bait_requires_cheap_tld():
+def test_typosquat_cred_requires_strong_keyword():
+    # Weak-tier portal words (support/account/...) must NOT trigger the rule.
+    assert rule_typosquat_with_login(
+        "u", _feat(is_typosquat=1, has_login_keyword=1,
+                   num_strong_login_keywords=0, has_https=0)
+    ) is None
+
+
+def test_typosquat_cred_merely_cheap_tld_does_not_pin():
+    # .online/.info-style TLDs are cheap but host real SMEs -- no hard pin.
+    hit = rule_typosquat_with_login(
+        "u", _feat(is_typosquat=1, num_strong_login_keywords=1,
+                   has_suspicious_tld=1, has_high_risk_tld=0, has_https=1)
+    )
+    assert hit and hit.pin_label is None
+
+
+def test_path_brand_bait_pins_only_on_high_risk_tld():
     assert rule_path_brand_impersonation(
         "u", _feat(path_brand_hit=1, has_suspicious_tld=0)
     ) is None
-    assert rule_path_brand_impersonation(
-        "u", _feat(path_brand_hit=1, has_suspicious_tld=1)
-    ).rule_id == "PATH_BRAND_BAIT"
+    # Weak-tier cheap TLD: raises the score but the model keeps the verdict.
+    soft = rule_path_brand_impersonation(
+        "u", _feat(path_brand_hit=1, has_suspicious_tld=1, has_high_risk_tld=0)
+    )
+    assert soft and soft.rule_id == "PATH_BRAND_BAIT"
+    assert soft.pin_label is None and soft.delta > 0
+    # High-risk TLD: unambiguous brand-bait kit -> hard pin.
+    hard = rule_path_brand_impersonation(
+        "u", _feat(path_brand_hit=1, has_suspicious_tld=1, has_high_risk_tld=1)
+    )
+    assert hard and hard.pin_label == "phishing"
 
 
 def test_ip_cred():
     assert rule_ip_with_login(
-        "u", _feat(has_ip=1, has_login_keyword=1)
+        "u", _feat(has_ip=1, num_strong_login_keywords=1)
     ).rule_id == "IP_CRED"
+    # Weak keyword on an IP host is not enough to fire the credential rule.
+    assert rule_ip_with_login(
+        "u", _feat(has_ip=1, has_login_keyword=1, num_strong_login_keywords=0)
+    ) is None
 
 
 def test_whitelist_safety_net_pins_safe():
@@ -131,6 +162,7 @@ def test_engine_combines_hits_and_clamps_delta():
     feat = _feat(
         has_ip=1,
         has_login_keyword=1,
+        num_strong_login_keywords=1,
         is_typosquat=1,
         closest_domain="krungthai.com",
     )
@@ -205,14 +237,36 @@ def test_subdomain_camouflage_does_not_fire_for_typosquat():
     assert rule_subdomain_camouflage("u", feat) is None
 
 
+def test_brand_token_host_fires_with_extra_signal():
+    from phish_features.rules import rule_brand_token_host
+    hit = rule_brand_token_host(
+        "https://kmitl-th.com/student-login",
+        _feat(host_brand_token_hit=1, num_strong_login_keywords=1),
+    )
+    assert hit and hit.rule_id == "BRAND_TOKEN_BAIT"
+    assert hit.pin_label is None and hit.delta > 0
+
+
+def test_brand_token_host_needs_extra_signal():
+    from phish_features.rules import rule_brand_token_host
+    # Brand token alone on a plain HTTPS .com host -- could be an affiliate.
+    assert rule_brand_token_host(
+        "https://chulabook.com/", _feat(host_brand_token_hit=1)
+    ) is None
+    # Typosquats are handled by TYPOSQUAT_CRED; no double fire.
+    assert rule_brand_token_host(
+        "u", _feat(host_brand_token_hit=1, is_typosquat=1, has_https=0)
+    ) is None
+
+
 def test_redirect_confusion_rule_fires():
-    feat = _feat(path_redirect_hit=1, has_login_keyword=1)
+    feat = _feat(path_redirect_hit=1, num_strong_login_keywords=1)
     hit = rule_redirect_confusion("http://evil.xyz/go?redirect=http://bank.com/login", feat)
     assert hit is not None
     assert hit.rule_id == "REDIRECT_CONFUSION"
     assert hit.pin_label is None  # raise score but don't force label
 
 
-def test_redirect_confusion_does_not_fire_without_login_keyword():
-    feat = _feat(path_redirect_hit=1, has_login_keyword=0)
+def test_redirect_confusion_does_not_fire_without_strong_keyword():
+    feat = _feat(path_redirect_hit=1, num_strong_login_keywords=0)
     assert rule_redirect_confusion("u", feat) is None

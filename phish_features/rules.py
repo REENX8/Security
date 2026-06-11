@@ -33,6 +33,18 @@ from .schema import LOGIN_KEYWORDS, SUSPICIOUS_TLDS
 Adjustment = "RuleHit"  # forward reference (resolved at runtime)
 
 
+def _has_strong_cred(feat: dict) -> bool:
+    """True when the URL path/query carries a STRONG credential keyword.
+
+    v1.8: rules that hard-pin a phishing verdict must require the strong
+    tier (login/verify/password/otp ...). The broad ``has_login_keyword``
+    flag also matches generic portal words (support/service/account ...)
+    that legitimate sites use constantly -- fine as a model feature, far
+    too noisy to force a verdict on.
+    """
+    return feat.get("num_strong_login_keywords", 0) >= 1
+
+
 # Registrable domains that are corporate-controlled and do NOT delegate
 # subdomains to untrusted users. An exact-host or true-subdomain match is
 # pinned safe so legitimate brand portals (login/console/signin subdomains)
@@ -169,7 +181,7 @@ def rule_punycode_credential(url: str, feat: dict) -> RuleHit | None:
     and leave the final verdict to the model. No legitimate Thai gov/edu/bank
     host in scope uses a punycode label, so the false-positive surface is tiny.
     """
-    if not (feat.get("has_punycode") and feat.get("has_login_keyword")):
+    if not (feat.get("has_punycode") and _has_strong_cred(feat)):
         return None
     has_extra_signal = (
         not feat.get("has_https")
@@ -198,20 +210,25 @@ def rule_punycode_credential(url: str, feat: dict) -> RuleHit | None:
 
 
 def rule_typosquat_with_login(url: str, feat: dict) -> RuleHit | None:
-    """Typosquat + login keyword -- a credential phishing setup.
+    """Typosquat + strong credential keyword -- a credential phishing setup.
 
     Hard-pins to phishing only when at least one additional phishing signal is
-    present (cheap/abused TLD, plain HTTP, or raw-IP host). Without these, a
+    present (high-risk TLD, plain HTTP, or raw-IP host). Without these, a
     legitimate HTTPS service whose brand name coincidentally resembles a Thai-gov
     domain (e.g. line.me ≈ life.ac.th) would be incorrectly force-classified as
     phishing. In that case we still raise the score but leave the final verdict
     to the ML model, which can weigh domain age and cert quality.
+
+    v1.8: the keyword must be strong tier (login/verify/... not
+    support/account/...), and the TLD arm of the extra signal requires the
+    HIGH-RISK tier -- merely-cheap TLDs (.online/.info/...) host too many
+    legitimate small sites to force a verdict.
     """
-    if not (feat.get("is_typosquat") and feat.get("has_login_keyword")):
+    if not (feat.get("is_typosquat") and _has_strong_cred(feat)):
         return None
     closest = feat.get("closest_domain") or "เว็บทางการ"
     has_extra_signal = (
-        feat.get("has_suspicious_tld")
+        feat.get("has_high_risk_tld")
         or not feat.get("has_https")
         or feat.get("has_ip")
     )
@@ -238,25 +255,41 @@ def rule_typosquat_with_login(url: str, feat: dict) -> RuleHit | None:
 
 
 def rule_path_brand_impersonation(url: str, feat: dict) -> RuleHit | None:
-    """Trusted brand sits in URL path but not in host -- a brand-bait kit."""
-    if feat.get("path_brand_hit") and feat.get("has_suspicious_tld"):
-        closest = feat.get("closest_domain") or ""
-        suffix = f" ({closest})" if closest else ""
+    """Trusted brand sits in URL path but not in host -- a brand-bait kit.
+
+    v1.8: hard-pin only on the HIGH-RISK TLD tier (free/heavily-abused
+    registries with no legitimate base rate). On a merely-cheap TLD a
+    legitimate SME site can carry a brand tag page (``/tag/obec``), so the
+    rule raises the score and lets the model decide.
+    """
+    if not (feat.get("path_brand_hit") and feat.get("has_suspicious_tld")):
+        return None
+    closest = feat.get("closest_domain") or ""
+    suffix = f" ({closest})" if closest else ""
+    if feat.get("has_high_risk_tld"):
         return RuleHit(
             "PATH_BRAND_BAIT",
             delta=0.30,
             pin_label="phishing",
             message=(
                 f"ชื่อแบรนด์ทางการ{suffix} ปรากฏใน path ของ URL "
-                "ขณะที่ host ใช้ TLD ราคาถูก ซึ่งเป็นรูปแบบฟิชชิงที่พบบ่อย"
+                "ขณะที่ host ใช้ TLD ที่ถูกใช้ปลอมบ่อย ซึ่งเป็นรูปแบบฟิชชิงที่พบบ่อย"
             ),
         )
-    return None
+    return RuleHit(
+        "PATH_BRAND_BAIT",
+        delta=0.30,
+        pin_label=None,
+        message=(
+            f"ชื่อแบรนด์ทางการ{suffix} ปรากฏใน path ของ URL "
+            "ขณะที่ host ใช้ TLD ราคาถูก — ควรตรวจสอบก่อนกรอกข้อมูล"
+        ),
+    )
 
 
 def rule_ip_with_login(url: str, feat: dict) -> RuleHit | None:
-    """IP host + credential keyword -- almost always phishing."""
-    if feat.get("has_ip") and feat.get("has_login_keyword"):
+    """IP host + strong credential keyword -- almost always phishing."""
+    if feat.get("has_ip") and _has_strong_cred(feat):
         return RuleHit(
             "IP_CRED",
             delta=0.50,
@@ -304,24 +337,37 @@ def rule_cheap_tld_no_https(url: str, feat: dict) -> RuleHit | None:
 
 
 def rule_https_lookalike(url: str, feat: dict) -> RuleHit | None:
-    """HTTPS + free cert + brand/credential signal -- modern phishing kit."""
-    if (
-        feat.get("has_https")
-        and feat.get("cert_is_lets_encrypt")
-        and (
-            feat.get("is_typosquat")
-            or feat.get("path_brand_hit")
-            or feat.get("has_login_keyword")
-        )
-    ):
+    """HTTPS + free cert + brand-impersonation signal -- modern phishing kit.
+
+    v1.8: a Let's Encrypt cert alone vouches for nothing, but it also
+    condemns nothing -- a huge share of legitimate sites use free DV certs.
+    The old condition pinned phishing on (free cert + any login keyword),
+    which force-blocked ordinary login portals. Now a BRAND signal is
+    required: hard-pin only for a typosquat host (impersonation is
+    unambiguous); a brand-in-path hit raises the score and lets the model
+    weigh it.
+    """
+    if not (feat.get("has_https") and feat.get("cert_is_lets_encrypt")):
+        return None
+    if feat.get("is_typosquat"):
         return RuleHit(
             "HTTPS_LOOKALIKE",
             delta=0.30,
             pin_label="phishing",
             message=(
                 "URL ใช้ HTTPS พร้อมใบรับรองฟรี (Let's Encrypt) "
-                "และมีสัญญาณการปลอมแปลงแบรนด์ — "
+                "บนโดเมนเลียนแบบแบรนด์จริง — "
                 "รูปแบบที่พบบ่อยในชุดฟิชชิงยุคใหม่"
+            ),
+        )
+    if feat.get("path_brand_hit"):
+        return RuleHit(
+            "HTTPS_LOOKALIKE",
+            delta=0.30,
+            pin_label=None,
+            message=(
+                "URL ใช้ HTTPS พร้อมใบรับรองฟรี (Let's Encrypt) "
+                "และมีชื่อแบรนด์ทางการใน path — ควรตรวจสอบก่อนกรอกข้อมูล"
             ),
         )
     return None
@@ -395,7 +441,7 @@ def rule_self_signed_login(url: str, feat: dict) -> RuleHit | None:
     self-signed cert collecting credentials is a near-certain phishing /
     man-in-the-middle setup, so pin to phishing.
     """
-    if feat.get("is_self_signed") and feat.get("has_login_keyword"):
+    if feat.get("is_self_signed") and _has_strong_cred(feat):
         return RuleHit(
             "SELF_SIGNED_CRED",
             delta=0.35,
@@ -408,14 +454,47 @@ def rule_self_signed_login(url: str, feat: dict) -> RuleHit | None:
     return None
 
 
+def rule_brand_token_host(url: str, feat: dict) -> RuleHit | None:
+    """Trusted brand embedded in the host label + a supporting signal.
+
+    ``kmitl-th.com/student-login`` / ``thaipolice-verify.shop`` -- the brand
+    is part of a longer host label, which edit distance misses (the
+    proportional typosquat gate correctly rejects it). Alone the token is
+    only a hint (legitimate affiliates exist), so the rule needs a cheap TLD,
+    a strong credential keyword, or plain HTTP, and it raises the score
+    without pinning -- the model keeps the final say.
+    """
+    if not feat.get("host_brand_token_hit") or feat.get("is_typosquat"):
+        return None
+    if (
+        feat.get("has_suspicious_tld")
+        or not feat.get("has_https")
+        or _has_strong_cred(feat)
+    ):
+        return RuleHit(
+            "BRAND_TOKEN_BAIT",
+            delta=0.25,
+            pin_label=None,
+            message=(
+                "ชื่อแบรนด์ทางการฝังอยู่ในชื่อโดเมนที่ยาวกว่า "
+                "พร้อมสัญญาณเสี่ยงอื่น — รูปแบบโดเมนเลียนแบบที่พบบ่อย"
+            ),
+        )
+    return None
+
+
 def rule_redirect_confusion(url: str, feat: dict) -> RuleHit | None:
-    """Open-redirect pattern combined with credential keyword.
+    """Open-redirect pattern combined with a credential or brand signal.
 
     Attackers chain open-redirect endpoints on legitimate or semi-trusted
     hosts to bypass reputation checks, then land on a phishing page that
-    harvests credentials.
+    harvests credentials. ``path_brand_hit`` covers redirect bait that stuffs
+    a trusted brand's URL into the parameter (a site redirecting to itself
+    does not set the flag, so legitimate SSO flows stay clean).
     """
-    if feat.get("path_redirect_hit") == 1 and feat.get("has_login_keyword"):
+    if feat.get("path_redirect_hit") == 1 and (
+        _has_strong_cred(feat) or feat.get("path_brand_hit")
+    ):
         return RuleHit(
             "REDIRECT_CONFUSION",
             delta=0.20,
@@ -438,6 +517,7 @@ DEFAULT_RULES: tuple[Rule, ...] = (
     rule_login_keyword_dense,     # high credential-keyword density
     rule_typosquat_with_login,
     rule_path_brand_impersonation,
+    rule_brand_token_host,        # brand embedded in a longer host label
     rule_subdomain_camouflage,
     rule_redirect_confusion,
     rule_encoded_ip_host,         # hex/octal IP literal host
@@ -519,6 +599,7 @@ __all__ = [
     "LOGIN_KEYWORDS",
     "SUSPICIOUS_TLDS",
     "rule_punycode_credential",
+    "rule_brand_token_host",
     "rule_https_lookalike",
     "rule_login_keyword_dense",
     "rule_subdomain_camouflage",

@@ -34,6 +34,9 @@ from sklearn.pipeline import Pipeline
 from sklearn.preprocessing import StandardScaler as _CVScaler
 
 from ml_pipeline.config import (
+    BENIGN_FP_MAX_PHISHING_RATE,
+    BENIGN_FP_METRICS_JSON,
+    BENIGN_HOLDOUT_CSV,
     EVALUATION_SUMMARY_JSON,
     GENERIC_HOLDOUT_CSV,
     INDEPENDENT_HOLDOUT_METRICS_JSON,
@@ -50,11 +53,12 @@ from ml_pipeline.config import (
     THAI_HOLDOUT_CSV,
     THAI_HOLDOUT_METRICS_JSON,
     THAI_RECALL_MIN_THRESHOLD,
+    WHITELIST_JSON,
     ensure_dirs,
 )
 from ml_pipeline.feature_engineering import build_feature_frame
 from ml_pipeline.train import TEST_SPLIT_CSV, build_ensemble
-from phish_features import ORDERED_FEATURES
+from phish_features import ORDERED_FEATURES, FeatureExtractor, Whitelist
 
 
 def wilson_ci(k: int, n: int, z: float = 1.96) -> tuple[float, float]:
@@ -270,6 +274,13 @@ def main() -> None:
         print(f"[eval] no live-feed holdout found at {LIVE_FEED_HOLDOUT_CSV} "
               "(run ml_pipeline.feed_training_export to populate it)")
 
+    benign_fp_metrics: dict | None = None
+    if os.path.exists(BENIGN_HOLDOUT_CSV):
+        benign_fp_metrics = evaluate_benign_holdout(model, scaler)
+    else:
+        print(f"[eval] no benign holdout found at {BENIGN_HOLDOUT_CSV} "
+              "(skipping benign FP gate)")
+
     write_evaluation_summary(
         metrics,
         real_holdout_metrics,
@@ -277,6 +288,7 @@ def main() -> None:
         cv_metrics,
         independent_holdout_metrics,
         live_feed_holdout_metrics,
+        benign_fp_metrics,
     )
 
 
@@ -297,10 +309,12 @@ def _eval_holdout_csv(
     frame = build_feature_frame(csv_path)
     X = frame[ORDERED_FEATURES].astype(float)
     X_s = scaler.transform(X.to_numpy())
-    y_pred = model.predict(X_s)
     y_proba = model.predict_proba(X_s)[:, 1]
 
-    flagged = int((y_pred == 1).sum())
+    # v1.8 fix: count against the SERVE-TIME phishing threshold (0.70).
+    # ``model.predict()`` cuts at proba 0.5, so the line labelled
+    # "score >= 0.7" previously over-reported recall for URLs in [0.5, 0.7).
+    flagged = int((y_proba >= 0.70).sum())
     suspicious_or_phishing = int((y_proba >= 0.30).sum())
     n = len(X)
 
@@ -418,6 +432,75 @@ def evaluate_thai_holdout(model, scaler) -> dict:
     )
 
 
+def evaluate_benign_holdout(model, scaler) -> dict:
+    """ML-only false-positive rates on the committed benign holdout.
+
+    The benign CSV carries url/category columns (no label), so the shared
+    phishing-recall helper does not apply. Features come from the same
+    ``FeatureExtractor`` the backend serves with, network disabled, so the
+    measurement matches the conservative imputed-defaults serve path.
+    Every phishing-only holdout above measures recall; this is the missing
+    other half -- without it a retrain could trade benign precision for
+    recall and no train-time gate would notice.
+    """
+    frame = pd.read_csv(BENIGN_HOLDOUT_CSV)
+    wl = Whitelist.from_json(WHITELIST_JSON)
+    extractor = FeatureExtractor(wl, enable_whois=False, enable_tls=False)
+
+    vectors = [extractor.extract_vector(str(u)) for u in frame["url"]]
+    X_s = scaler.transform(vectors)
+    y_proba = model.predict_proba(X_s)[:, 1]
+
+    n = len(frame)
+    fp_phishing = int((y_proba >= 0.70).sum())
+    fp_suspicious = int((y_proba >= 0.30).sum())
+    fp_rate_phishing = round(fp_phishing / n, 4) if n else 0.0
+    fp_rate_suspicious = round(fp_suspicious / n, 4) if n else 0.0
+
+    print()
+    print("=" * 52)
+    print("  BENIGN HOLDOUT -- FALSE-POSITIVE GATE (ML only)")
+    print("=" * 52)
+    print(f"  Sample size              : {n}")
+    print(f"  FP rate (score >= 0.7)   : {fp_phishing}/{n} = {fp_rate_phishing:.4f}")
+    print(f"  FP+warn rate (>= 0.3)    : {fp_suspicious}/{n} = {fp_rate_suspicious:.4f}")
+    print(f"  Mean score               : {float(y_proba.mean()):.4f}")
+    print(f"  Max score                : {float(y_proba.max()):.4f}" if n else "")
+
+    flagged = frame.assign(score=y_proba)[y_proba >= 0.30].sort_values(
+        "score", ascending=False
+    )
+    fp_records = [
+        {
+            "url": r["url"],
+            "category": r.get("category", ""),
+            "score": round(float(r["score"]), 4),
+        }
+        for _, r in flagged.iterrows()
+    ]
+    if fp_records:
+        print(f"  Benign URLs scoring >= 0.3 ({len(fp_records)}):")
+        for rec in fp_records[:10]:
+            print(f"    - {rec['url']}  (score={rec['score']:.2f})")
+
+    metrics = {
+        "sample_size": n,
+        "fp_rate_phishing": fp_rate_phishing,
+        "fp_rate_suspicious": fp_rate_suspicious,
+        "fp_count_phishing": fp_phishing,
+        "fp_count_suspicious": fp_suspicious,
+        "mean_score": round(float(y_proba.mean()), 4) if n else 0.0,
+        "max_score": round(float(y_proba.max()), 4) if n else 0.0,
+        "flagged_urls": fp_records,
+        "gate_max_fp_rate_phishing": BENIGN_FP_MAX_PHISHING_RATE,
+    }
+    with open(BENIGN_FP_METRICS_JSON, "w", encoding="utf-8") as fh:
+        json.dump(metrics, fh, indent=2)
+    print(f"  Saved {BENIGN_FP_METRICS_JSON}")
+    print("=" * 52)
+    return metrics
+
+
 def evaluate_live_feed_holdout(model, scaler) -> dict:
     result = _eval_holdout_csv(
         LIVE_FEED_HOLDOUT_CSV,
@@ -478,6 +561,7 @@ def write_evaluation_summary(
     cv_metrics: dict | None = None,
     independent_holdout_metrics: dict | None = None,
     live_feed_holdout_metrics: dict | None = None,
+    benign_fp_metrics: dict | None = None,
 ) -> None:
     """Write a consolidated evaluation_summary.json that makes grader intent clear.
 
@@ -566,6 +650,7 @@ def write_evaluation_summary(
         "generic_real_holdout": real_holdout_metrics,
         "independent_real_holdout": independent_holdout_metrics,
         "live_feed_holdout": live_feed_holdout_metrics,
+        "benign_fp": benign_fp_metrics,
         "cross_validation": cv_metrics,
     }
     with open(EVALUATION_SUMMARY_JSON, "w", encoding="utf-8") as fh:
@@ -610,6 +695,21 @@ def _enforce_primary_threshold(min_threshold: float) -> None:
         sys.exit(1)
     print(f"[ci-gate] OK:   {metric} = {primary:.4f} on n={n} "
           f">= required {min_threshold:.4f}")
+
+    # Benign FP gate (v1.8): recall means nothing if legitimate sites get
+    # blocked, so the same CI run also fails on a benign FP regression.
+    benign = summary.get("benign_fp")
+    if benign is not None:
+        fp_rate = benign.get("fp_rate_phishing", 0.0)
+        bn = benign.get("sample_size", 0)
+        if fp_rate > BENIGN_FP_MAX_PHISHING_RATE:
+            print(f"[ci-gate] FAIL: benign fp_rate_phishing = {fp_rate:.4f} "
+                  f"on n={bn} > allowed {BENIGN_FP_MAX_PHISHING_RATE:.4f}")
+            print(f"           See {BENIGN_FP_METRICS_JSON} for the "
+                  "legitimate URLs the model would block.")
+            sys.exit(4)
+        print(f"[ci-gate] OK:   benign fp_rate_phishing = {fp_rate:.4f} "
+              f"on n={bn} <= allowed {BENIGN_FP_MAX_PHISHING_RATE:.4f}")
 
 
 if __name__ == "__main__":

@@ -4,11 +4,11 @@
   "negatives_source": "thai_gov_domains.csv",
   "current_runtime_threshold": 0.7,
   "f1_optimal": {
-    "threshold": 0.3,
-    "precision": 1.0,
+    "threshold": 0.05,
+    "precision": 0.9979,
     "recall": 0.9979,
-    "f1": 0.9989,
-    "false_positives": 0,
+    "f1": 0.9979,
+    "false_positives": 1,
     "false_negatives": 1
   },
   "high_precision_recommended": {
@@ -38,102 +38,14 @@
     },
     {
       "threshold": 0.15,
-      "precision": 0.9979,
-      "recall": 0.9979,
+      "precision": 1.0,
+      "recall": 0.9957,
       "f1": 0.9979,
-      "false_positives": 1,
-      "false_negatives": 1
+      "false_positives": 0,
+      "false_negatives": 2
     },
     {
       "threshold": 0.2,
-      "precision": 0.9979,
-      "recall": 0.9979,
-      "f1": 0.9979,
-      "false_positives": 1,
-      "false_negatives": 1
-    },
-    {
-      "threshold": 0.25,
-      "precision": 0.9979,
-      "recall": 0.9979,
-      "f1": 0.9979,
-      "false_positives": 1,
-      "false_negatives": 1
-    },
-    {
-      "threshold": 0.3,
-      "precision": 1.0,
-      "recall": 0.9979,
-      "f1": 0.9989,
-      "false_positives": 0,
-      "false_negatives": 1
-    },
-    {
-      "threshold": 0.35,
-      "precision": 1.0,
-      "recall": 0.9979,
-      "f1": 0.9989,
-      "false_positives": 0,
-      "false_negatives": 1
-    },
-    {
-      "threshold": 0.4,
-      "precision": 1.0,
-      "recall": 0.9979,
-      "f1": 0.9989,
-      "false_positives": 0,
-      "false_negatives": 1
-    },
-    {
-      "threshold": 0.45,
-      "precision": 1.0,
-      "recall": 0.9979,
-      "f1": 0.9989,
-      "false_positives": 0,
-      "false_negatives": 1
-    },
-    {
-      "threshold": 0.5,
-      "precision": 1.0,
-      "recall": 0.9979,
-      "f1": 0.9989,
-      "false_positives": 0,
-      "false_negatives": 1
-    },
-    {
-      "threshold": 0.55,
-      "precision": 1.0,
-      "recall": 0.9979,
-      "f1": 0.9989,
-      "false_positives": 0,
-      "false_negatives": 1
-    },
-    {
-      "threshold": 0.6,
-      "precision": 1.0,
-      "recall": 0.9979,
-      "f1": 0.9989,
-      "false_positives": 0,
-      "false_negatives": 1
-    },
-    {
-      "threshold": 0.65,
-      "precision": 1.0,
-      "recall": 0.9957,
-      "f1": 0.9979,
-      "false_positives": 0,
-      "false_negatives": 2
-    },
-    {
-      "threshold": 0.7,
-      "precision": 1.0,
-      "recall": 0.9957,
-      "f1": 0.9979,
-      "false_positives": 0,
-      "false_negatives": 2
-    },
-    {
-      "threshold": 0.75,
       "precision": 1.0,
       "recall": 0.9915,
       "f1": 0.9957,
@@ -141,36 +53,124 @@
       "false_negatives": 4
     },
     {
+      "threshold": 0.25,
+      "precision": 1.0,
+      "recall": 0.9915,
+      "f1": 0.9957,
+      "false_positives": 0,
+      "false_negatives": 4
+    },
+    {
+      "threshold": 0.3,
+      "precision": 1.0,
+      "recall": 0.985,
+      "f1": 0.9925,
+      "false_positives": 0,
+      "false_negatives": 7
+    },
+    {
+      "threshold": 0.35,
+      "precision": 1.0,
+      "recall": 0.985,
+      "f1": 0.9925,
+      "false_positives": 0,
+      "false_negatives": 7
+    },
+    {
+      "threshold": 0.4,
+      "precision": 1.0,
+      "recall": 0.985,
+      "f1": 0.9925,
+      "false_positives": 0,
+      "false_negatives": 7
+    },
+    {
+      "threshold": 0.45,
+      "precision": 1.0,
+      "recall": 0.9829,
+      "f1": 0.9914,
+      "false_positives": 0,
+      "false_negatives": 8
+    },
+    {
+      "threshold": 0.5,
+      "precision": 1.0,
+      "recall": 0.9829,
+      "f1": 0.9914,
+      "false_positives": 0,
+      "false_negatives": 8
+    },
+    {
+      "threshold": 0.55,
+      "precision": 1.0,
+      "recall": 0.9744,
+      "f1": 0.987,
+      "false_positives": 0,
+      "false_negatives": 12
+    },
+    {
+      "threshold": 0.6,
+      "precision": 1.0,
+      "recall": 0.9701,
+      "f1": 0.9848,
+      "false_positives": 0,
+      "false_negatives": 14
+    },
+    {
+      "threshold": 0.65,
+      "precision": 1.0,
+      "recall": 0.9701,
+      "f1": 0.9848,
+      "false_positives": 0,
+      "false_negatives": 14
+    },
+    {
+      "threshold": 0.7,
+      "precision": 1.0,
+      "recall": 0.9637,
+      "f1": 0.9815,
+      "false_positives": 0,
+      "false_negatives": 17
+    },
+    {
+      "threshold": 0.75,
+      "precision": 1.0,
+      "recall": 0.9615,
+      "f1": 0.9804,
+      "false_positives": 0,
+      "false_negatives": 18
+    },
+    {
       "threshold": 0.8,
       "precision": 1.0,
-      "recall": 0.9893,
-      "f1": 0.9946,
+      "recall": 0.9551,
+      "f1": 0.977,
       "false_positives": 0,
-      "false_negatives": 5
+      "false_negatives": 21
     },
     {
       "threshold": 0.85,
       "precision": 1.0,
-      "recall": 0.9893,
-      "f1": 0.9946,
+      "recall": 0.9509,
+      "f1": 0.9748,
       "false_positives": 0,
-      "false_negatives": 5
+      "false_negatives": 23
     },
     {
       "threshold": 0.9,
       "precision": 1.0,
-      "recall": 0.9893,
-      "f1": 0.9946,
+      "recall": 0.9487,
+      "f1": 0.9737,
       "false_positives": 0,
-      "false_negatives": 5
+      "false_negatives": 24
     },
     {
       "threshold": 0.95,
       "precision": 1.0,
-      "recall": 0.9808,
-      "f1": 0.9903,
+      "recall": 0.9402,
+      "f1": 0.9692,
       "false_positives": 0,
-      "false_negatives": 9
+      "false_negatives": 28
     }
   ],
   "note": "Positives are the committed phishing holdouts; negatives are the trusted Thai domain list. This is an in-distribution estimate \u2014 treat thresholds as guidance, validate on live telemetry before changing THRESHOLD_PHISHING."

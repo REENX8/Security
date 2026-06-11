@@ -10,6 +10,7 @@ export const FEATURE_GROUPS = [
       "num_digits", "has_ip", "entropy", "has_https", "num_subdomains",
       "path_depth", "domain_label_max_len", "has_port", "max_digit_run",
       "has_query_string", "path_length", "num_login_keywords",
+      "num_strong_login_keywords",
       "query_param_count", "path_entropy", "host_token_count",
       "digit_to_letter_ratio",
     ],
@@ -35,8 +36,8 @@ export const FEATURE_GROUPS = [
   {
     title: "เลียนแบบแบรนด์ (Impersonation)",
     keys: [
-      "has_login_keyword", "has_suspicious_tld", "path_brand_hit",
-      "host_has_brand_and_suspicious_tld",
+      "has_login_keyword", "has_suspicious_tld", "has_high_risk_tld",
+      "path_brand_hit", "host_has_brand_and_suspicious_tld",
     ],
   },
 ];
@@ -59,6 +60,7 @@ export const FEATURE_LABELS = {
   has_query_string: "มี query string",
   path_length: "ความยาว path",
   num_login_keywords: "คำที่สื่อ login",
+  num_strong_login_keywords: "คำขอรหัสผ่านโดยตรง",
   query_param_count: "จำนวน query param",
   path_entropy: "entropy ของ path",
   host_token_count: "จำนวน token ใน host",
@@ -82,6 +84,7 @@ export const FEATURE_LABELS = {
   homoglyph_distance: "ระยะ homoglyph",
   has_login_keyword: "มีคำว่า login/verify",
   has_suspicious_tld: "TLD ราคาถูก/น่าสงสัย",
+  has_high_risk_tld: "TLD กลุ่มเสี่ยงสูง (ฟรี/ถูกใช้ปลอมหนัก)",
   path_brand_hit: "พบชื่อแบรนด์ใน path",
   host_has_brand_and_suspicious_tld: "แบรนด์ + TLD น่าสงสัย",
 };
@@ -90,7 +93,8 @@ export const FEATURE_LABELS = {
 const SUSPICIOUS_WHEN_TRUE = new Set([
   "has_ip", "is_typosquat", "is_self_signed", "has_punycode",
   "has_mixed_script", "has_login_keyword", "has_suspicious_tld",
-  "path_brand_hit", "host_has_brand_and_suspicious_tld",
+  "has_high_risk_tld", "path_brand_hit",
+  "host_has_brand_and_suspicious_tld",
 ]);
 
 export function isNotable(key, value) {

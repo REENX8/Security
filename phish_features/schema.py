@@ -45,7 +45,18 @@ from __future__ import annotations
 #             has_encoded_ip (hex 0x.../octal 0NNN. notation — bypasses naive
 #             dotted-decimal IP regex) and path_redirect_hit (open-redirect
 #             pattern in path/query). Both are deterministic, no network lookups.
-FEATURE_SCHEMA_VERSION = "1.7.0"
+#   v1.8.0 -- false-positive reduction release. has_login_keyword now matches
+#             the documented contract (path+query only -- previously the whole
+#             URL string, so legit hosts like login.microsoftonline.com carried
+#             the flag). LOGIN_KEYWORDS split into STRONG (credential
+#             collection: login/verify/password/otp ...) and WEAK (generic
+#             portal words: support/service/account ...); SUSPICIOUS_TLDS gains
+#             a HIGH_RISK_TLDS subset (free/heavily-abused registries). 3 new
+#             features: num_strong_login_keywords and has_high_risk_tld expose
+#             the strong tiers to the model; host_brand_token_hit catches
+#             brand-as-host-token impersonation (kmitl-th.com, thai-customs.cc)
+#             that the typosquat proportional gate correctly rejects.
+FEATURE_SCHEMA_VERSION = "1.8.0"
 
 # The exact, ordered list of numeric features fed to the model.
 # Index position IS the contract -- never reorder, only append + bump version.
@@ -91,8 +102,9 @@ ORDERED_FEATURES: list[str] = [
     # --- v1.3 path-impersonation features ---
     "has_login_keyword",    # 1 if URL path/query contains a credential-collection keyword
     "has_suspicious_tld",   # 1 if eTLD is in a curated cheap/abused list
-    "path_brand_hit",       # 1 if a trusted brand label appears in the URL path
-                            #   while the host's brand label does not
+    "path_brand_hit",       # 1 if a trusted brand label appears in the URL
+                            #   path (full segment) or query string while the
+                            #   host's brand label does not
                             #   (e.g. ``random.cc/bot.go.th/login``)
     "path_length",          # total characters in URL path (>120 is rare on legit sites)
     # --- v1.4 richer lexical features ---
@@ -112,6 +124,16 @@ ORDERED_FEATURES: list[str] = [
     # --- v1.7 adversarial-evasion features (deterministic, no network) ---
     "has_encoded_ip",      # 1 if host uses hex (0x12345678) or octal (0177.012...) IP notation
     "path_redirect_hit",   # 1 if URL path/query contains an open-redirect pattern
+    # --- v1.8 false-positive reduction features ---
+    "num_strong_login_keywords",  # count of STRONG credential keywords in path+query
+                                  #   (login/verify/password ... -- excludes generic
+                                  #   portal words like support/service/account)
+    "has_high_risk_tld",   # 1 if eTLD is in the HIGH_RISK_TLDS subset (free or
+                           #   heavily-abused registries; much stronger signal
+                           #   than the broad has_suspicious_tld flag)
+    "host_brand_token_hit",  # 1 if a hyphen/dot token of the host equals a
+                             #   whitelisted brand label while the host's own
+                             #   brand is different (kmitl-th.com, obec.go.th.evil.xyz)
 ]
 
 N_FEATURES = len(ORDERED_FEATURES)
@@ -170,30 +192,52 @@ KNOWN_THAI_REGISTRARS: tuple[str, ...] = (
 # Credential-collection / pressure keywords that show up in the URL path or
 # query string of the overwhelming majority of phishing kits. Order doesn't
 # matter; the lookup is a frozenset for O(1) checks.
-LOGIN_KEYWORDS: frozenset[str] = frozenset({
+#
+# v1.8: split into two tiers. STRONG keywords are specific to credential
+# collection and almost never appear in ordinary content paths; WEAK keywords
+# are common English words (support/service/account ...) that legitimate
+# portals use constantly -- they still feed the broad count features, but
+# rules that pin a phishing verdict must require a STRONG keyword.
+LOGIN_KEYWORDS_STRONG: frozenset[str] = frozenset({
     "login", "signin", "sign-in", "log-in", "logon",
     "verify", "verification", "validate", "validation",
-    "account", "accounts", "myaccount",
-    "secure", "security", "session", "auth", "authenticate",
-    "update", "updated", "confirm", "confirmation",
+    "authenticate", "confirm", "confirmation",
     "password", "passwd", "credential", "credentials",
     "wallet", "recover", "recovery", "reset", "unlock",
-    "support", "billing", "invoice", "refund",
-    "webscr", "ebay", "service", "client", "customer",
-    "twofactor", "otp", "kyc",
+    "webscr", "twofactor", "otp", "kyc",
 })
+LOGIN_KEYWORDS_WEAK: frozenset[str] = frozenset({
+    "account", "accounts", "myaccount",
+    "secure", "security", "session", "auth",
+    "update", "updated",
+    "support", "billing", "invoice", "refund",
+    "ebay", "service", "client", "customer",
+})
+# Back-compat union -- has_login_keyword / num_login_keywords count both tiers.
+LOGIN_KEYWORDS: frozenset[str] = LOGIN_KEYWORDS_STRONG | LOGIN_KEYWORDS_WEAK
 
 # Cheap / commonly abused TLDs. OpenPhish + URLhaus 2024-2025 over-index
 # heavily on these compared to .com base rates. A 1/0 flag is enough --
 # the model decides the weight.
-SUSPICIOUS_TLDS: frozenset[str] = frozenset({
-    "xyz", "top", "icu", "buzz", "click", "loan",
+#
+# v1.8: split into two tiers. HIGH_RISK_TLDS are free or near-free registries
+# whose abuse share dwarfs legitimate use (Freenom .tk/.ml/..., and the
+# .icu/.cfd/.sbs cluster). The remainder of SUSPICIOUS_TLDS (.online, .site,
+# .info, .shop ...) is cheap but widely used by legitimate small businesses,
+# so it stays a weak signal: it feeds the model but never pins a verdict.
+HIGH_RISK_TLDS: frozenset[str] = frozenset({
+    "tk", "ml", "ga", "cf", "gq",
+    "icu", "cfd", "sbs", "bond", "monster", "buzz",
+    "click", "loan", "win", "top", "xyz",
+    "rest", "stream", "review", "party", "racing", "download", "country",
+})
+SUSPICIOUS_TLDS: frozenset[str] = HIGH_RISK_TLDS | frozenset({
     "online", "site", "store", "shop", "vip", "live", "work",
-    "fit", "lol", "rest", "cfd", "sbs", "bond", "monster",
-    "cc", "tk", "ml", "ga", "cf", "gq",
-    "club", "support", "win", "biz", "info",
-    "you", "cv", "uno", "country", "stream", "review", "party",
-    "racing", "download", "fyi", "page", "host", "space",
+    "fit", "lol",
+    "cc",
+    "club", "support", "biz", "info",
+    "you", "cv", "uno",
+    "fyi", "page", "host", "space",
 })
 
 

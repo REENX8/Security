@@ -54,8 +54,8 @@
 
 โครงการนี้นำเสนอ **แพลตฟอร์มตรวจจับ URL ฟิชชิงเฉพาะทาง** สำหรับเป้าหมาย
 ที่เป็นแบรนด์ไทย ประกอบด้วย (1) ML ensemble RandomForest + XGBoost บน
-44 features รวมถึง IDN/Homoglyph, Path-impersonation features และ
-lexical patterns ใหม่ใน schema v1.6.0 (2) Heuristic Rules Engine เพื่อความ
+49 features รวมถึง IDN/Homoglyph, Path-impersonation features และ
+lexical patterns ใหม่ใน schema v1.8.0 (2) Heuristic Rules Engine เพื่อความ
 โปร่งใสและตรวจสอบได้ (3) Brand Watchlist + Webhook (รองรับ LINE Notify)
 สำหรับแจ้งเตือนหน่วยงาน (4) Campaign Clustering เพื่อจัดกลุ่มฟิชชิงจาก kit
 เดียวกัน (5) Public Threat Feed (JSON/CSV/STIX 2.1) แชร์เป็นสาธารณะ
@@ -81,8 +81,8 @@ training data.
 
 This project presents a **specialised phishing-URL detection platform**
 targeting Thai brands, consisting of (1) a RandomForest + XGBoost
-ensemble on 44 features including IDN/Homoglyph, Path-impersonation
-and new lexical pattern features at schema v1.6.0, (2) a Heuristic Rules
+ensemble on 49 features including IDN/Homoglyph, Path-impersonation
+and new lexical pattern features at schema v1.8.0, (2) a Heuristic Rules
 Engine for transparency and auditability, (3) Brand Watchlist + Webhook
 (LINE Notify compatible) for agency alerting, (4) Campaign Clustering
 to group phishing URLs from the same kit, (5) Public Threat Feed
@@ -113,7 +113,7 @@ brand ราชการที่ประชาชนไว้ใจ — สร
 ระบบที่ออกแบบโดยตรงสำหรับเป้าหมายนี้ต้องการ:
 
 1. **Whitelist ของ Thai brand** ที่ครอบคลุม → ใช้ 500+ โดเมน
-2. **Feature ที่จับการปลอมในระดับ URL string ได้** → 44 features ที่ออกแบบเอง (schema v1.6.0)
+2. **Feature ที่จับการปลอมในระดับ URL string ได้** → 49 features ที่ออกแบบเอง (schema v1.8.0)
 3. **โมเดลที่ฝึกบน Thai-specific data** → curated seed corpus 215 URL
 4. **ระบบที่โปร่งใส** → Rules Engine แสดง rule_id ที่ทำงาน
 5. **ช่องทางใช้งานที่ accessible** → extension + portal ฟรี ไม่ต้อง login
@@ -206,8 +206,8 @@ verdict กลับ:
                               ┌────────▼─────────┐
                               │ ML Ensemble      │
                               │ RF + XGB         │
-                              │ schema v1.6.0    │
-                              │ 44 features      │
+                              │ schema v1.8.0    │
+                              │ 49 features      │
                               └──────────────────┘
 ```
 
@@ -215,7 +215,7 @@ verdict กลับ:
 
 1. Browser extension หรือ portal ส่ง URL ไป `POST /api/v1/check`
 2. Backend เรียก `URLUnshortener` (ถ้าเปิด) แกะ short-link → URL ปลายทาง
-3. `FeatureExtractor` คำนวณ 44 features (lexical, IDN, whitelist, WHOIS, TLS, IP/ASN reputation)
+3. `FeatureExtractor` คำนวณ 49 features (lexical, IDN, whitelist, WHOIS, TLS, IP/ASN reputation)
 4. ML ensemble (RF + XGB voting + isotonic calibration) ให้ probability score
 5. `RulesEngine` ตรวจ rule hits → ปรับ score / pin label หากตรง pattern ที่
    มั่นใจ
@@ -226,7 +226,7 @@ verdict กลับ:
 
 ### 4.2 ทฤษฎี / Algorithm / เทคโนโลยี
 
-#### 4.2.1 Feature Schema v1.6.0 (รวม 44 features)
+#### 4.2.1 Feature Schema v1.8.0 (รวม 49 features)
 
 | กลุ่ม | จำนวน | ตัวอย่าง |
 |------|------|----------|
@@ -401,7 +401,7 @@ URL ที่ fingerprint ตรงกันถือเป็น campaign เ�
 
 ```
 phish_features/   ← shared package, ML pipeline และ backend ใช้ร่วมกัน
-├── schema.py     ← single source of truth 44 features + LOGIN_KEYWORDS + SUSPICIOUS_TLDS
+├── schema.py     ← single source of truth 49 features + LOGIN_KEYWORDS (strong/weak) + SUSPICIOUS_TLDS/HIGH_RISK_TLDS
 ├── lexical.py    ← computed-from-string features (deterministic)
 ├── whitelist.py  ← typosquat + brand-label edit distance
 ├── homoglyph.py  ← IDN decode + confusable fold (Unicode TR36)

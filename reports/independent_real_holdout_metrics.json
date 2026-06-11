@@ -1,52 +1,22 @@
 {
   "sample_size": 100,
-  "recall_phishing_threshold": 0.9,
+  "recall_phishing_threshold": 0.56,
   "recall_phishing_ci_95": [
-    0.8256,
-    0.9448
+    0.4623,
+    0.6533
   ],
-  "recall_suspicious_threshold": 0.91,
+  "recall_suspicious_threshold": 0.73,
   "recall_suspicious_ci_95": [
-    0.8377,
-    0.9519
+    0.6357,
+    0.8073
   ],
-  "mean_score": 0.8888,
-  "median_score": 1.0,
-  "missed_count": 9,
+  "mean_score": 0.6521,
+  "median_score": 0.9389,
+  "missed_count": 27,
   "missed_urls": [
     {
-      "url": "http://dpd.hvtmxqr.xin/com",
-      "score": 0.0,
-      "closest_domain": "dmcr.go.th",
-      "min_edit_distance": 5,
-      "is_typosquat": 0,
-      "has_punycode": 0,
-      "has_mixed_script": 0,
-      "tld_type": "other"
-    },
-    {
-      "url": "http://veaxz.fwh.is/",
-      "score": 0.0,
-      "closest_domain": "dmh.go.th",
-      "min_edit_distance": 2,
-      "is_typosquat": 0,
-      "has_punycode": 0,
-      "has_mixed_script": 0,
-      "tld_type": "other"
-    },
-    {
-      "url": "https://did.li/aHAmC",
-      "score": 0.0,
-      "closest_domain": "dbd.go.th",
-      "min_edit_distance": 1,
-      "is_typosquat": 0,
-      "has_punycode": 0,
-      "has_mixed_script": 0,
-      "tld_type": "other"
-    },
-    {
       "url": "https://q.funyfpt.org/flampifypdf/flhanper/",
-      "score": 0.0429,
+      "score": 0.0,
       "closest_domain": "ant.ac.th",
       "min_edit_distance": 5,
       "is_typosquat": 0,
@@ -55,8 +25,18 @@
       "tld_type": "other"
     },
     {
-      "url": "http://gweissrs.github.io/Netflix_telalogin",
-      "score": 0.0447,
+      "url": "https://roblox.com.kz/users/1062657295/profile",
+      "score": 0.0,
+      "closest_domain": "coj.go.th",
+      "min_edit_distance": 1,
+      "is_typosquat": 0,
+      "has_punycode": 0,
+      "has_mixed_script": 0,
+      "tld_type": "other"
+    },
+    {
+      "url": "https://emamazumder.github.io/Amazon-Clone-Website",
+      "score": 0.0033,
       "closest_domain": "ait.ac.th",
       "min_edit_distance": 4,
       "is_typosquat": 0,
@@ -65,9 +45,29 @@
       "tld_type": "other"
     },
     {
-      "url": "https://bet98d.com/",
-      "score": 0.0506,
-      "closest_domain": "bot.or.th",
+      "url": "https://s.teams-ml.com/p/fjbd-cbch/hqkgxffv/",
+      "score": 0.0033,
+      "closest_domain": "treasury.go.th",
+      "min_edit_distance": 5,
+      "is_typosquat": 0,
+      "has_punycode": 0,
+      "has_mixed_script": 0,
+      "tld_type": "other"
+    },
+    {
+      "url": "https://rss.readles.at/go/y274w2/y274x274?label=0406",
+      "score": 0.0033,
+      "closest_domain": "raffles.ac.th",
+      "min_edit_distance": 3,
+      "is_typosquat": 1,
+      "has_punycode": 0,
+      "has_mixed_script": 0,
+      "tld_type": "other"
+    },
+    {
+      "url": "https://www.o-shop.com/pl/menu/oakley-prizm-tm-4141.html/",
+      "score": 0.0033,
+      "closest_domain": "dop.go.th",
       "min_edit_distance": 4,
       "is_typosquat": 0,
       "has_punycode": 0,
@@ -75,8 +75,168 @@
       "tld_type": "other"
     },
     {
+      "url": "http://gweissrs.github.io/Netflix_telalogin",
+      "score": 0.008,
+      "closest_domain": "ait.ac.th",
+      "min_edit_distance": 4,
+      "is_typosquat": 0,
+      "has_punycode": 0,
+      "has_mixed_script": 0,
+      "tld_type": "other"
+    },
+    {
+      "url": "http://aizhara.apsny.land/assfv43/log.php",
+      "score": 0.008,
+      "closest_domain": "ais.co.th",
+      "min_edit_distance": 3,
+      "is_typosquat": 0,
+      "has_punycode": 0,
+      "has_mixed_script": 0,
+      "tld_type": "other"
+    },
+    {
+      "url": "https://storage.yandexcloud.net/seren/jo/bi2/shr.html",
+      "score": 0.008,
+      "closest_domain": "admincourt.go.th",
+      "min_edit_distance": 8,
+      "is_typosquat": 0,
+      "has_punycode": 0,
+      "has_mixed_script": 0,
+      "tld_type": "other"
+    },
+    {
+      "url": "https://hilfezentrum-benutzer-info.serveousercontent.com/DE/process/user.html",
+      "score": 0.0198,
+      "closest_domain": "supremecourt.or.th",
+      "min_edit_distance": 11,
+      "is_typosquat": 0,
+      "has_punycode": 0,
+      "has_mixed_script": 0,
+      "tld_type": "other"
+    },
+    {
+      "url": "https://click.abitursprueche.de/ga/click/2-17328413-22-9261-18098-9967-509ff80723-af6f49103c",
+      "score": 0.0198,
+      "closest_domain": "inter-tech.ac.th",
+      "min_edit_distance": 9,
+      "is_typosquat": 0,
+      "has_punycode": 0,
+      "has_mixed_script": 0,
+      "tld_type": "other"
+    },
+    {
+      "url": "http://alwajalwa.github.io/video-player",
+      "score": 0.0198,
+      "closest_domain": "ait.ac.th",
+      "min_edit_distance": 4,
+      "is_typosquat": 0,
+      "has_punycode": 0,
+      "has_mixed_script": 0,
+      "tld_type": "other"
+    },
+    {
+      "url": "https://center-reassurance-adminpage.pages.dev/help/contact/639637205723888",
+      "score": 0.0198,
+      "closest_domain": "acfs.go.th",
+      "min_edit_distance": 3,
+      "is_typosquat": 0,
+      "has_punycode": 0,
+      "has_mixed_script": 0,
+      "tld_type": "other"
+    },
+    {
+      "url": "https://customer-sp-alexk.pages.dev/help/contact/282824571426767/",
+      "score": 0.0198,
+      "closest_domain": "acfs.go.th",
+      "min_edit_distance": 3,
+      "is_typosquat": 0,
+      "has_punycode": 0,
+      "has_mixed_script": 0,
+      "tld_type": "other"
+    },
+    {
+      "url": "https://did.li/aHAmC",
+      "score": 0.0366,
+      "closest_domain": "dbd.go.th",
+      "min_edit_distance": 1,
+      "is_typosquat": 0,
+      "has_punycode": 0,
+      "has_mixed_script": 0,
+      "tld_type": "other"
+    },
+    {
+      "url": "http://zulpiyev.github.io/js29",
+      "score": 0.0366,
+      "closest_domain": "ait.ac.th",
+      "min_edit_distance": 4,
+      "is_typosquat": 0,
+      "has_punycode": 0,
+      "has_mixed_script": 0,
+      "tld_type": "other"
+    },
+    {
+      "url": "https://linkedin.comunicazioni-sicure.it/actionrequired?rid=RwQSixi",
+      "score": 0.0366,
+      "closest_domain": "constitutionalcourt.or.th",
+      "min_edit_distance": 12,
+      "is_typosquat": 0,
+      "has_punycode": 0,
+      "has_mixed_script": 0,
+      "tld_type": "other"
+    },
+    {
+      "url": "https://store.communityappitem.shop/workshop/AK47-EternalDecay/",
+      "score": 0.0556,
+      "closest_domain": "chaiyaphum.go.th",
+      "min_edit_distance": 10,
+      "is_typosquat": 0,
+      "has_punycode": 0,
+      "has_mixed_script": 0,
+      "tld_type": "other"
+    },
+    {
+      "url": "https://code-with-farhan-cs.github.io/netflix-clone",
+      "score": 0.0556,
+      "closest_domain": "ait.ac.th",
+      "min_edit_distance": 4,
+      "is_typosquat": 0,
+      "has_punycode": 0,
+      "has_mixed_script": 0,
+      "tld_type": "other"
+    },
+    {
+      "url": "https://gnlgroup.net/santander/index.html",
+      "score": 0.0678,
+      "closest_domain": "uobgroup.com",
+      "min_edit_distance": 3,
+      "is_typosquat": 1,
+      "has_punycode": 0,
+      "has_mixed_script": 0,
+      "tld_type": "other"
+    },
+    {
+      "url": "http://meta-porthub.pages.dev/appeals/submit-appeal-form/return",
+      "score": 0.0817,
+      "closest_domain": "acfs.go.th",
+      "min_edit_distance": 3,
+      "is_typosquat": 0,
+      "has_punycode": 0,
+      "has_mixed_script": 0,
+      "tld_type": "other"
+    },
+    {
+      "url": "http://veaxz.fwh.is/",
+      "score": 0.1487,
+      "closest_domain": "dmh.go.th",
+      "min_edit_distance": 2,
+      "is_typosquat": 0,
+      "has_punycode": 0,
+      "has_mixed_script": 0,
+      "tld_type": "other"
+    },
+    {
       "url": "https://yahwebonlinetime.weebly.com/",
-      "score": 0.1617,
+      "score": 0.1545,
       "closest_domain": "bbl.co.th",
       "min_edit_distance": 4,
       "is_typosquat": 0,
@@ -85,20 +245,40 @@
       "tld_type": "other"
     },
     {
-      "url": "http://alwajalwa.github.io/video-player",
-      "score": 0.1629,
-      "closest_domain": "ait.ac.th",
-      "min_edit_distance": 4,
+      "url": "https://acc.partner-credit-submission.com/__;!!bt8rzum9aw!5t7lf5li5nfedhsbbwoxmqglod6rtyiw990oxsxmvhunjfwsu0puc68sspi7_9ct2vdnylpffqacoxaj$/",
+      "score": 0.2012,
+      "closest_domain": "arsomsilp.ac.th",
+      "min_edit_distance": 19,
       "is_typosquat": 0,
       "has_punycode": 0,
       "has_mixed_script": 0,
       "tld_type": "other"
     },
     {
-      "url": "http://zulpiyev.github.io/js29",
-      "score": 0.2904,
-      "closest_domain": "ait.ac.th",
-      "min_edit_distance": 4,
+      "url": "https://121jio.senes.at/stakings/?b=YTo0OntzOjU6ImxhYmVsIjtzOjQ6IjA0MDYiO3M6MzoidXNyIjtpOjExMjtzOjQ6Im5vcGQiO3M6MTQ6InJzcy5yZWFkbGVzLmF0IjtzOjE6Im8iO2k6MTEzNjt9",
+      "score": 0.2248,
+      "closest_domain": "dede.go.th",
+      "min_edit_distance": 3,
+      "is_typosquat": 0,
+      "has_punycode": 0,
+      "has_mixed_script": 0,
+      "tld_type": "other"
+    },
+    {
+      "url": "https://zazxwzoz.usw-1.sealos.app/vc/xv/login.php",
+      "score": 0.2592,
+      "closest_domain": "sepo.go.th",
+      "min_edit_distance": 3,
+      "is_typosquat": 0,
+      "has_punycode": 0,
+      "has_mixed_script": 0,
+      "tld_type": "other"
+    },
+    {
+      "url": "http://dpd.hvtmxqr.xin/com",
+      "score": 0.2607,
+      "closest_domain": "dmcr.go.th",
+      "min_edit_distance": 5,
       "is_typosquat": 0,
       "has_punycode": 0,
       "has_mixed_script": 0,

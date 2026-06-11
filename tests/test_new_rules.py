@@ -20,7 +20,9 @@ def _feat(**kwargs) -> dict:
         "is_typosquat": 0,
         "has_login_keyword": 0,
         "num_login_keywords": 0,
+        "num_strong_login_keywords": 0,
         "has_suspicious_tld": 0,
+        "has_high_risk_tld": 0,
         "path_brand_hit": 0,
         "has_ip": 0,
         "has_https": 1,
@@ -49,22 +51,28 @@ def test_https_lookalike_typosquat():
     assert hit.delta == 0.30
 
 
-def test_https_lookalike_path_brand():
+def test_https_lookalike_path_brand_soft_raises():
+    # Brand in path + free cert raises the score but does NOT force the
+    # verdict -- a legit site can host brand content behind a free DV cert.
     hit = rule_https_lookalike(
         "https://random.top/ktb/login",
         _feat(has_https=1, cert_is_lets_encrypt=1, path_brand_hit=1),
     )
     assert hit is not None
     assert hit.rule_id == "HTTPS_LOOKALIKE"
+    assert hit.pin_label is None
+    assert hit.delta > 0
 
 
-def test_https_lookalike_login_keyword():
-    hit = rule_https_lookalike(
+def test_https_lookalike_login_keyword_alone_does_not_fire():
+    # v1.8: a free cert + login keyword describes half the legitimate web
+    # (every ordinary login portal on Let's Encrypt) -- no brand signal,
+    # no rule hit. The old behaviour force-blocked exactly these sites.
+    assert rule_https_lookalike(
         "https://update-account.xyz/verify",
-        _feat(has_https=1, cert_is_lets_encrypt=1, has_login_keyword=1),
-    )
-    assert hit is not None
-    assert hit.rule_id == "HTTPS_LOOKALIKE"
+        _feat(has_https=1, cert_is_lets_encrypt=1, has_login_keyword=1,
+              num_strong_login_keywords=1),
+    ) is None
 
 
 def test_https_lookalike_no_fire_without_free_cert():
@@ -135,7 +143,8 @@ def test_encoded_ip_host_no_fire_when_absent():
 
 def test_self_signed_login_fires():
     hit = rule_self_signed_login(
-        "https://1.2.3.4/login", _feat(is_self_signed=1, has_login_keyword=1)
+        "https://1.2.3.4/login",
+        _feat(is_self_signed=1, num_strong_login_keywords=1),
     )
     assert hit is not None
     assert hit.rule_id == "SELF_SIGNED_CRED"
@@ -145,13 +154,13 @@ def test_self_signed_login_fires():
 
 def test_self_signed_login_no_fire_without_credential():
     assert rule_self_signed_login(
-        "u", _feat(is_self_signed=1, has_login_keyword=0)
+        "u", _feat(is_self_signed=1, num_strong_login_keywords=0)
     ) is None
 
 
 def test_self_signed_login_no_fire_with_ca_cert():
     assert rule_self_signed_login(
-        "u", _feat(is_self_signed=0, has_login_keyword=1)
+        "u", _feat(is_self_signed=0, num_strong_login_keywords=1)
     ) is None
 
 
@@ -224,7 +233,8 @@ def test_engine_includes_encoded_ip_host():
 def test_engine_includes_self_signed_cred():
     engine = RulesEngine()
     result = engine.evaluate(
-        "https://1.2.3.4/login", _feat(is_self_signed=1, has_login_keyword=1)
+        "https://1.2.3.4/login",
+        _feat(is_self_signed=1, num_strong_login_keywords=1),
     )
     assert "SELF_SIGNED_CRED" in result.applied_ids()
     assert result.pinned_label == "phishing"

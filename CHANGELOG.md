@@ -15,6 +15,35 @@ or mirror it explicitly.
 ## [Unreleased]
 
 ### Fixed
+- **`has_login_keyword` matched the hostname, not just the path (v1.8.0 root
+  FP cause).** The extractor tokenised the WHOLE URL string, so every
+  legitimate auth host (`login.microsoftonline.com`, `accounts.google.com`,
+  `support.apple.com`, `secure.bangkokbank.com`) carried the credential flag.
+  This poisoned the model feature AND five credential rules — most damaging in
+  production where TLS is on: `HTTPS_LOOKALIKE` hard-pinned *phishing* for any
+  Let's Encrypt site with a login keyword anywhere in the URL. The flag now
+  comes from path+query only, per the documented schema contract.
+- **Benign-looking signals were phishing-only in training data.** `gen_legit`
+  never produced cheap TLDs, SSO/OAuth login portals, brand mentions in
+  content paths, hashed CDN asset paths, utm-heavy queries, or two-level
+  subdomains — so the model learnt each as a near-deterministic phishing
+  tell (e.g. `console.cloud.google.com` scored 0.87 from `num_subdomains=2`
+  alone). New hard-benign archetypes in the synthetic generator cover all of
+  these (~35% of legit rows).
+- **`path_brand_hit` flagged incidental brand mentions.** Loose sub-token
+  matching hit content slugs (`/news/obec-budget-2026`) and asset names
+  (`/obec-logo.png`). The brand must now be a full path segment; the query
+  string is also searched so redirect bait
+  (`track.evil.com/click?url=https://obec.go.th/...`) is caught — a site
+  redirecting to itself is exempt.
+- **Homoglyph→typosquat promotion lacked FP guards.** The confusable-fold
+  promotion now applies the same `label_len >= 4` + proportional-distance
+  gates as `Whitelist.whitelist_features`, so short or only loosely similar
+  non-Latin labels are no longer promoted.
+- **Phishing `redirect_chain` training rows never set `path_redirect_hit`.**
+  The archetype emitted bare-domain params (`?to=obec.go.th`), so the
+  open-redirect feature only ever fired on benign SSO rows. The archetype now
+  emits full-URL params and tracker-style hosts (`track.<rand>.com`).
 - **False positives on legitimate brand portals.** With WHOIS/TLS unavailable
   (fail-open), the model alone blocked real login/console subdomains of major
   brands — `login.microsoftonline.com`, `signin.aws.amazon.com`,
@@ -25,7 +54,6 @@ or mirror it explicitly.
   such as `amazonaws.com`/`github.io` are deliberately excluded). A phishing
   pin from another rule still wins. Benign FP rate on the new holdout:
   3/46 → **0/46**; adversarial detection unchanged at 110/110.
-
 - **Feed → retrain connection was dead.** `feed_ingestion` now stamps every
   persisted feed verdict with `features["feed_source"] = <source name>`. The
   retrain trigger (`check_feed_accumulation`) and the training-corpus export
@@ -36,7 +64,35 @@ or mirror it explicitly.
   internally), so a fresh batch of confirmed feed phishing actually drives a
   retrain instead of waiting on the periodic timer.
 
+### Changed
+- **Feature schema v1.7.0 → v1.8.0 (retrain required; model artifacts
+  regenerated).** Two appended features: `num_strong_login_keywords` (count
+  of strong-tier credential keywords) and `has_high_risk_tld` (free /
+  heavily-abused registries). `LOGIN_KEYWORDS` is now split into
+  `LOGIN_KEYWORDS_STRONG` (login/verify/password/otp/...) and
+  `LOGIN_KEYWORDS_WEAK` (support/service/account/... — common on legitimate
+  portals); `SUSPICIOUS_TLDS` gains the `HIGH_RISK_TLDS` subset (.tk/.ml/
+  .icu/.top/... vs merely-cheap .online/.site/.info).
+- **Credential rules require the strong keyword tier** (`TYPOSQUAT_CRED`,
+  `IDN_CRED`, `IP_CRED`, `SELF_SIGNED_CRED`, `REDIRECT_CONFUSION`), and
+  TLD-based pins require the high-risk tier (`TYPOSQUAT_CRED` extra signal,
+  `PATH_BRAND_BAIT` — weak-tier TLDs now only raise the score).
+  `HTTPS_LOOKALIKE` no longer fires on a bare login keyword: it pins only
+  for a typosquat host and soft-raises for brand-in-path.
+  `REDIRECT_CONFUSION` also fires on brand-in-redirect (`path_brand_hit`).
+- Metrics after retrain: Thai-targeting holdout recall **100% (378/378)**
+  (unchanged), benign-holdout FP rate **0/68** at both thresholds,
+  adversarial suite 100%, generic cross-check 86/90.
+
 ### Added
+- **Benign false-positive gate in the ML pipeline.** `make evaluate-gate` now
+  also fails when any URL in the expanded `data/benign_holdout.csv` (68 rows;
+  new hard cases: SME sites on cheap TLDs, SSO redirects, brand-in-path news
+  URLs, hashed CDN assets, utm-heavy queries) scores ≥ 0.7 from the raw model
+  (`BENIGN_FP_MAX_PHISHING_RATE`, env-overridable). Results land in
+  `reports/benign_fp_metrics.json` and `evaluation_summary.json` under
+  `benign_fp`. Previously every train-time gate measured recall only — a
+  retrain could trade benign precision away unnoticed.
 - **Per-user check history.** `POST /api/v1/check` and `/check/batch` attribute
   the stored check to the signed-in user (JWT `user_id`) via the new
   `optional_user_id` dependency, incrementing `User.check_count` atomically.

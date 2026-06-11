@@ -99,13 +99,25 @@ def count_subdomains(host: str) -> int:
     return max(extra, 0)
 
 
+def path_query_tokens(path: str, query: str) -> set[str]:
+    """Lower-cased alphanumeric tokens of the URL path + query string."""
+    text = (path + " " + query).lower()
+    # tokenise on non-alphanumeric boundaries
+    return set(re.split(r"[^a-z0-9]+", text))
+
+
 def _count_login_keywords(path: str, query: str) -> int:
     """Count how many LOGIN_KEYWORDS appear in the URL path + query string."""
     from phish_features.schema import LOGIN_KEYWORDS
-    text = (path + " " + query).lower()
-    # tokenise on non-alphanumeric boundaries
-    tokens = set(re.split(r"[^a-z0-9]+", text))
+    tokens = path_query_tokens(path, query)
     return sum(1 for kw in LOGIN_KEYWORDS if kw in tokens)
+
+
+def _count_strong_login_keywords(path: str, query: str) -> int:
+    """Count STRONG-tier credential keywords in the URL path + query string."""
+    from phish_features.schema import LOGIN_KEYWORDS_STRONG
+    tokens = path_query_tokens(path, query)
+    return sum(1 for kw in LOGIN_KEYWORDS_STRONG if kw in tokens)
 
 
 def _count_query_params(query: str) -> int:
@@ -180,6 +192,10 @@ def extract_lexical(url: str) -> dict:
         "path_length": len(parsed.path or ""),
         # v1.4 richer lexical features
         "num_login_keywords": _count_login_keywords(parsed.path or "", parsed.query or ""),
+        # v1.8: strong tier only (credential collection, not generic portal words)
+        "num_strong_login_keywords": _count_strong_login_keywords(
+            parsed.path or "", parsed.query or ""
+        ),
         "query_param_count": _count_query_params(parsed.query or ""),
         "path_entropy": round(shannon_entropy(unquote(parsed.path or "")), 6),
         "host_token_count": len(_HOST_TOKEN_RE.findall(host)),

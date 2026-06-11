@@ -66,8 +66,11 @@ def compute_metrics() -> dict[str, str]:
 
     thai = summary["thai_targeting_holdout"]
     n = int(thai["sample_size"])
-    caught = n - int(thai["missed_count"])
     recall_pct = thai["recall_phishing_threshold"] * 100
+    # Count at the SAME threshold the percentage is measured at (>= 0.7).
+    # ``missed_count`` counts score < 0.30 -- using it here printed
+    # contradictions like "99.21% (378/378)".
+    caught = round(thai["recall_phishing_threshold"] * n)
     ci = thai["recall_phishing_ci_95"]
 
     gen = summary.get("secondary_metrics", {})

@@ -45,3 +45,25 @@ https://console.cloud.google.com,subdomain,GCP console (multi-label host)
 https://support.apple.com/en-us/account,keyword_path,Apple support account path
 https://www.dropbox.com/account/security,keyword_path,Dropbox account/security path
 https://id.line.me,login_page,LINE identity service
+https://lannacoffeeroasters.online,sme_cheap_tld,Real-style Thai SME on a cheap .online TLD
+https://ariyabakeryhouse.shop/menu,sme_cheap_tld,SME storefront on .shop
+https://pattayabeachtour.site/booking,sme_cheap_tld,Travel SME on .site
+https://silomyogastudio.club/promotion,sme_cheap_tld,Fitness studio on .club
+https://krabidivingcenter.info/contact,sme_cheap_tld,Resort site on .info
+https://hatyaiprintshop.biz/about-us,sme_cheap_tld,Print shop on .biz
+https://www.thaiware.com/download/software,content,Thai software download portal
+https://www.dek-d.com/board/education,content,Thai education community
+https://www.beartai.com/news/it-news,content,Thai tech news
+https://www.thairath.co.th/news/obec-budget-2026,brand_in_path,News article slug mentioning OBEC
+https://www.matichon.co.th/tag/obec,brand_in_path,News tag page for a gov agency
+https://www.posttoday.com/images/scb-logo.png,brand_in_path,Asset path containing a bank brand
+https://www.sanook.com/news/chula-research-award,brand_in_path,News slug mentioning a university
+https://sso.kapook.com/login?next=https%3A%2F%2Fkapook.com%2Fdashboard,sso_redirect,SSO login with benign redirect param
+https://accounts.wongnai.com/oauth2/authorize?client_id=app123&redirect_uri=https%3A%2F%2Fwongnai.com%2Fcallback,sso_redirect,OAuth authorize endpoint
+https://auth.jobthai.com/realms/main/protocol/openid-connect/auth?client_id=portal,sso_redirect,Keycloak-style OIDC path
+https://cdn.lazada.co.th/static/3f9a2b7c81d04e55/a1b2c3d4.js,deep_asset,Hashed CDN asset path
+https://static.shopee.co.th/static/9e8d7c6b5a403f21/f0e1d2c3.css,deep_asset,Hashed CDN asset path
+https://www.central.co.th/search?q=shoes&utm_source=facebook&utm_medium=cpc&utm_campaign=summer&page=2,query_heavy,utm-heavy search URL
+https://www.bigc.co.th/products?category=mobile&sort=price&order=asc&page=3&per_page=24,query_heavy,Filter-heavy listing URL
+https://www.agoda.com/customer/service,keyword_path,Weak-tier keyword path (customer service)
+https://www.grab.com/billing/history,keyword_path,Weak-tier keyword path (billing)

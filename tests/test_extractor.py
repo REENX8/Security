@@ -75,11 +75,11 @@ def test_extract_dict_has_idn_features(extractor):
 
 
 def test_schema_contract_v15(extractor):
-    """v1.7 schema invariants: 46 features, no dups, defaults are a subset."""
+    """v1.8 schema invariants: 49 features, no dups, defaults are a subset."""
     from phish_features.schema import FEATURE_SCHEMA_VERSION, N_FEATURES
 
-    assert FEATURE_SCHEMA_VERSION == "1.7.0"
-    assert N_FEATURES == 46
+    assert FEATURE_SCHEMA_VERSION == "1.8.0"
+    assert N_FEATURES == 49
     assert len(set(ORDERED_FEATURES)) == N_FEATURES
     assert set(IMPUTED_DEFAULTS).issubset(set(ORDERED_FEATURES))
 
@@ -135,6 +135,76 @@ def test_v15_tls_overrides_take_precedence(extractor):
     assert feat["cert_is_lets_encrypt"] == 1
     assert feat["cert_validity_days"] == 90
     assert feat["cert_san_count"] == 2
+
+
+# --- v1.8 false-positive fixes ---
+
+def test_login_keyword_ignores_hostname(extractor):
+    """has_login_keyword must come from the PATH/QUERY only -- legitimate
+    auth hosts (login.*, accounts.*, support.*) must not carry the flag."""
+    for url in (
+        "https://login.microsoftonline.com/",
+        "https://accounts.google.com/",
+        "https://support.apple.com/en-us",
+        "https://secure.bangkokbank.com/",
+    ):
+        feat = extractor.extract_dict(url)
+        assert feat["has_login_keyword"] == 0, url
+        assert feat["num_strong_login_keywords"] == 0, url
+    # ... while a keyword in the path still fires.
+    feat = extractor.extract_dict("https://example.com/login")
+    assert feat["has_login_keyword"] == 1
+    assert feat["num_strong_login_keywords"] == 1
+
+
+def test_strong_login_keywords_exclude_weak_tier(extractor):
+    feat = extractor.extract_dict("https://example.com/customer/support/billing")
+    assert feat["has_login_keyword"] == 1       # weak tier still counts here
+    assert feat["num_strong_login_keywords"] == 0
+    feat = extractor.extract_dict("https://example.com/verify-password?otp=1")
+    assert feat["num_strong_login_keywords"] == 3
+
+
+def test_high_risk_tld_is_subset_of_suspicious(extractor):
+    from phish_features.schema import HIGH_RISK_TLDS, SUSPICIOUS_TLDS
+
+    assert HIGH_RISK_TLDS < SUSPICIOUS_TLDS
+    risky = extractor.extract_dict("https://evil.tk/login")
+    assert risky["has_high_risk_tld"] == 1 and risky["has_suspicious_tld"] == 1
+    cheap = extractor.extract_dict("https://somecafe.online/menu")
+    assert cheap["has_high_risk_tld"] == 0 and cheap["has_suspicious_tld"] == 1
+    com = extractor.extract_dict("https://example.com/")
+    assert com["has_high_risk_tld"] == 0 and com["has_suspicious_tld"] == 0
+
+
+def test_path_brand_hit_requires_full_segment(extractor):
+    # Brand as its own path segment -> impersonation kit pattern.
+    kit = extractor.extract_dict("https://secure-update.cc/krungthai/login")
+    assert kit["path_brand_hit"] == 1
+    # Brand as a sub-token of a content slug / asset name -> NOT a hit.
+    for url in (
+        "https://cdn.example.com/obec-logo/image.png",
+        "https://news.example.co.th/news/obec-budget-2026",
+    ):
+        assert extractor.extract_dict(url)["path_brand_hit"] == 0, url
+    # Brand as a file segment still hits.
+    page = extractor.extract_dict("https://secure-update.cc/krungthai.html")
+    assert page["path_brand_hit"] == 1
+
+
+def test_host_brand_token_hit(extractor):
+    # Brand + suffix host (too far for the proportional typosquat gate).
+    assert extractor.extract_dict("https://kmitl-th.com/student-login")[
+        "host_brand_token_hit"] == 1
+    # Brand as a subdomain label of an attacker domain.
+    assert extractor.extract_dict("http://obec.go.th.evil-domain.net/wp-login.php")[
+        "host_brand_token_hit"] == 1
+    # The brand's own host (any subdomain) is exempt.
+    assert extractor.extract_dict("https://www.obec.go.th/news")[
+        "host_brand_token_hit"] == 0
+    # Unrelated hosts don't trip it.
+    assert extractor.extract_dict("https://my-startup.site/login")[
+        "host_brand_token_hit"] == 0
 
 
 def test_extract_batch_matches_individual(extractor):

@@ -1,24 +1,84 @@
 {
   "sample_size": 90,
-  "recall_phishing_threshold": 0.9889,
+  "recall_phishing_threshold": 0.8444,
   "recall_phishing_ci_95": [
-    0.9397,
-    0.998
+    0.7557,
+    0.905
   ],
-  "recall_suspicious_threshold": 0.9889,
+  "recall_suspicious_threshold": 0.9222,
   "recall_suspicious_ci_95": [
-    0.9397,
-    0.998
+    0.8481,
+    0.9618
   ],
-  "mean_score": 0.9687,
-  "median_score": 1.0,
-  "missed_count": 1,
+  "mean_score": 0.8852,
+  "median_score": 0.9909,
+  "missed_count": 7,
   "missed_urls": [
     {
-      "url": "https://robnhodlogen.gitbook.io/account",
-      "score": 0.0,
+      "url": "https://www.roblox.com.bi/games/7041939546/Catalog-Avatar-Creator?privateServerLinkCode=35976373059471016383959043181064&game_id=7041939546&game_name=Catalog-Avatar-Creator",
+      "score": 0.0333,
+      "closest_domain": "coj.go.th",
+      "min_edit_distance": 1,
+      "is_typosquat": 0,
+      "has_punycode": 0,
+      "has_mixed_script": 0,
+      "tld_type": "other"
+    },
+    {
+      "url": "https://kukoinnxlogin.gitbook.io/",
+      "score": 0.131,
       "closest_domain": "citibank.co.th",
       "min_edit_distance": 4,
+      "is_typosquat": 0,
+      "has_punycode": 0,
+      "has_mixed_script": 0,
+      "tld_type": "other"
+    },
+    {
+      "url": "http://req-sup405902.lol/view/es",
+      "score": 0.1558,
+      "closest_domain": "esu.ac.th",
+      "min_edit_distance": 10,
+      "is_typosquat": 0,
+      "has_punycode": 0,
+      "has_mixed_script": 0,
+      "tld_type": "other"
+    },
+    {
+      "url": "https://www.gov-parkimgj.shop/com",
+      "score": 0.1983,
+      "closest_domain": "govchannel.go.th",
+      "min_edit_distance": 8,
+      "is_typosquat": 0,
+      "has_punycode": 0,
+      "has_mixed_script": 0,
+      "tld_type": "other"
+    },
+    {
+      "url": "https://www.progamacashback.online/",
+      "score": 0.2648,
+      "closest_domain": "prachuap.go.th",
+      "min_edit_distance": 9,
+      "is_typosquat": 0,
+      "has_punycode": 0,
+      "has_mixed_script": 0,
+      "tld_type": "other"
+    },
+    {
+      "url": "http://web-git-featwebearntdpdeposit-uniswap.vercel.app/explore",
+      "score": 0.2872,
+      "closest_domain": "vec.go.th",
+      "min_edit_distance": 3,
+      "is_typosquat": 0,
+      "has_punycode": 0,
+      "has_mixed_script": 0,
+      "tld_type": "other"
+    },
+    {
+      "url": "https://aflinks.co.uk/spl-eng/TenderDocRFP.php",
+      "score": 0.2872,
+      "closest_domain": "coj.go.th",
+      "min_edit_distance": 1,
       "is_typosquat": 0,
       "has_punycode": 0,
       "has_mixed_script": 0,

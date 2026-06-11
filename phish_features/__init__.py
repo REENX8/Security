@@ -21,8 +21,11 @@ from .rules import (
 )
 from .schema import (
     FEATURE_SCHEMA_VERSION,
+    HIGH_RISK_TLDS,
     IMPUTED_DEFAULTS,
     LOGIN_KEYWORDS,
+    LOGIN_KEYWORDS_STRONG,
+    LOGIN_KEYWORDS_WEAK,
     N_FEATURES,
     ORDERED_FEATURES,
     SUSPICIOUS_TLDS,
@@ -42,8 +45,11 @@ __all__ = [
     "DEFAULT_RULES",
     "FeatureExtractor",
     "FEATURE_SCHEMA_VERSION",
+    "HIGH_RISK_TLDS",
     "IMPUTED_DEFAULTS",
     "LOGIN_KEYWORDS",
+    "LOGIN_KEYWORDS_STRONG",
+    "LOGIN_KEYWORDS_WEAK",
     "N_FEATURES",
     "ORDERED_FEATURES",
     "RuleHit",

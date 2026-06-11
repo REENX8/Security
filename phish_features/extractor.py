@@ -13,8 +13,9 @@ from urllib.parse import urlparse
 
 from .domain import whois_features
 from .homoglyph import has_mixed_script, has_punycode
-from .lexical import extract_lexical, normalize_url
+from .lexical import extract_lexical, normalize_url, path_query_tokens
 from .schema import (
+    HIGH_RISK_TLDS,
     IMPUTED_DEFAULTS,
     LOGIN_KEYWORDS,
     ORDERED_FEATURES,
@@ -24,10 +25,6 @@ from .schema import (
 )
 from .tls import tls_features
 from .whitelist import Whitelist, brand_label
-
-# Tokenise URL path on any character that's not alphanumeric. This is what
-# decides whether ``login`` lives inside path segment ``/secure-login.php``.
-_PATH_TOKEN_RE = re.compile(r"[A-Za-z0-9]+")
 
 
 def _etld(host: str) -> str:
@@ -49,29 +46,72 @@ def _etld(host: str) -> str:
 
 
 def _path_brand_hit(url: str, host_brand: str, whitelist: Whitelist) -> int:
-    """1 if a whitelisted brand label appears in the URL path *and* the host's
-    brand label does NOT match it.
+    """1 if a whitelisted brand label appears in the URL path/query *and* the
+    host's brand label does NOT match it.
 
     Phishing kits commonly use a random/benign host and stuff the brand into
     the path: ``secure-update.cc/krungthai/login``. Legitimate sites almost
     never do this (their brand is in the host, not the path).
+
+    v1.8: the brand must be a FULL path segment (optionally with a file
+    extension, ``/krungthai.html``). Matching loose sub-tokens flagged
+    incidental mentions on legitimate sites -- ``/news/obec-budget-2026`` or
+    ``/images/obec-logo.png`` is content about the agency, not an
+    impersonation kit; kits put the brand in its own segment so it shows
+    prominently in the address bar.
+
+    The QUERY string is also searched (token-wise): redirect bait stuffs the
+    brand's URL into a parameter (``track.evil.com/click?url=https://obec.go.th``).
+    A site redirecting to ITSELF is exempt because the host brand matches.
     """
     try:
         from urllib.parse import urlparse
-        path = urlparse(normalize_url(url)).path or ""
+        parsed = urlparse(normalize_url(url))
+        path = parsed.path or ""
+        query = parsed.query or ""
     except Exception:  # noqa: BLE001
         return 0
-    if not path or path == "/":
+    if (not path or path == "/") and not query:
         return 0
-    tokens = {t.lower() for t in _PATH_TOKEN_RE.findall(path) if len(t) >= 4}
-    if not tokens:
+    segments = {s.lower() for s in path.split("/") if s}
+    # also match "krungthai.html" / "krungthai.php" style file segments
+    segments |= {s.split(".", 1)[0] for s in segments if "." in s}
+    if query:
+        segments |= path_query_tokens("", query)
+    candidates = {s for s in segments if len(s) >= 4}
+    if not candidates:
         return 0
     host_brand = (host_brand or "").lower()
     for label in whitelist._labels:  # uses precomputed brand labels
         if len(label) < 4:
             continue
-        if label in tokens and label != host_brand:
+        if label in candidates and label != host_brand:
             return 1
+    return 0
+
+
+def _host_brand_token_hit(host: str, host_brand: str, whitelist: Whitelist) -> int:
+    """1 if a whitelisted brand label appears inside the host's tokens while
+    the host's own brand label is different.
+
+    Catches brand impersonation that edit distance cannot: ``kmitl-th.com``
+    (brand + suffix, distance 3/5 fails the proportional typosquat gate),
+    ``obec.go.th.attacker.xyz`` (brand as a subdomain label) and name
+    expansions like ``chulalongkorn.com`` (contains ``chula``). A substring
+    only counts when the token is clearly longer than the brand (>= 2 extra
+    chars) -- near-identical tokens are typosquat territory and stay with
+    the edit-distance features. The brand's own host never trips it.
+    """
+    tokens = {t for t in re.split(r"[.\-]", (host or "").lower()) if len(t) >= 4}
+    if not tokens:
+        return 0
+    host_brand = (host_brand or "").lower()
+    for label in whitelist._labels:
+        if len(label) < 4 or label == host_brand:
+            continue
+        for token in tokens:
+            if token == label or (len(token) >= len(label) + 2 and label in token):
+                return 1
     return 0
 
 
@@ -116,7 +156,8 @@ class FeatureExtractor:
         network lookup is performed for the overridden keys.
         """
         norm = normalize_url(url)
-        host = (urlparse(norm).hostname or "").lower()
+        parsed = urlparse(norm)
+        host = (parsed.hostname or "").lower()
 
         feat: dict = {}
         feat.update(extract_lexical(url))
@@ -127,13 +168,15 @@ class FeatureExtractor:
         feat["is_thai_tld"] = is_thai
 
         # --- v1.3 path / TLD impersonation features ---
-        path_tokens = {
-            t.lower()
-            for t in _PATH_TOKEN_RE.findall(url)
-            if t
-        }
+        # v1.8 fix: tokenise the PATH + QUERY only, per the schema contract.
+        # Tokenising the whole URL string made every legitimate auth host
+        # (login.microsoftonline.com, accounts.google.com, ...) carry the
+        # flag, which poisoned both the model and the credential rules.
+        path_tokens = path_query_tokens(parsed.path or "", parsed.query or "")
         feat["has_login_keyword"] = int(bool(path_tokens & LOGIN_KEYWORDS))
-        feat["has_suspicious_tld"] = int(_etld(host) in SUSPICIOUS_TLDS)
+        etld = _etld(host)
+        feat["has_suspicious_tld"] = int(etld in SUSPICIOUS_TLDS)
+        feat["has_high_risk_tld"] = int(etld in HIGH_RISK_TLDS)
 
         # Typosquat distance is meaningless for raw-IP hosts.
         if feat["has_ip"] or not host:
@@ -144,6 +187,7 @@ class FeatureExtractor:
             feat["has_punycode"] = 0
             feat["has_mixed_script"] = 0
             feat["path_brand_hit"] = 0
+            feat["host_brand_token_hit"] = 0
         else:
             feat.update(self.whitelist.whitelist_features(host))
             # IDN / homoglyph features: re-run the closest lookup against
@@ -159,11 +203,27 @@ class FeatureExtractor:
             # form is closer than the raw form -- otherwise an attacker
             # only has to swap one letter for a Cyrillic look-alike to
             # bypass typosquat detection entirely.
+            #
+            # v1.8: apply the same false-positive guards as
+            # ``Whitelist.whitelist_features`` -- a >= 4-char label and a
+            # proportional-distance gate -- so a short or only loosely
+            # similar non-Latin label is not promoted to a typosquat just
+            # because confusable folding nudged it closer.
+            label_len = len(brand_label(host))
+            closest_label_len = (
+                len(brand_label(norm_dom)) if norm_dom else 0
+            )
+            proportional_ok = norm_dist == 0 or (
+                closest_label_len > 0
+                and label_len >= 4
+                and norm_dist / min(label_len, closest_label_len) <= 0.50
+            )
             if (
                 not feat["is_typosquat"]
                 and norm_dist < raw_dist
                 and norm_dist <= 3
                 and norm_dom is not None
+                and proportional_ok
             ):
                 feat["is_typosquat"] = 1
                 feat["closest_domain"] = norm_dom
@@ -171,6 +231,9 @@ class FeatureExtractor:
 
             feat["path_brand_hit"] = _path_brand_hit(
                 url, brand_label(host), self.whitelist
+            )
+            feat["host_brand_token_hit"] = _host_brand_token_hit(
+                host, brand_label(host), self.whitelist
             )
 
         # --- v1.5 interaction: a trusted brand is being impersonated (in the

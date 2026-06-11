@@ -151,8 +151,8 @@ LINE Messaging API · Phishing Detection · Cybersecurity · Thai Government
                               ┌────────▼─────────┐
                               │ ML Ensemble      │
                               │ RF + XGB         │
-                              │ schema v1.6.0    │
-                              │ 44 features      │
+                              │ schema v1.8.0    │
+                              │ 49 features      │
                               └──────────────────┘
 ```
 
@@ -161,7 +161,7 @@ LINE Messaging API · Phishing Detection · Cybersecurity · Thai Government
 | ส่วน | เทคนิค / Algorithm |
 |------|--------------------|
 | ML model | RandomForest + XGBoost soft-voting ensemble + isotonic calibration |
-| Feature extraction | Lexical 15 ตัว + IDN/Homoglyph 3 ตัว + Path-impersonation 4 ตัว + WHOIS 4 ตัว + TLS 3 ตัว + Whitelist 2 ตัว + Meta 2 ตัว + Lexical v1.4 4 ตัว + TLS/interaction v1.5 5 ตัว + IP/ASN reputation v1.6 2 ตัว = **44 features** |
+| Feature extraction | Lexical 15 ตัว + IDN/Homoglyph 3 ตัว + Path-impersonation 4 ตัว + WHOIS 4 ตัว + TLS 3 ตัว + Whitelist 2 ตัว + Meta 2 ตัว + Lexical v1.4 4 ตัว + TLS/interaction v1.5 5 ตัว + IP/ASN reputation v1.6 2 ตัว + adversarial-evasion v1.7 2 ตัว + FP-reduction v1.8 3 ตัว = **49 features** |
 | IDN Defense | Punycode decode + Unicode confusable fold (TR36) + Levenshtein distance |
 | Typosquat | Brand-label edit distance ≤ 3 + TLD-swap detection |
 | Campaign clustering | Fingerprint = `brand|tld|path-shape` (digit → `#`, hex → `$hex`) |
@@ -209,7 +209,7 @@ LINE Messaging API · Phishing Detection · Cybersecurity · Thai Government
 #### โครงสร้างซอฟต์แวร์ (Design)
 ```
 phish_features/   ← shared package, ML pipeline และ backend ใช้ร่วมกัน
-├── schema.py     ← single source of truth ของ 44 features + LOGIN_KEYWORDS + SUSPICIOUS_TLDS
+├── schema.py     ← single source of truth ของ 49 features + LOGIN_KEYWORDS (strong/weak) + SUSPICIOUS_TLDS/HIGH_RISK_TLDS
 ├── lexical.py    ← computed-from-string features (เร็ว, deterministic)
 ├── whitelist.py  ← typosquat + brand-label edit distance
 ├── homoglyph.py  ← IDN decode + confusable fold
