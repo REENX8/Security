@@ -75,6 +75,36 @@ def _path_brand_hit(url: str, host_brand: str, whitelist: Whitelist) -> int:
     return 0
 
 
+def _whitelist_domain_in_subdomain(host: str, whitelist: Whitelist) -> int:
+    """1 if a FULL whitelisted agency domain is embedded as a subdomain
+    label-group of ``host`` while the registrable domain is someone else's.
+
+    ``www.sso.go.th.welfare-claim.online`` carries ``sso.go.th`` as a leading
+    label group, but its registrable domain is ``welfare-claim.online`` — a
+    classic subdomain-camouflage spoof. A genuine subdomain of the agency
+    (``reg.sso.go.th``) or the bare domain (``sso.go.th``) is exempt.
+
+    This is the v1.9 signal for short-brand agencies (sso, rd, ku …) whose
+    brand labels are too short to clear the typosquat / path-brand gates.
+    """
+    h = (host or "").lower().strip(".")
+    if not h:
+        return 0
+    exact = whitelist._exact
+    # A host that IS a whitelisted domain or a true subdomain of one is
+    # legitimate (reg.sso.go.th) -- never camouflage. Checked first so an
+    # interior-substring match can never override a genuine agency host.
+    for d in exact:
+        if h == d or h.endswith("." + d):
+            return 0
+    # Camouflage: the full agency domain appears as a leading or interior
+    # label group, but the registrable domain belongs to the attacker.
+    for d in exact:
+        if h.startswith(d + ".") or ("." + d + ".") in h:
+            return 1
+    return 0
+
+
 def classify_tld(host: str) -> tuple[str, int]:
     """Return ``(tld_type, is_thai_tld)`` for a host.
 
@@ -144,6 +174,7 @@ class FeatureExtractor:
             feat["has_punycode"] = 0
             feat["has_mixed_script"] = 0
             feat["path_brand_hit"] = 0
+            feat["has_whitelist_domain_in_subdomain"] = 0
         else:
             feat.update(self.whitelist.whitelist_features(host))
             # IDN / homoglyph features: re-run the closest lookup against
@@ -171,6 +202,9 @@ class FeatureExtractor:
 
             feat["path_brand_hit"] = _path_brand_hit(
                 url, brand_label(host), self.whitelist
+            )
+            feat["has_whitelist_domain_in_subdomain"] = (
+                _whitelist_domain_in_subdomain(host, self.whitelist)
             )
 
         # --- v1.5 interaction: a trusted brand is being impersonated (in the

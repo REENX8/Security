@@ -1,39 +1,19 @@
 {
   "sample_size": 100,
-  "recall_phishing_threshold": 0.9,
+  "recall_phishing_threshold": 0.94,
   "recall_phishing_ci_95": [
-    0.8256,
-    0.9448
+    0.8752,
+    0.9722
   ],
-  "recall_suspicious_threshold": 0.91,
+  "recall_suspicious_threshold": 0.96,
   "recall_suspicious_ci_95": [
-    0.8377,
-    0.9519
+    0.9016,
+    0.9843
   ],
-  "mean_score": 0.8888,
+  "mean_score": 0.9331,
   "median_score": 1.0,
-  "missed_count": 9,
+  "missed_count": 4,
   "missed_urls": [
-    {
-      "url": "http://dpd.hvtmxqr.xin/com",
-      "score": 0.0,
-      "closest_domain": "dmcr.go.th",
-      "min_edit_distance": 5,
-      "is_typosquat": 0,
-      "has_punycode": 0,
-      "has_mixed_script": 0,
-      "tld_type": "other"
-    },
-    {
-      "url": "http://veaxz.fwh.is/",
-      "score": 0.0,
-      "closest_domain": "dmh.go.th",
-      "min_edit_distance": 2,
-      "is_typosquat": 0,
-      "has_punycode": 0,
-      "has_mixed_script": 0,
-      "tld_type": "other"
-    },
     {
       "url": "https://did.li/aHAmC",
       "score": 0.0,
@@ -45,9 +25,9 @@
       "tld_type": "other"
     },
     {
-      "url": "https://q.funyfpt.org/flampifypdf/flhanper/",
-      "score": 0.0429,
-      "closest_domain": "ant.ac.th",
+      "url": "http://dpd.hvtmxqr.xin/com",
+      "score": 0.0057,
+      "closest_domain": "dmcr.go.th",
       "min_edit_distance": 5,
       "is_typosquat": 0,
       "has_punycode": 0,
@@ -55,50 +35,20 @@
       "tld_type": "other"
     },
     {
-      "url": "http://gweissrs.github.io/Netflix_telalogin",
-      "score": 0.0447,
-      "closest_domain": "ait.ac.th",
-      "min_edit_distance": 4,
+      "url": "http://veaxz.fwh.is/",
+      "score": 0.1427,
+      "closest_domain": "dmh.go.th",
+      "min_edit_distance": 2,
       "is_typosquat": 0,
       "has_punycode": 0,
       "has_mixed_script": 0,
       "tld_type": "other"
     },
     {
-      "url": "https://bet98d.com/",
-      "score": 0.0506,
-      "closest_domain": "bot.or.th",
-      "min_edit_distance": 4,
-      "is_typosquat": 0,
-      "has_punycode": 0,
-      "has_mixed_script": 0,
-      "tld_type": "other"
-    },
-    {
-      "url": "https://yahwebonlinetime.weebly.com/",
-      "score": 0.1617,
-      "closest_domain": "bbl.co.th",
-      "min_edit_distance": 4,
-      "is_typosquat": 0,
-      "has_punycode": 0,
-      "has_mixed_script": 0,
-      "tld_type": "other"
-    },
-    {
-      "url": "http://alwajalwa.github.io/video-player",
-      "score": 0.1629,
-      "closest_domain": "ait.ac.th",
-      "min_edit_distance": 4,
-      "is_typosquat": 0,
-      "has_punycode": 0,
-      "has_mixed_script": 0,
-      "tld_type": "other"
-    },
-    {
-      "url": "http://zulpiyev.github.io/js29",
-      "score": 0.2904,
-      "closest_domain": "ait.ac.th",
-      "min_edit_distance": 4,
+      "url": "https://q.funyfpt.org/flampifypdf/flhanper/",
+      "score": 0.2915,
+      "closest_domain": "ant.ac.th",
+      "min_edit_distance": 5,
       "is_typosquat": 0,
       "has_punycode": 0,
       "has_mixed_script": 0,

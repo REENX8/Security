@@ -1,6 +1,7 @@
-// Groups the 42 raw model features into human-readable sections with Thai
+// Groups the 47 raw model features into human-readable sections with Thai
 // labels, so the DetailModal explains the verdict instead of dumping a flat
-// key/value table. Unknown keys fall back to their raw name.
+// key/value table. Unknown keys fall back to their raw name. Kept in sync with
+// phish_features/schema.py ORDERED_FEATURES by tests/test_dashboard_feature_groups.py.
 
 export const FEATURE_GROUPS = [
   {
@@ -11,7 +12,7 @@ export const FEATURE_GROUPS = [
       "path_depth", "domain_label_max_len", "has_port", "max_digit_run",
       "has_query_string", "path_length", "num_login_keywords",
       "query_param_count", "path_entropy", "host_token_count",
-      "digit_to_letter_ratio",
+      "digit_to_letter_ratio", "has_encoded_ip",
     ],
   },
   {
@@ -36,8 +37,13 @@ export const FEATURE_GROUPS = [
     title: "เลียนแบบแบรนด์ (Impersonation)",
     keys: [
       "has_login_keyword", "has_suspicious_tld", "path_brand_hit",
-      "host_has_brand_and_suspicious_tld",
+      "host_has_brand_and_suspicious_tld", "path_redirect_hit",
+      "has_whitelist_domain_in_subdomain",
     ],
+  },
+  {
+    title: "ความน่าเชื่อถือ IP/ASN (Reputation)",
+    keys: ["ip_reputation_score", "asn_reputation_score"],
   },
 ];
 
@@ -84,6 +90,11 @@ export const FEATURE_LABELS = {
   has_suspicious_tld: "TLD ราคาถูก/น่าสงสัย",
   path_brand_hit: "พบชื่อแบรนด์ใน path",
   host_has_brand_and_suspicious_tld: "แบรนด์ + TLD น่าสงสัย",
+  has_encoded_ip: "IP แบบเข้ารหัส (hex/octal)",
+  path_redirect_hit: "พบ open-redirect ใน path",
+  has_whitelist_domain_in_subdomain: "โดเมนราชการถูกใช้เป็น subdomain (ปลอม)",
+  ip_reputation_score: "คะแนนชื่อเสียง IP",
+  asn_reputation_score: "คะแนนชื่อเสียง ASN",
 };
 
 // A heuristic for "notable" values worth highlighting (a phishy signal).
@@ -91,6 +102,7 @@ const SUSPICIOUS_WHEN_TRUE = new Set([
   "has_ip", "is_typosquat", "is_self_signed", "has_punycode",
   "has_mixed_script", "has_login_keyword", "has_suspicious_tld",
   "path_brand_hit", "host_has_brand_and_suspicious_tld",
+  "has_encoded_ip", "path_redirect_hit", "has_whitelist_domain_in_subdomain",
 ]);
 
 export function isNotable(key, value) {
@@ -102,6 +114,11 @@ export function isNotable(key, value) {
   }
   if (key === "homoglyph_distance") return value > 0;
   if (key === "min_edit_distance") return value > 0 && value <= 2;
+  // Reputation scores are a bad-verdict share in [0,1]; -1 means "no history"
+  // (the dominant, class-neutral state) and must not be highlighted.
+  if (key === "ip_reputation_score" || key === "asn_reputation_score") {
+    return value > 0.3;
+  }
   return false;
 }
 

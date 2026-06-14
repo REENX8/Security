@@ -197,6 +197,33 @@ def rule_punycode_credential(url: str, feat: dict) -> RuleHit | None:
     )
 
 
+def rule_mixed_script_credential(url: str, feat: dict) -> RuleHit | None:
+    """Mixed-script (e.g. Latin + Cyrillic) host requesting credentials.
+
+    ``rule_punycode_credential`` only covers xn-- encoded IDN hosts, and
+    ``rule_punycode_brand_match`` only fires when the confusable-fold collapses
+    onto a *whitelisted* brand. An attacker defeats both by homoglyphing a
+    commercial brand that is NOT on the Thai gov/edu whitelist (``truemоney.com``
+    with a Cyrillic ``о``): no whitelist match, so the fold never collapses, yet
+    the rendered host reads exactly like the real brand. A single hostname label
+    that mixes Unicode scripts has no legitimate use — real sites stay within one
+    script — so a mixed-script host asking for login is a homograph credential
+    phish. Kept as a soft score raise (no hard pin) to stay conservative; the
+    benign corpus contains no mixed-script host, so the FP surface is nil.
+    """
+    if not (feat.get("has_mixed_script") and feat.get("has_login_keyword")):
+        return None
+    return RuleHit(
+        "MIXED_SCRIPT_CRED",
+        delta=0.30,
+        pin_label=None,
+        message=(
+            "ชื่อโดเมนใช้ตัวอักษรหลายภาษาผสมกัน (เช่น Latin + Cyrillic) "
+            "และ URL ขอข้อมูล login — เทคนิค homograph เพื่อหลอกให้กรอกรหัสผ่าน"
+        ),
+    )
+
+
 def rule_typosquat_with_login(url: str, feat: dict) -> RuleHit | None:
     """Typosquat + login keyword -- a credential phishing setup.
 
@@ -348,12 +375,27 @@ def rule_subdomain_camouflage(url: str, feat: dict) -> RuleHit | None:
     e.g. ``www.krungthai.com.verify-now.xyz`` — the trusted brand appears as a
     subdomain label to fool visual inspection while the actual registrable domain
     is ``verify-now.xyz``.
+
+    Two arms fire this rule:
+      1. A trusted brand label sits in the URL path while the host carries
+         deep subdomains (the original path_brand_hit arm).
+      2. A FULL whitelisted agency domain is embedded as a subdomain
+         label-group (``has_whitelist_domain_in_subdomain``). This catches
+         short-brand agencies (sso.go.th, rd.go.th) whose 2-3 char brand label
+         is too short for the typosquat / path-brand gates: there is no
+         legitimate reason for another registrant's host to carry a real gov
+         domain as a subdomain prefix. The benign holdout has no host of this
+         shape, so the false-positive surface is nil.
     """
-    if (
+    whitelist_domain_in_sub = (
+        feat.get("has_whitelist_domain_in_subdomain") == 1
+    )
+    path_brand_camo = (
         feat.get("num_subdomains", 0) >= 2
         and feat.get("path_brand_hit") == 1
         and not feat.get("is_typosquat")
-    ):
+    )
+    if whitelist_domain_in_sub or path_brand_camo:
         return RuleHit(
             "SUBDOMAIN_CAMOUFLAGE",
             delta=0.35,
@@ -434,6 +476,7 @@ DEFAULT_RULES: tuple[Rule, ...] = (
     rule_at_trick,
     rule_punycode_brand_match,
     rule_punycode_credential,     # IDN homograph + credential request
+    rule_mixed_script_credential,  # mixed-script (Latin+Cyrillic) + credential
     rule_https_lookalike,         # HTTPS + free cert + brand/credential signal
     rule_login_keyword_dense,     # high credential-keyword density
     rule_typosquat_with_login,
@@ -519,6 +562,7 @@ __all__ = [
     "LOGIN_KEYWORDS",
     "SUSPICIOUS_TLDS",
     "rule_punycode_credential",
+    "rule_mixed_script_credential",
     "rule_https_lookalike",
     "rule_login_keyword_dense",
     "rule_subdomain_camouflage",

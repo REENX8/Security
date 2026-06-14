@@ -14,6 +14,53 @@ or mirror it explicitly.
 
 ## [Unreleased]
 
+### Added
+- **Generalisation to unseen phishing shapes (schema v1.9.0, 47 features).**
+  Three new synthetic phishing archetypes teach patterns the independent
+  real-world holdout (zero train/host overlap) was blind to: `cctld_clone`
+  (`brand.com.kz` — brand intact, registrable domain collapses to a too-short
+  `com.kz` label), `user_content_host` (kits on `*.pages.dev` / `*.github.io` /
+  `*.web.app` / `*.workers.dev` / `*.sealos.app` / `*.netlify.app` /
+  `weebly.com`) and `query_blob` (cheap host + 80–200 char base64 query). A
+  paired benign user-content arm in `gen_legit` keeps the platform suffix
+  class-neutral (only the path/lure tokens separate benign from phishing).
+  Independent holdout recall **0.90 → 0.94 @0.7** (0.91 → 0.96 @0.3) with Thai
+  recall held at **100% (378/378)** and benign FP at **0/46**. A new
+  `tests/test_synthetic_generator.py` asserts each archetype is present,
+  generation is deterministic, and no generated host collides with any
+  committed holdout (no eval bleed).
+- **`has_whitelist_domain_in_subdomain` feature + rule (short-brand spoof).**
+  Fires when a full whitelisted agency domain (`sso.go.th`) is embedded as a
+  subdomain label-group while the registrable domain belongs to someone else
+  (`www.sso.go.th.welfare-claim.online`); a genuine subdomain of the agency
+  (`reg.sso.go.th`) is exempt. Closes the blind spot for agencies whose brand
+  label is < 4 chars (sso, rd, ku …) and so slips past the typosquat / path
+  gates. A second arm on `SUBDOMAIN_CAMOUFLAGE` pins these phishing.
+- **`MIXED_SCRIPT_CRED` rule.** A single hostname label mixing Unicode scripts
+  (Latin + Cyrillic) while asking for credentials is a homograph credential
+  phish even when the brand is not whitelisted (`truemоney.com`, Cyrillic `о`),
+  a case the punycode-only rules missed. Soft +0.30 (no hard pin); the benign
+  corpus has no mixed-script host.
+- **Benign false-positive gate in `make evaluate-gate`.** `ml_pipeline/evaluate.py`
+  now scores `data/benign_holdout.csv` through the full model+rules pipeline and
+  `--enforce-threshold` fails (exit 5) on any phishing FP or a suspicious rate
+  above `BENIGN_FP_MAX_SUSPICIOUS_RATE` (default 0.15). The feedback-retrain
+  promotion path inherits the same gate for free.
+- **Adversarial corpus +50 cases (111 → 161).** New evasion classes:
+  `short_brand_subdomain_spoof`, `brand_expansion_host`, `brand_in_query_redirect`,
+  `cctld_clone`, `user_content_host` — every row scores ≥ 0.50 as phishing.
+- **Dashboard feature catalog parity + cross-contract test.**
+  `dashboard/src/lib/features.js` now covers all 47 features (added the
+  IP/ASN reputation, encoded-IP, open-redirect and whitelist-subdomain keys with
+  Thai labels and notability rules); `tests/test_dashboard_feature_groups.py`
+  asserts the JS catalog never drifts from `ORDERED_FEATURES`.
+
+### Changed
+- **`PHISH_GENERIC_TRAIN_MAX` default 90 → 200.** Re-swept after the archetype
+  expansion against {90, 120, 150, 200}; 200 is the largest cap holding Thai
+  recall ≥ 0.99 and benign FP at 0 while giving the best independent-holdout
+  recall (0.94). See the sweep table in `ml_pipeline/config.py`.
+
 ### Fixed
 - **False positives on legitimate brand portals.** With WHOIS/TLS unavailable
   (fail-open), the model alone blocked real login/console subdomains of major

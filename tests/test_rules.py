@@ -186,6 +186,24 @@ def test_redirect_in_path_not_false_positive():
     assert _has_redirect_in_path("http://evil.xyz/page?user=foo&pass=bar") == 0
 
 
+def test_mixed_script_credential_raises_without_pin():
+    from phish_features.rules import rule_mixed_script_credential
+    feat = _feat(has_mixed_script=1, has_login_keyword=1)
+    hit = rule_mixed_script_credential("http://truemоney.com/wallet", feat)
+    assert hit is not None
+    assert hit.rule_id == "MIXED_SCRIPT_CRED"
+    assert hit.pin_label is None
+    assert hit.delta > 0
+
+
+def test_mixed_script_credential_needs_both_signals():
+    from phish_features.rules import rule_mixed_script_credential
+    # Mixed script but no login keyword -> no fire (avoids FP on legit IDN).
+    assert rule_mixed_script_credential("u", _feat(has_mixed_script=1)) is None
+    # Login keyword but ASCII host -> no fire.
+    assert rule_mixed_script_credential("u", _feat(has_login_keyword=1)) is None
+
+
 def test_subdomain_camouflage_rule_fires():
     feat = _feat(num_subdomains=3, path_brand_hit=1, is_typosquat=0)
     hit = rule_subdomain_camouflage("http://krungthai.com.evil.xyz/login", feat)
@@ -203,6 +221,21 @@ def test_subdomain_camouflage_does_not_fire_for_typosquat():
     # When is_typosquat=1 the TYPOSQUAT_CRED rule handles it; no double-fire.
     feat = _feat(num_subdomains=3, path_brand_hit=1, is_typosquat=1)
     assert rule_subdomain_camouflage("u", feat) is None
+
+
+def test_subdomain_camouflage_fires_on_whitelist_domain_in_subdomain():
+    # v1.9 arm: a full agency domain embedded as a subdomain prefix fires
+    # even without path_brand_hit and even for short brands (sso).
+    feat = _feat(
+        num_subdomains=0, path_brand_hit=0, is_typosquat=0,
+        has_whitelist_domain_in_subdomain=1,
+    )
+    hit = rule_subdomain_camouflage(
+        "http://www.sso.go.th.welfare-claim.online/login", feat
+    )
+    assert hit is not None
+    assert hit.rule_id == "SUBDOMAIN_CAMOUFLAGE"
+    assert hit.pin_label == "phishing"
 
 
 def test_redirect_confusion_rule_fires():

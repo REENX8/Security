@@ -1,0 +1,9 @@
+{
+  "sample_size": 46,
+  "fp_count_phishing": 0,
+  "fp_count_suspicious": 0,
+  "fp_rate_phishing": 0.0,
+  "fp_rate_suspicious": 0.0,
+  "gate_max_fp_rate_suspicious": 0.15,
+  "offenders": []
+}

@@ -83,6 +83,44 @@ _HOMOGLYPHS = {
     "o": "0", "l": "1", "i": "1", "e": "3", "a": "@", "s": "5",
 }
 
+# --- v1.9 archetype building blocks ---------------------------------------
+# Second-level labels + foreign ccTLDs used by the cctld_clone archetype:
+# brand.com.kz / brand.co.pl — the registrable domain becomes ``com.kz``
+# (brand label "com", too short for any typosquat gate), so the brand is
+# visually intact while the host is a cheap foreign registration. This is the
+# shape that scored 0.0 on the independent holdout (roblox.com.kz class).
+_CCTLD_CLONE_SLDS = ["com", "co", "net"]
+_CCTLD_CLONE_TLDS = [
+    "kz", "pl", "ru", "br", "in", "id", "ng", "at", "ve", "ua", "land",
+]
+
+# User-content / serverless platforms that delegate subdomains to arbitrary
+# users. Phishing kits abuse these because the platform's reputation rubs off
+# on the attacker's subdomain. They are DELIBERATELY excluded from
+# KNOWN_GOOD_DOMAINS in rules.py, so the model must learn to read the path /
+# lure tokens, not the platform suffix. Benign examples on the SAME platforms
+# are generated in gen_legit so the suffix itself never becomes a phishing tell.
+_USER_CONTENT_HOSTS = [
+    "pages.dev", "github.io", "web.app", "workers.dev",
+    "sealos.app", "netlify.app", "weebly.com",
+]
+_USER_CONTENT_LURES = [
+    "customer", "center", "appeal", "secure", "account",
+    "wallet", "support", "verify", "billing", "service",
+]
+_USER_CONTENT_PHISH_PATHS = [
+    "vc/xv/login.php", "appeals/submit-appeal-form", "login",
+    "account/verify", "secure/session/login.php", "appeals/submit-appeal-form/return",
+]
+# Benign paths on the same user-content platforms — portfolios, docs, blogs.
+_USER_CONTENT_GOOD_PATHS = [
+    "", "portfolio", "docs/intro", "blog/post-1", "about",
+    "projects", "index.html", "resume",
+]
+_B64_ALPHABET = (
+    "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/="
+)
+
 # Latin -> Unicode confusable swaps for the IDN homoglyph archetype.
 # These mirror the confusables FoldedMap in phish_features.homoglyph so the
 # new feature actually fires on the generated examples.
@@ -273,8 +311,15 @@ class SyntheticGenerator:
 
     # ----- legitimate ---------------------------------------------------
     def gen_legit(self) -> dict:
-        # ~60% trusted Thai gov/edu, ~40% other well-known legitimate sites.
-        if self.rng.random() < 0.6:
+        roll = self.rng.random()
+        # ~5% benign user-content hosts (portfolios/docs/blogs on the SAME
+        # platforms the user_content_host phishing archetype abuses). This
+        # keeps the platform suffix class-neutral: only the path/lure tokens
+        # separate benign from phishing, never ``pages.dev`` itself.
+        if roll < 0.05:
+            return self._gen_legit_user_content()
+        # ~57% trusted Thai gov/edu, ~38% other well-known legitimate sites.
+        if roll < 0.62:
             domain = self.rng.choice(self.domains)
         else:
             domain = self.rng.choice(_LEGIT_OTHER)
@@ -289,6 +334,24 @@ class SyntheticGenerator:
         row.update(self.sim_network(0, scheme == "https"))
         return row
 
+    def _gen_legit_user_content(self) -> dict:
+        """A legitimate site hosted on a user-content platform (benign path)."""
+        platform = self.rng.choice(_USER_CONTENT_HOSTS)
+        name = self.rng.choice([
+            self._rand_str(self.rng.randint(5, 9)),
+            f"{self._rand_str(self.rng.randint(4, 7))}-dev",
+            f"{self.rng.choice(['my', 'the', 'team', 'open'])}-{self._rand_str(5)}",
+        ])
+        path = self.rng.choice(_USER_CONTENT_GOOD_PATHS)
+        # User-content platforms serve over HTTPS almost universally.
+        scheme = "https" if self.rng.random() < 0.98 else "http"
+        url = f"{scheme}://{name}.{platform}"
+        if path:
+            url += f"/{path}"
+        row = {"url": url, "label": 0}
+        row.update(self.sim_network(0, scheme == "https"))
+        return row
+
     def gen_phish(self) -> dict:
         domain = self.rng.choice(self.domains)
         label = self._domain_label(domain)
@@ -296,10 +359,14 @@ class SyntheticGenerator:
             ["typosquat", "tld_swap", "subdomain_spoof", "ip_host",
              "at_trick", "brand_stuffed", "https_ip_host", "redirect_chain",
              "idn_homoglyph", "punycode_spoof", "path_brand_spoof",
-             "long_random_subdomain", "double_dash_stuffed", "token_stuffed_path"],
+             "long_random_subdomain", "double_dash_stuffed", "token_stuffed_path",
+             # v1.9: brand-clone on a foreign ccTLD, phishing on user-content
+             # hosts, and base64-blob query strings — the three patterns the
+             # independent holdout (zero train host overlap) was blind to.
+             "cctld_clone", "user_content_host", "query_blob"],
             # v1.4: 3 new archetypes teach the model num_login_keywords,
             # host_token_count, and path_entropy signals.
-            weights=[19, 9, 9, 8, 8, 9, 4, 5, 4, 4, 10, 6, 5, 10],
+            weights=[19, 9, 9, 8, 8, 9, 4, 5, 4, 4, 10, 6, 5, 10, 6, 6, 4],
         )[0]
         scheme = "https" if self.rng.random() < 0.55 else "http"
         path = self.rng.choice(_PHISH_PATHS)
@@ -373,6 +440,34 @@ class SyntheticGenerator:
             # exercises host_token_count and num_hyphens
             kws = self.rng.sample(_BRAND_WORDS, k=self.rng.randint(2, 4))
             host = "--".join([label] + kws) + "." + self._pick_bad_tld()
+        elif archetype == "cctld_clone":
+            # brand.com.kz — half the brands come from the whitelist, half from
+            # the well-known-but-not-whitelisted set (roblox-class). The selling
+            # point is the SHAPE (brand.<sld>.<foreign-cc>), not the brand: the
+            # registrable domain collapses to ``com.kz`` (label "com"), which is
+            # too short for every typosquat gate.
+            if self.rng.random() < 0.5:
+                brand = label
+            else:
+                brand = self.rng.choice(_LEGIT_OTHER).split(".")[0]
+            sld = self.rng.choice(_CCTLD_CLONE_SLDS)
+            cc = self.rng.choice(_CCTLD_CLONE_TLDS)
+            host = f"{brand}.{sld}.{cc}"
+        elif archetype == "user_content_host":
+            platform = self.rng.choice(_USER_CONTENT_HOSTS)
+            lure = self.rng.choice(_USER_CONTENT_LURES)
+            host_label = self.rng.choice([
+                f"customer-sp-{self._rand_str(4)}",
+                f"center-{lure}-adminpage",
+                f"{lure}-{self._rand_str(5)}",
+                f"{lure}-verify-{self._rand_str(3)}",
+            ])
+            host = f"{host_label}.{platform}"
+            # These platforms serve over HTTPS almost universally.
+            scheme = "https" if self.rng.random() < 0.9 else "http"
+        elif archetype == "query_blob":
+            attacker = self._rand_str(self.rng.randint(6, 11))
+            host = f"{attacker}.{self.rng.choice(_CHEAP_TLDS)}"
         else:  # brand_stuffed
             words = self.rng.sample(_BRAND_WORDS, k=self.rng.randint(2, 4))
             host = "-".join([label] + words) + "." + self._pick_bad_tld()
@@ -388,6 +483,24 @@ class SyntheticGenerator:
                 url += f"?id={self._rand_str(self.rng.randint(8, 20))}"
         elif archetype == "double_dash_stuffed":
             url = f"{scheme}://{host}/{path}"
+        elif archetype == "cctld_clone":
+            extra = self.rng.choice([
+                "login", "account",
+                f"users/{self.rng.randint(1000, 99999)}/profile",
+            ])
+            url = f"{scheme}://{host}/{extra}"
+        elif archetype == "user_content_host":
+            p = self.rng.choice(_USER_CONTENT_PHISH_PATHS)
+            url = f"{scheme}://{host}/{p}"
+        elif archetype == "query_blob":
+            blob_len = self.rng.randint(80, 200)
+            blob = "".join(self.rng.choice(_B64_ALPHABET) for _ in range(blob_len))
+            key = self.rng.choice(["data", "token", "q", "s", "redirect"])
+            deep = self.rng.choice([
+                "auth/v2/session/login.php", "secure/login.php",
+                "account/verify/login.php",
+            ])
+            url = f"{scheme}://{host}/{deep}?{key}={blob}"
         elif archetype == "token_stuffed_path":
             # Benign-ish host; long credential-keyword-stuffed path
             # exercises path_entropy + num_login_keywords + path_length

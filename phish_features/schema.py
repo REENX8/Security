@@ -45,7 +45,18 @@ from __future__ import annotations
 #             has_encoded_ip (hex 0x.../octal 0NNN. notation — bypasses naive
 #             dotted-decimal IP regex) and path_redirect_hit (open-redirect
 #             pattern in path/query). Both are deterministic, no network lookups.
-FEATURE_SCHEMA_VERSION = "1.7.0"
+#   v1.9.0 -- 1 new deterministic feature: has_whitelist_domain_in_subdomain.
+#             Fires when a FULL whitelisted agency domain (e.g. sso.go.th) is
+#             embedded as a leading/interior subdomain label-group of a host
+#             whose registrable domain belongs to someone else
+#             (www.sso.go.th.welfare-claim.online). A genuine subdomain of the
+#             agency (reg.sso.go.th) is exempt. This closes the short-brand
+#             blind spot: agencies with brand labels < 4 chars (sso, rd, ku …)
+#             slip past the typosquat gate and host_brand path checks, so a
+#             full-domain subdomain-prefix spoof carried no dedicated signal.
+#             (No 1.8.x schema bump: the v1.8 false-positive round changed only
+#             rules/weights, not the feature contract.)
+FEATURE_SCHEMA_VERSION = "1.9.0"
 
 # The exact, ordered list of numeric features fed to the model.
 # Index position IS the contract -- never reorder, only append + bump version.
@@ -112,6 +123,11 @@ ORDERED_FEATURES: list[str] = [
     # --- v1.7 adversarial-evasion features (deterministic, no network) ---
     "has_encoded_ip",      # 1 if host uses hex (0x12345678) or octal (0177.012...) IP notation
     "path_redirect_hit",   # 1 if URL path/query contains an open-redirect pattern
+    # --- v1.9 subdomain-camouflage feature (deterministic, no network) ---
+    "has_whitelist_domain_in_subdomain",  # 1 if a full whitelisted agency domain
+                            #   is embedded as a subdomain label-group while the
+                            #   registrable domain is someone else's (spoof);
+                            #   genuine subdomains of the agency are exempt
 ]
 
 N_FEATURES = len(ORDERED_FEATURES)
