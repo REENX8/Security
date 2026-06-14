@@ -1,2 +1,3 @@
 url,score,closest_domain,min_edit_distance,is_typosquat,has_punycode,has_mixed_script,tld_type
-https://robnhodlogen.gitbook.io/account,0.0,citibank.co.th,4,0,0,0,other
+https://lnsta.fr/,0.0052,nstda.or.th,2,1,0,0,other
+http://flverr.cam/view/es,0.1824,drr.go.th,4,0,0,0,other

@@ -34,6 +34,9 @@ from sklearn.pipeline import Pipeline
 from sklearn.preprocessing import StandardScaler as _CVScaler
 
 from ml_pipeline.config import (
+    BENIGN_FP_MAX_SUSPICIOUS_RATE,
+    BENIGN_HOLDOUT_CSV,
+    BENIGN_HOLDOUT_METRICS_JSON,
     EVALUATION_SUMMARY_JSON,
     GENERIC_HOLDOUT_CSV,
     INDEPENDENT_HOLDOUT_METRICS_JSON,
@@ -50,11 +53,18 @@ from ml_pipeline.config import (
     THAI_HOLDOUT_CSV,
     THAI_HOLDOUT_METRICS_JSON,
     THAI_RECALL_MIN_THRESHOLD,
+    WHITELIST_JSON,
     ensure_dirs,
 )
 from ml_pipeline.feature_engineering import build_feature_frame
 from ml_pipeline.train import TEST_SPLIT_CSV, build_ensemble
-from phish_features import ORDERED_FEATURES
+from phish_features import ORDERED_FEATURES, FeatureExtractor, RulesEngine, Whitelist
+
+# Serve-time label thresholds (backend defaults in app/config.py). Mirrored here
+# so the benign gate computes the SAME label the API would return; kept as plain
+# constants to avoid importing the backend settings into the ML pipeline.
+_THRESHOLD_PHISHING = 0.70
+_THRESHOLD_SUSPICIOUS = 0.30
 
 
 def wilson_ci(k: int, n: int, z: float = 1.96) -> tuple[float, float]:
@@ -270,6 +280,8 @@ def main() -> None:
         print(f"[eval] no live-feed holdout found at {LIVE_FEED_HOLDOUT_CSV} "
               "(run ml_pipeline.feed_training_export to populate it)")
 
+    benign_holdout_metrics = evaluate_benign_holdout(model, scaler)
+
     write_evaluation_summary(
         metrics,
         real_holdout_metrics,
@@ -277,6 +289,7 @@ def main() -> None:
         cv_metrics,
         independent_holdout_metrics,
         live_feed_holdout_metrics,
+        benign_holdout_metrics,
     )
 
 
@@ -407,6 +420,86 @@ def evaluate_independent_real_holdout(model, scaler) -> dict:
     )
 
 
+def evaluate_benign_holdout(model, scaler) -> dict:
+    """False-positive check on a corpus of real legitimate sites.
+
+    Scores each benign URL through the FULL pipeline (model + rules engine,
+    WHOIS/TLS off — the conservative fail-open path) and reports how many land
+    in the ``phishing`` / ``suspicious`` bands. This mirrors the serve-time
+    behaviour exercised by tests/test_benign_fp.py so the CI gate fails on the
+    same regression instead of waiting for the pytest run.
+    """
+    if not os.path.exists(BENIGN_HOLDOUT_CSV):
+        print(f"[eval] no benign holdout at {BENIGN_HOLDOUT_CSV} "
+              "(skipping benign false-positive gate)")
+        return {}
+    import csv as _csv
+
+    wl = Whitelist.from_json(WHITELIST_JSON)
+    extractor = FeatureExtractor(wl, enable_whois=False, enable_tls=False)
+    engine = RulesEngine()
+
+    with open(BENIGN_HOLDOUT_CSV, newline="", encoding="utf-8") as fh:
+        rows = [r for r in _csv.DictReader(fh) if (r.get("url") or "").strip()]
+
+    n = len(rows)
+    phishing = 0
+    suspicious = 0
+    offenders: list[dict] = []
+    for r in rows:
+        url = r["url"].strip()
+        feat = extractor.extract_dict(url)
+        vector = [[float(feat[name]) for name in ORDERED_FEATURES]]
+        proba = float(model.predict_proba(scaler.transform(vector))[0][1])
+        rules_out = engine.evaluate(url, feat)
+        score = max(0.0, min(1.0, proba + rules_out.score_delta))
+        if rules_out.pinned_label == "phishing":
+            label = "phishing"
+        elif rules_out.pinned_label == "safe":
+            label = "safe"
+        elif score >= _THRESHOLD_PHISHING:
+            label = "phishing"
+        elif score >= _THRESHOLD_SUSPICIOUS:
+            label = "suspicious"
+        else:
+            label = "safe"
+        if label == "phishing":
+            phishing += 1
+            offenders.append({"url": url, "label": label, "score": round(score, 4)})
+        elif label == "suspicious":
+            suspicious += 1
+            offenders.append({"url": url, "label": label, "score": round(score, 4)})
+
+    fp_rate_phishing = round(phishing / n, 4) if n else 0.0
+    fp_rate_suspicious = round(suspicious / n, 4) if n else 0.0
+
+    print()
+    print("=" * 52)
+    print("  BENIGN FALSE-POSITIVE GATE (legitimate sites)")
+    print("=" * 52)
+    print(f"  Sample size            : {n}")
+    print(f"  Blocked as phishing    : {phishing}/{n} = {fp_rate_phishing:.4f}")
+    print(f"  Flagged as suspicious  : {suspicious}/{n} = {fp_rate_suspicious:.4f}  "
+          f"(cap {BENIGN_FP_MAX_SUSPICIOUS_RATE:.2f})")
+    for o in offenders[:5]:
+        print(f"    - [{o['label']}] {o['url']}  (score={o['score']:.2f})")
+
+    metrics = {
+        "sample_size": n,
+        "fp_count_phishing": phishing,
+        "fp_count_suspicious": suspicious,
+        "fp_rate_phishing": fp_rate_phishing,
+        "fp_rate_suspicious": fp_rate_suspicious,
+        "gate_max_fp_rate_suspicious": BENIGN_FP_MAX_SUSPICIOUS_RATE,
+        "offenders": offenders,
+    }
+    with open(BENIGN_HOLDOUT_METRICS_JSON, "w", encoding="utf-8") as fh:
+        json.dump(metrics, fh, indent=2)
+    print(f"  Saved {BENIGN_HOLDOUT_METRICS_JSON}")
+    print("=" * 52)
+    return metrics
+
+
 def evaluate_thai_holdout(model, scaler) -> dict:
     return _eval_holdout_csv(
         THAI_HOLDOUT_CSV,
@@ -478,6 +571,7 @@ def write_evaluation_summary(
     cv_metrics: dict | None = None,
     independent_holdout_metrics: dict | None = None,
     live_feed_holdout_metrics: dict | None = None,
+    benign_holdout_metrics: dict | None = None,
 ) -> None:
     """Write a consolidated evaluation_summary.json that makes grader intent clear.
 
@@ -566,6 +660,7 @@ def write_evaluation_summary(
         "generic_real_holdout": real_holdout_metrics,
         "independent_real_holdout": independent_holdout_metrics,
         "live_feed_holdout": live_feed_holdout_metrics,
+        "benign_holdout": benign_holdout_metrics or None,
         "cross_validation": cv_metrics,
     }
     with open(EVALUATION_SUMMARY_JSON, "w", encoding="utf-8") as fh:
@@ -612,6 +707,44 @@ def _enforce_primary_threshold(min_threshold: float) -> None:
           f">= required {min_threshold:.4f}")
 
 
+def _enforce_benign_fp_gate(max_suspicious_rate: float) -> None:
+    """Exit non-zero if benign sites are misclassified beyond the allowed band.
+
+    Reads the benign_holdout block from evaluation_summary.json. A single
+    benign site blocked as ``phishing`` is always a hard fail; the suspicious
+    rate is bounded by ``max_suspicious_rate``. Same corpus and thresholds as
+    tests/test_benign_fp.py, so the gate and the unit test move together.
+    """
+    import sys
+    if not os.path.exists(EVALUATION_SUMMARY_JSON):
+        print(f"[ci-gate] FAIL: {EVALUATION_SUMMARY_JSON} missing; "
+              "did evaluation actually run?")
+        sys.exit(2)
+    with open(EVALUATION_SUMMARY_JSON, encoding="utf-8") as fh:
+        summary = json.load(fh)
+    benign = summary.get("benign_holdout")
+    if not benign:
+        print("[ci-gate] SKIP: no benign holdout metrics "
+              "(benign corpus absent — benign FP gate not enforced)")
+        return
+    fp_phish = benign.get("fp_count_phishing", 0)
+    fp_susp_rate = benign.get("fp_rate_suspicious", 0.0)
+    n = benign.get("sample_size", 0)
+    if fp_phish > 0:
+        print(f"[ci-gate] FAIL: {fp_phish} legitimate site(s) blocked as "
+              f"phishing on n={n} (hard gate 0). "
+              f"See {BENIGN_HOLDOUT_METRICS_JSON}.")
+        sys.exit(5)
+    if fp_susp_rate > max_suspicious_rate:
+        print(f"[ci-gate] FAIL: benign suspicious rate {fp_susp_rate:.4f} on "
+              f"n={n} > cap {max_suspicious_rate:.4f}. "
+              f"See {BENIGN_HOLDOUT_METRICS_JSON}.")
+        sys.exit(5)
+    print(f"[ci-gate] OK:   benign FP phishing={fp_phish} "
+          f"suspicious_rate={fp_susp_rate:.4f} on n={n} "
+          f"<= cap {max_suspicious_rate:.4f}")
+
+
 if __name__ == "__main__":
     import argparse
     parser = argparse.ArgumentParser(description="Evaluate the phishing detector")
@@ -627,3 +760,4 @@ if __name__ == "__main__":
     main()
     if args.enforce_threshold:
         _enforce_primary_threshold(THAI_RECALL_MIN_THRESHOLD)
+        _enforce_benign_fp_gate(BENIGN_FP_MAX_SUSPICIOUS_RATE)

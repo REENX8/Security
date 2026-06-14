@@ -3,11 +3,12 @@ import StatCard from "../components/StatCard.jsx";
 import { useHealth } from "../api/queries.js";
 
 const FEATURE_GROUPS = [
-  { title: "โครงสร้าง URL (Lexical)", count: 21 },
+  { title: "โครงสร้าง URL (Lexical)", count: 22 },
   { title: "โดเมน & ทะเบียน (Domain / WHOIS)", count: 7 },
   { title: "ใบรับรอง TLS", count: 7 },
   { title: "ตัวอักษรลวง / IDN (Homoglyph)", count: 3 },
-  { title: "เลียนแบบแบรนด์ (Impersonation)", count: 4 },
+  { title: "เลียนแบบแบรนด์ (Impersonation)", count: 6 },
+  { title: "ความน่าเชื่อถือ IP/ASN (Reputation)", count: 2 },
 ];
 
 const RULES = [
@@ -35,8 +36,8 @@ export default function About() {
         <section className="space-y-4">
           <h3 className="text-lg font-bold">สถาปัตยกรรมเชิงเทคนิค (Technical Architecture)</h3>
           <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
-            <StatCard title="ฟีเจอร์ที่สกัด" value="42" accent="#3b82f6" icon="🧬"
-                      sub="schema v1.5.0" />
+            <StatCard title="ฟีเจอร์ที่สกัด" value="47" accent="#3b82f6" icon="🧬"
+                      sub="schema v1.9.0" />
             <StatCard title="กฎที่โปร่งใส" value="7" accent="#a855f7" icon="📜"
                       sub="Rules Engine อธิบายได้" />
             <StatCard title="Recall ฟิชชิงไทย" value="100%" accent="#22c55e" icon="🎯"
@@ -50,7 +51,7 @@ export default function About() {
           <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
             <div className="rounded-lg border border-slate-800 bg-slate-900/40 p-5">
               <div className="mb-3 text-sm font-semibold text-slate-200">
-                โมเดล Ensemble — 42 ฟีเจอร์ใน 5 กลุ่ม
+                โมเดล Ensemble — 47 ฟีเจอร์ใน 6 กลุ่ม
               </div>
               <ul className="space-y-1.5 text-sm">
                 {FEATURE_GROUPS.map((g) => (

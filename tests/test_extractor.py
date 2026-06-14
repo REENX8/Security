@@ -75,13 +75,58 @@ def test_extract_dict_has_idn_features(extractor):
 
 
 def test_schema_contract_v15(extractor):
-    """v1.7 schema invariants: 46 features, no dups, defaults are a subset."""
+    """v1.9 schema invariants: 47 features, no dups, defaults are a subset."""
     from phish_features.schema import FEATURE_SCHEMA_VERSION, N_FEATURES
 
-    assert FEATURE_SCHEMA_VERSION == "1.7.0"
-    assert N_FEATURES == 46
+    assert FEATURE_SCHEMA_VERSION == "1.9.0"
+    assert N_FEATURES == 47
     assert len(set(ORDERED_FEATURES)) == N_FEATURES
     assert set(IMPUTED_DEFAULTS).issubset(set(ORDERED_FEATURES))
+
+
+def test_whitelist_domain_in_subdomain_spoof(extractor):
+    """A full agency domain embedded as a subdomain prefix is camouflage."""
+    # Short-brand agency (sso.go.th) carried as a leading label group while the
+    # registrable domain is the attacker's -> fires.
+    spoof = extractor.extract_dict(
+        "http://www.sso.go.th.welfare-claim.online/login"
+    )
+    assert spoof["has_whitelist_domain_in_subdomain"] == 1
+    # Interior placement also fires.
+    spoof2 = extractor.extract_dict("https://obec.go.th.evil.xyz/verify")
+    assert spoof2["has_whitelist_domain_in_subdomain"] == 1
+
+
+def test_whitelist_domain_in_subdomain_exempts_real_subdomain(extractor):
+    """A genuine subdomain or the bare agency domain must NOT fire."""
+    # True subdomain of the agency.
+    assert (
+        extractor.extract_dict("https://reg.sso.go.th/")[
+            "has_whitelist_domain_in_subdomain"
+        ]
+        == 0
+    )
+    # Bare agency domain.
+    assert (
+        extractor.extract_dict("https://sso.go.th/")[
+            "has_whitelist_domain_in_subdomain"
+        ]
+        == 0
+    )
+    # Ordinary external site.
+    assert (
+        extractor.extract_dict("https://example.com/")[
+            "has_whitelist_domain_in_subdomain"
+        ]
+        == 0
+    )
+    # IP host falls in the no-host branch and is always 0.
+    assert (
+        extractor.extract_dict("http://203.0.113.45/login")[
+            "has_whitelist_domain_in_subdomain"
+        ]
+        == 0
+    )
 
 
 def test_v15_features_present_and_imputed(extractor):

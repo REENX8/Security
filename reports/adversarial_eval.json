@@ -1,6 +1,6 @@
 {
-  "total": 110,
-  "detected": 110,
+  "total": 160,
+  "detected": 160,
   "missed": 0,
   "detection_rate": 1.0,
   "passed": true,
@@ -8,6 +8,21 @@
   "missed_urls": [],
   "by_category": {
     "at_trick": {
+      "n": 10,
+      "detected": 10,
+      "rate": 1.0
+    },
+    "brand_expansion_host": {
+      "n": 10,
+      "detected": 10,
+      "rate": 1.0
+    },
+    "brand_in_query_redirect": {
+      "n": 10,
+      "detected": 10,
+      "rate": 1.0
+    },
+    "cctld_clone": {
       "n": 10,
       "detected": 10,
       "rate": 1.0
@@ -47,12 +62,22 @@
       "detected": 10,
       "rate": 1.0
     },
+    "short_brand_subdomain_spoof": {
+      "n": 10,
+      "detected": 10,
+      "rate": 1.0
+    },
     "subdomain_depth": {
       "n": 10,
       "detected": 10,
       "rate": 1.0
     },
     "url_encoding": {
+      "n": 10,
+      "detected": 10,
+      "rate": 1.0
+    },
+    "user_content_host": {
       "n": 10,
       "detected": 10,
       "rate": 1.0

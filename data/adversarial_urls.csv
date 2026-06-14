@@ -109,3 +109,53 @@ http://0300.0250.0000.0001/verify,phishing,encoded_ip_host,Octal IP literal of 1
 http://0012.0064.0001.0005/account,phishing,encoded_ip_host,Octal IP literal hosting account phishing
 http://0177.0001.0002.0003/wallet,phishing,encoded_ip_host,Octal IP literal targeting wallet credentials
 http://0010.0020.0030.0040/reset,phishing,encoded_ip_host,Octal IP literal with password-reset bait
+http://www.sso.go.th.welfare-claim.online/login,phishing,short_brand_subdomain_spoof,Full agency domain sso.go.th as subdomain prefix; registrable domain is attacker's
+http://rd.go.th.tax-refund-center.online/verify,phishing,short_brand_subdomain_spoof,Short-brand agency rd.go.th camouflaged as subdomain
+https://www.set.or.th.dividend-claim.xyz/account,phishing,short_brand_subdomain_spoof,set.or.th subdomain spoof on cheap TLD
+http://obec.go.th.scholarship-form.top/login,phishing,short_brand_subdomain_spoof,obec.go.th embedded as subdomain label-group
+http://www.dbd.go.th.business-renew.online/signin,phishing,short_brand_subdomain_spoof,dbd.go.th subdomain camouflage
+https://moe.go.th.student-grant.site/verify-account,phishing,short_brand_subdomain_spoof,moe.go.th carried as subdomain prefix
+http://www.bot.or.th.account-secure.icu/login,phishing,short_brand_subdomain_spoof,bot.or.th subdomain spoof
+http://mwa.co.th.bill-payment.online/pay,phishing,short_brand_subdomain_spoof,mwa.co.th subdomain camouflage with payment lure
+https://www.pea.co.th.refund-claim.xyz/account/login,phishing,short_brand_subdomain_spoof,pea.co.th subdomain spoof
+http://gsb.or.th.reward-point.top/redeem,phishing,short_brand_subdomain_spoof,gsb.or.th subdomain camouflage with reward lure
+http://kmitl-th.com/login,phishing,brand_expansion_host,Brand expanded with -th suffix on .com
+http://chula-secure.com/account/verify,phishing,brand_expansion_host,Brand + -secure expansion impersonating chula
+http://mahidol-login.net/signin,phishing,brand_expansion_host,Brand + -login expansion on .net
+http://obec-online.com/verify-account,phishing,brand_expansion_host,Brand + -online expansion impersonating obec
+http://krungthai-th.com/login,phishing,brand_expansion_host,Bank brand + -th expansion
+http://rd-refund.com/tax/login,phishing,brand_expansion_host,Revenue dept brand + -refund expansion
+http://sso-claim.net/account,phishing,brand_expansion_host,Social security brand + -claim expansion
+http://nstda-verify.com/login,phishing,brand_expansion_host,Research agency brand + -verify expansion
+http://thaigov-portal.com/secure/login,phishing,brand_expansion_host,Generic thaigov + -portal expansion
+http://moph-service.net/account/verify,phishing,brand_expansion_host,Health ministry brand + -service expansion
+http://secure-login.xyz/redirect?to=krungthai.com&next=login,phishing,brand_in_query_redirect,Open-redirect carrying trusted brand in query
+http://link-track.top/r?url=https://obec.go.th/login,phishing,brand_in_query_redirect,Redirect param embedding obec.go.th
+http://go-redirect.icu/out?target=rd.go.th&action=verify,phishing,brand_in_query_redirect,Redirect param embedding rd.go.th
+http://click.sbs/redirect?to=chula.ac.th/account/login,phishing,brand_in_query_redirect,Redirect param embedding chula.ac.th
+http://t.cfd/r?u=mahidol.ac.th&p=signin,phishing,brand_in_query_redirect,Short host open-redirect with mahidol brand
+http://safe-jump.online/redirect?dest=set.or.th/login,phishing,brand_in_query_redirect,Redirect param embedding set.or.th
+http://url-fwd.xyz/go?to=bot.or.th/verify-account,phishing,brand_in_query_redirect,Redirect param embedding bot.or.th
+http://redir.top/?to=ktb.co.th/login&ref=mail,phishing,brand_in_query_redirect,Redirect param embedding ktb.co.th
+http://open.click/redirect?url=gsb.or.th/account,phishing,brand_in_query_redirect,Redirect param embedding gsb.or.th
+http://l.site/r?target=nstda.or.th/secure/login,phishing,brand_in_query_redirect,Redirect param embedding nstda.or.th
+https://roblox.com.kz/login,phishing,cctld_clone,Brand clone on foreign ccTLD com.kz (brand label intact)
+http://paypal.com.pl/account/verify,phishing,cctld_clone,Brand clone on com.pl
+https://microsoft.co.ru/users/10293/profile,phishing,cctld_clone,Brand clone on co.ru with profile path
+http://netflix.com.br/login,phishing,cctld_clone,Brand clone on com.br
+https://amazon.co.in/account,phishing,cctld_clone,Brand clone on co.in
+http://krungthai.com.kz/login,phishing,cctld_clone,Thai bank brand clone on com.kz
+https://chula.net.id/users/55012/profile,phishing,cctld_clone,University brand clone on net.id
+http://obec.com.ng/account,phishing,cctld_clone,Gov brand clone on com.ng
+https://facebook.com.ve/login,phishing,cctld_clone,Brand clone on com.ve
+http://apple.com.ua/verify,phishing,cctld_clone,Brand clone on com.ua
+https://customer-sp-vh9a.pages.dev/vc/xv/login.php,phishing,user_content_host,Phishing kit on pages.dev with login.php
+http://center-account-adminpage.github.io/appeals/submit-appeal-form,phishing,user_content_host,Appeal-form kit on github.io
+https://wallet-verify-x7q.web.app/secure/session/login.php,phishing,user_content_host,Wallet-verify kit on web.app
+http://billing-q8z2.workers.dev/account/verify,phishing,user_content_host,Billing kit on workers.dev
+https://support-customer-form.sealos.app/login,phishing,user_content_host,Support-form kit on sealos.app
+http://verify-secure-9ab.netlify.app/vc/xv/login.php,phishing,user_content_host,Verify kit on netlify.app
+https://account-update-portal.weebly.com/login,phishing,user_content_host,Account-update kit on weebly.com
+http://customer-sp-kk21.pages.dev/appeals/submit-appeal-form/return,phishing,user_content_host,Appeal kit on pages.dev
+https://secure-login-center.github.io/account/verify,phishing,user_content_host,Secure-login kit on github.io
+http://center-billing-adminpage.web.app/secure/session/login.php,phishing,user_content_host,Billing-admin kit on web.app
